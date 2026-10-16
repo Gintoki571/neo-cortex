@@ -2,7 +2,7 @@
 BASE = {"vector": 1.0, "bm25": 1.0, "graph": 1.0, "temporal": 0.5}
 # weight_c = BASE_c * (1 + sum_i conf_i * BOOST[i][c]); intent confidences are soft, so a misroute only nudges
 BOOST = {
-    "fact": {"bm25": 0.5, "vector": 0.25},
+    "fact": {"bm25": 0.5, "vector": 0.25, "graph": -0.3},  # single-hop facts: text channels already find them, keep graph noise down
     "connection": {"graph": 1.0},
     "temporal": {"temporal": 2.0},
     "owner": {"graph": 1.0},

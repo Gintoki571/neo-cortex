@@ -70,7 +70,7 @@ def _mem_line(r) -> str:
 
 def _item(n, r) -> str:
     s = r["source"]
-    src = (f'doc "{_t(s.get("title"), 60)}" ({s.get("kind")}) [{s.get("doc_id")}]' if r["label"] == "Chunk"
+    src = (f'doc "{_t(s.get("title"), 60)}" ({s.get("kind")}) [{s.get("doc_id")}]' + (f' by {s["author"]}' if s.get("author") else "") if r["label"] == "Chunk"
            else "memory " + "/".join(x for x in (s.get("agent"), s.get("project")) if x) + (f" session {s['source_id']}" if s.get("source_id") else ""))
     why = ",".join(f"{c}#{k}" for c, k in r["channels"].items())
     out = f"{n}. [{r['id']}] {r['kind'] or r['label'].lower()} {_d(r['date_ms'])}" + (" SUPERSEDED" if r["status"] == "superseded" else "")
@@ -203,7 +203,9 @@ def remember(store, text, kind=None, about=None, supersedes=None, agent=None, pr
 def ask(store, question, max_chars=MAX, tenant=None) -> str:
     """Multi-hop evidence pack. It does not answer: the caller reasons over seeds, paths, facts and cited evidence."""
     pq = parse_query(question)
-    seeds = ch.link_entities(store, pq["entities"], question, tenant)
+    ginfo = {}
+    rs = _recall(store, question, k=8, weights={"graph": 2.0}, info=ginfo, tenant=tenant)
+    seeds = ginfo["seeds"] if "seeds" in ginfo else ch.link_entities(store, pq["entities"], question, tenant)  # seeds the walk actually used
     out = ["# ask: evidence pack"]
     if seeds:
         out.append("## Seeds (linked entities)")
@@ -217,15 +219,20 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
         out.append("## Bridging paths")
         out += _path_lines(store, paths, tenant, "- ")
         ids = list({*ids, *(n[0] for nodes, _ in paths for n in nodes)})
+    rel_ents = [e for e, *_ in ginfo.get("entities", [])[:6]]
+    ids = list({*ids, *rel_ents})
     if ids:
         facts = store.query(
-            "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE a.id IN $i AND b.id IN $i RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id "
-            "ORDER BY r.valid_from_ms DESC LIMIT 15", {"i": ids}, tenant)
+            "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE (a.id IN $i AND b.id IN $i) OR ((a.id IN $r OR b.id IN $r) AND r.type IN $ty) "
+            "RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id "
+            "ORDER BY r.conf DESC LIMIT 15", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them
         if facts:
             src = _src_names(store, [f[5] for f in facts], tenant)
             out.append("## Facts among them")
             out += [f"- {a} -[{t}]-> {b} ({_d(d)}, conf {c or 0:.2f}) src {src.get(s, s or '?')}" for a, t, b, c, d, s in facts]
-    rs = _recall(store, question, k=6, weights={"graph": 2.0}, tenant=tenant)
+    if ginfo.get("entities"):  # reached by the Personalized PageRank walk: bridging answers (people, owners) show up here
+        out.append("## Related entities (graph walk from the seeds, strongest first)")
+        out += [f"- [{e}] {n}: {tr}" for e, n, _, tr in ginfo["entities"][:6]]
     if rs:
         out.append("## Evidence (cite ids)")
         out += [_item(i, r) for i, r in enumerate(rs, 1)]

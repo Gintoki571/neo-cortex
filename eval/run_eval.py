@@ -175,16 +175,20 @@ def main():
                                  "n_ownership": len(sub("ownership")), "ms": mean([r["ms"] for r in ask_rows]), "rows": ask_rows},
                          "who": {tag: {"any": mean([r[tag]["any"] for r in who_rows]), "all": mean([r[tag]["all"] for r in who_rows]),
                                        "n": len(who_rows)} for tag in ("question", "entity")} | {"rows": who_rows}}
-    # bootstrap: full vs the best config that has no graph channel
+    # bootstrap: full and auto vs the best config that has no graph channel
     boots = []
     nog = [n for n in names if CONFIGS[n] is not None and "graph" not in CONFIGS[n] and n in per_q]
-    if "full" in per_q and nog:
+    for cfg in ("full", "auto"):
+        if cfg not in per_q or not nog:
+            continue
         best = max(nog, key=lambda n: (agg[n]["overall"]["recall@10"], agg[n]["overall"]["fullcover@10"]))
-        for subset, types in (("all questions", TYPES), ("multi+ownership", ["multi", "ownership"])):
-            idx = [i for i, q in enumerate(gold) if q["type"] in types]
+        odd = lambda i: int(gold[i]["id"][1:]) % 2 == 1  # noqa: E731
+        for subset, ok in (("all questions", lambda i: True), ("odd questions", odd), ("even questions", lambda i: not odd(i)),
+                           ("multi+ownership", lambda i: gold[i]["type"] in ("multi", "ownership"))):
+            idx = [i for i in range(len(gold)) if ok(i)]
             for m in ("recall@10", "fullcover@10"):
-                r = M.paired_bootstrap([per_q["full"][i][m] for i in idx], [per_q[best][i][m] for i in idx])
-                boots.append({"subset": subset, "metric": m, "a": "full", "b": best, **r})
+                r = M.paired_bootstrap([per_q[cfg][i][m] for i in idx], [per_q[best][i][m] for i in idx])
+                boots.append({"subset": subset, "metric": m, "a": cfg, "b": best, **r})
     res = {"now_ms": NOW_MS, "k": K, "n_questions": len(gold), "ingest": ing, "configs": names, "aggregate": agg, "latency": lat,
            "bootstrap": boots, "tools": tools_res, "per_question": per_q, "gold": {q["id"]: q["gold_docs"] for q in gold},
            "total_seconds": round(time.time() - t0, 1)}

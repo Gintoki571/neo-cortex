@@ -1,17 +1,18 @@
 """Retrieval channels. Each returns [(node_id, score)] over Chunk/Memory nodes, best first (higher is better)."""
 import difflib
+import math
 import re
 import threading
 from dataclasses import dataclass
 
 import bm25s
+import numpy as np
 import Stemmer
 
 from .. import models
 from ..util import normalize_key
 
 N = 50  # candidates per channel
-DECAY = 0.5  # graph weight per REL hop
 _STOP = set("a an the of to in on at for and or is are was were be been do does did what which who whom whose when where why how "
             "with by from as that this these those it its i we you they he she our your their my me us about has have had not "
             "can could should would will than then there into over any all".split())
@@ -105,9 +106,37 @@ def bm25(store, q: str, f: Filt, tenant=None, n=N):
 
 
 # --- graph ------------------------------------------------------------------------------------------------------
-def link_entities(store, ents, q, tenant=None) -> dict:
-    """Query entities -> {entity_id: (name, conf)}. Exact key (GLiNER entity 1.0, query n-gram 0.7), else fuzzy
-    full-text on Entity.name (0.8 x similarity), else nearest Entity.emb (0.6)."""
+# Query words that name a role or a kind of thing, never one specific entity: such phrases are not linked fuzzily.
+_GENERIC = set("engineer developer manager executive owner reviewer person people team group service system component incident outage "
+               "failure issue change edit config configuration setting feature code path flow store tool company customer user "
+               "thing bug error problem rule decision file module library project work month year week day".split())
+ALPHA, BETA, LAMBDA = 0.5, 0.5, 0.5  # PPR restart prob.; share of an entity's mass sent along REL; weight of anchor seeds
+SPEC_POW = 2.0  # idf-like weight squared: hub entities (people on every ticket) must not carry mass
+HOPS, MAX_NODES, PER_ENT, SEEDS = 3, 500, 25, 5
+
+
+def _content(name):
+    """Content tokens of a phrase: lowercase, no stop/generic words, plural 's' stripped."""
+    out = []
+    for t in key_of(name).split():
+        t = t[:-1] if len(t) > 3 and t.endswith("s") else t
+        if t not in _STOP and t not in _GENERIC and (len(t) >= 3 or t.isdigit()):
+            out.append(t)
+    return out
+
+
+def _spec(m):
+    """Entity specificity (idf-like): entities named in many chunks say little about any one of them."""
+    return (1 / math.log(1 + max(m or 1, 1))) ** SPEC_POW
+
+
+def link_entities(store, ents, q, tenant=None, cap=SEEDS) -> dict:
+    """Query entities -> {entity_id: (name, conf)}, at most `cap`. Exact key (GLiNER entity 1.0, query n-gram 0.7), fuzzy
+    full-text on Entity.name (0.8 x similarity), a rare content word shared with an entity name (0.35-0.5), else the nearest
+    Entity.emb (0.6) when it is very close (>= 0.9) or close (>= 0.8) and shares a content word. Generic phrases ("the
+    executive", "configuration edit") only link by exact key."""
+    rows = store.query("MATCH (e:Entity) RETURN e.id, e.key, e.name", None, tenant)  # shortcut: O(entities) per call, fine to ~10k
+    bykey = {r[1]: r for r in rows}
     words = key_of(q).split()
     grams = {" ".join(words[i:i + n]) for n in (1, 2, 3) for i in range(len(words) - n + 1)}
     grams = {g for g in grams if len(g) >= 3 and not all(w in _STOP for w in g.split())}
@@ -115,27 +144,42 @@ def link_entities(store, ents, q, tenant=None) -> dict:
     for g in grams:
         want.setdefault(g, 0.7)
     out, hit = {}, set()
-    for kk, eid, name in store.query("MATCH (e:Entity) WHERE e.key IN $k RETURN e.key, e.id, e.name", {"k": list(want)}, tenant):
-        hit.add(kk)
-        out[eid] = (name, max(want[kk], out.get(eid, ("", 0))[1]))
+
+    def put(eid, name, c):
+        if c > out.get(eid, ("", 0))[1]:
+            out[eid] = (name, c)
+
+    for kk, c in want.items():
+        if kk in bykey:
+            hit.add(kk)
+            put(bykey[kk][0], bykey[kk][2], c)
+    toks = {}  # content word -> entities whose name has it
+    for eid, ek, name in rows:
+        for t in set(_content(ek or "")):
+            toks.setdefault(t, []).append((eid, name, ek))
+    for t in set(_content(q)):
+        if 1 <= len(toks.get(t, [])) <= 2:
+            for eid, name, ek in toks[t]:
+                put(eid, name, 0.35 + 0.15 / max(len(_content(ek)), 1))
     for e in ents:
         k = key_of(e["name"])
-        if k in hit or not k:
+        ct = set(_content(e["name"]))
+        if k in hit or not k or not ct:
             continue
-        toks = [t for t in k.split() if len(t) >= 3] or [k]
+        ft = [t for t in k.split() if len(t) >= 3] or [k]
         for eid, name, ek in store.query("CALL db.idx.fulltext.queryNodes('Entity',$q) YIELD node RETURN node.id, node.name, node.key",
-                                         {"q": "|".join(f"%{t}%" for t in toks)}, tenant):
+                                         {"q": "|".join(f"%{t}%" for t in ft)}, tenant):
             c = 0.8 * difflib.SequenceMatcher(None, k, ek or key_of(name)).ratio()
-            if c >= 0.6 and c > out.get(eid, ("", 0))[1]:
-                out[eid] = (name, c)
+            if c >= 0.6:
+                put(eid, name, c)
                 hit.add(k)
         if k not in hit:
             v = models.embed_docs([e["name"]], [e["type"]])[0].tolist()
             for eid, name, d in store.query("CALL db.idx.vector.queryNodes('Entity','emb',3,vecf32($v)) YIELD node, score RETURN node.id, node.name, score",
                                             {"v": v}, tenant):
-                if 1 - d >= 0.8 and 0.6 > out.get(eid, ("", 0))[1]:
-                    out[eid] = (name, 0.6)
-    return dict(sorted(out.items(), key=lambda kv: -kv[1][1])[:8])
+                if (1 - d >= 0.9) or (1 - d >= 0.8 and ct & set(_content(name))):
+                    put(eid, name, 0.6)
+    return dict(sorted(out.items(), key=lambda kv: -kv[1][1])[:cap])
 
 
 def _render(trail):
@@ -145,57 +189,129 @@ def _render(trail):
     return s
 
 
-def graph(store, ents, q: str, f: Filt, tenant=None, n=N, paths: dict | None = None):
-    """Seeds -> entities within 2 REL hops (weight x conf x DECAY per hop) -> Chunks/Memories that MENTION them.
-    Entities on SPpaths between seed pairs get a bridging weight and evidence touching two of them a 1.5x bonus.
-    `paths` (optional dict) is filled with {node_id: ["A -[OWNS]-> B <-[MENTIONS]- node", ...]}."""
+def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
+    """HippoRAG-style Personalized PageRank over the local Entity/Chunk/Memory graph around the seeds.
+    qseeds/aseeds: {entity_id: weight} (query-linked; mentioned by the top dense/BM25 hits), scaled by specificity.
+    Walk: entity -> REL neighbours (conf, undirected; BETA of its mass) or the chunks mentioning it (the rest, uniform);
+    chunk -> its entities (conf x specificity). `current` skips REL edges already ended. Returns (mass {node_id: float},
+    names {entity_id: name}, trail(node_id) -> [name, (rel, forward, name), ...] along a shortest hop path from a seed).
+    numpy, not algo.pageRank: FalkorDB's PageRank has no personalization vector, and the subgraph is capped at MAX_NODES."""
+    seeds = {**aseeds, **qseeds}
+    ents = {r[0]: (r[1], r[2]) for r in store.query("MATCH (e:Entity) WHERE e.id IN $i RETURN e.id, e.name, e.mentions",
+                                                    {"i": list(seeds)}, tenant)}
+    seeds = {e: w for e, w in seeds.items() if e in ents}
+    nb, ch_of, ent_of = {}, {}, {}  # entity -> {entity: [w, type, fwd]}, entity -> {chunk: conf}, chunk -> {entity: conf}
+    front, done = set(ents), set()
+    cond = "AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)" if current else ""
+    for _ in range(HOPS):
+        if not front or len(ents) + len(ent_of) > MAX_NODES:
+            break
+        done |= front
+        fe, new_c = set(), set()
+        for a, b, bn, bm, t, c, st in store.query(
+                f"MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $ids {cond} RETURN a.id, b.id, b.name, b.mentions, r.type, "
+                "coalesce(r.conf, 0.5), startNode(r).id", {"ids": list(front), "now": now or 0}, tenant):
+            ents.setdefault(b, (bn, bm))
+            cur = nb.setdefault(a, {}).get(b)
+            nb[a][b] = [1 - (1 - (cur[0] if cur else 0)) * (1 - c), t if not cur or c > cur[0] else cur[1], st == a]  # corroborated
+            fe.add(b)
+        for n, e, mc in store.query(
+                "MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE e.id IN $ids AND (n:Chunk OR n:Memory) RETURN n.id, e.id, coalesce(m.conf, 1.0) "
+                "ORDER BY m.conf DESC LIMIT 3000", {"ids": list(front)}, tenant):  # shortcut: hub entities keep their PER_ENT best chunks
+            if len(ch_of.setdefault(e, {})) < PER_ENT:
+                ch_of[e][n] = mc
+                if n not in ent_of:
+                    new_c.add(n)
+        if new_c:
+            for n, e, en, em, mc in store.query(
+                    "MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE n.id IN $ids RETURN n.id, e.id, e.name, e.mentions, coalesce(m.conf, 1.0)",
+                    {"ids": list(new_c)}, tenant):
+                ent_of.setdefault(n, {})[e] = mc
+                if e not in ents:
+                    ents[e] = (en, em)
+                    fe.add(e)
+        front = fe - done
+    idx = {k: i for i, k in enumerate([*ents, *ent_of])}
+    P = np.zeros((len(idx), len(idx)))
+    for e in ents:
+        r_, m_ = nb.get(e, {}), ch_of.get(e, {})
+        wr, wm = sum(v[0] for v in r_.values()), sum(m_.values())
+        for b, v in r_.items():
+            P[idx[e], idx[b]] += (BETA if wm else 1) * v[0] / wr
+        for c, mc in m_.items():
+            P[idx[e], idx[c]] += (1 - BETA if wr else 1) * mc / wm
+    for c, m_ in ent_of.items():
+        tot = sum(mc * _spec(ents[e][1]) for e, mc in m_.items())
+        for e, mc in m_.items():
+            P[idx[c], idx[e]] += mc * _spec(ents[e][1]) / tot
+
+    def vec(sd):
+        v = np.zeros(len(idx))
+        for e, w in sd.items():
+            if e in ents:
+                v[idx[e]] += w * _spec(ents[e][1])
+        return v / v.sum() if v.any() else v
+
+    rq, ra = vec(qseeds), vec(aseeds)
+    r = ra if not rq.any() else rq if not ra.any() else (1 - LAMBDA) * rq + LAMBDA * ra
+    p = r.copy()
+    for _ in range(40):
+        q = (1 - ALPHA) * (p @ P)
+        p = q + (1 - q.sum()) * r  # mass lost at dead ends restarts at the seeds
+    mass = {k: float(p[i]) for k, i in idx.items()}
+    # BFS parents over the same edges, seeds first by weight (ties go to the stronger seed)
+    adj = {}
+    for a, d in nb.items():
+        for b, (_, t, fwd) in d.items():
+            adj.setdefault(a, []).append((b, t, fwd))
+    for e, d in ch_of.items():
+        for c in d:
+            adj.setdefault(e, []).append((c, "MENTIONS", False))
+    for c, d in ent_of.items():
+        for e in d:
+            adj.setdefault(c, []).append((e, "MENTIONS", True))
+    par = {s: None for s in sorted(seeds, key=lambda e: -seeds[e])}
+    queue = list(par)
+    for u in queue:
+        for v, t, fwd in adj.get(u, []):
+            if v not in par:
+                par[v] = (u, t, fwd)
+                queue.append(v)
+    name = lambda k: ents[k][0] if k in ents else k  # noqa: E731
+
+    def trail(k):
+        out = []
+        while par.get(k):
+            u, t, fwd = par[k]
+            out.append((t, fwd, name(k)))
+            k = u
+        return [name(k), *reversed(out)] if k in par else [name(k)]
+    return mass, {e: v[0] for e, v in ents.items()}, trail
+
+
+def graph(store, ents, q: str, f: Filt, tenant=None, n=N, paths: dict | None = None, anchors=(), now=None, current=True, info: dict | None = None):
+    """Seeds (linked query entities, plus the entities mentioned by `anchors`, the top dense/BM25 hits, at lower weight)
+    -> Personalized PageRank (see `ppr`) -> Chunks/Memories ranked by mass. `paths` is filled with
+    {node_id: ["A -[OWNS]-> B <-[MENTIONS]- node"]}; `info` with {"seeds": {id: (name, conf)}, "entities": [(id, name, mass, trail)]}."""
     seeds = link_entities(store, ents, q, tenant)
-    if not seeds:
+    a = {}
+    rank = {x: i for i, x in enumerate(anchors)}
+    for nid, e, mc in store.query("MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE n.id IN $ids RETURN n.id, e.id, coalesce(m.conf, 1.0)",
+                                  {"ids": list(anchors)}, tenant) if anchors else []:
+        a[e] = max(a.get(e, 0), mc / (1 + rank[nid]))
+    seeds = {e: v for e, v in seeds.items() if v[1] >= 0.65 or e in a or not anchors}  # weak links need support from the retrieved hits
+    if not seeds and not a:
         return []
-    W = {e: (c, [nm]) for e, (nm, c) in seeds.items()}  # entity -> (weight, trail)
-    names = {e: nm for e, (nm, _) in seeds.items()}
-    front = set(W)
-    for _ in range(2):
-        new = {}
-        for a, b, bn, t, c, st in store.query(
-                "MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $ids RETURN a.id, b.id, b.name, r.type, coalesce(r.conf, 0.5), startNode(r).id",
-                {"ids": list(front)}, tenant):
-            w = W[a][0] * c * DECAY
-            names[b] = bn
-            if w > W.get(b, (0,))[0] and w > new.get(b, (0,))[0]:
-                new[b] = (w, W[a][1] + [(t, st == a, bn)])
-        W.update(new)
-        front = set(new)
-    core = set(seeds)
-    sl = list(seeds)[:6]
-    for i, a in enumerate(sl):
-        for b in sl[i + 1:]:
-            for ids, rels in store.query(
-                    "MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'], maxLen:3, "
-                    "relDirection:'both', pathCount:1}) YIELD path RETURN [x IN nodes(path) | [x.id, x.name]], "
-                    "[r IN relationships(path) | [r.type, startNode(r).id]]", {"a": a, "b": b}, tenant):
-                bw = 0.8 * min(seeds[a][1], seeds[b][1])
-                trail = [ids[0][1]]
-                for j, (rel, st) in enumerate(rels):
-                    trail.append((rel, st == ids[j][0], ids[j + 1][1]))
-                    e = ids[j + 1][0]
-                    core.add(e)
-                    if bw > W.get(e, (0,))[0]:
-                        W[e] = (bw, list(trail))
-    top = sorted(W, key=lambda e: -W[e][0])[:40]
-    score, why = {}, {}
-    for nid, e, mc in store.query("MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE e.id IN $ids AND (n:Chunk OR n:Memory) "
-                                  "RETURN n.id, e.id, coalesce(m.conf, 1.0)", {"ids": top}, tenant):
-        s = W[e][0] * mc
-        score[nid] = score.get(nid, 0) + s
-        why.setdefault(nid, []).append((s, e))
-    for nid, ws in why.items():
-        if len({e for _, e in ws} & core) >= 2:
-            score[nid] *= 1.5
-    ranked = keep(store, sorted(score.items(), key=lambda kv: -kv[1])[:n * 2], f, tenant)[:n]
+    mass, names, trail = ppr(store, {e: c for e, (_, c) in seeds.items()}, a, tenant, now, current)
+    m = meta(store, [k for k in mass if k not in names], tenant)
+    ranked = keep(store, sorted(((k, v) for k, v in mass.items() if k in m), key=lambda kv: -kv[1])[:n * 2], f, tenant, m)[:n]
     if paths is not None:
-        for nid, _ in ranked:
-            paths[nid] = [f"{_render(W[e][1])} <-[MENTIONS]- {nid}" for _, e in sorted(why[nid], reverse=True)[:2]]
+        for k, _ in ranked:
+            paths[k] = [_render(trail(k))]
+    if info is not None:
+        info["seeds"] = seeds
+        info["entities"] = [(e, names[e], v, _render(trail(e)) if len(trail(e)) > 1 else "named by a top hit")
+                            for e, v in sorted(((e, mass[e]) for e in names if e not in seeds), key=lambda kv: -kv[1])[:10]]
     return ranked
 
 

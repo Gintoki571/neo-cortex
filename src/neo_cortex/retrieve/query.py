@@ -26,7 +26,7 @@ _MONTHS = {m: i for i, m in enumerate(_MON.split("|")[:12], 1)}
 _MONTHS.update({"jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6, "jul": 7, "aug": 8, "sept": 9, "sep": 9, "oct": 10, "nov": 11, "dec": 12})
 _EXPR = re.compile(
     rf"\b(?:(?P<mod>since|after|from|before|until|till|in)\s+)?(?:(?P<iso>\d{{4}}-\d{{2}}-\d{{2}})"
-    rf"|(?P<rel>yesterday|today|last\s+(?:week|month|year)|(?:last|past)\s+\d+\s+(?:day|week|month|year)s?)"
+    rf"|(?P<rel>yesterday|last\s+(?:week|month|year)|(?:last|past)\s+\d+\s+(?:day|week|month|year)s?)"
     rf"|(?P<mon>{_MON})(?:\s+(?P<yr>\d{{4}}))?)\b", re.I)
 _BETWEEN = re.compile(r"\bbetween\s+(\d{4}-\d{2}-\d{2})\s+and\s+(\d{4}-\d{2}-\d{2})\b", re.I)
 _DAY = 86_400_000
@@ -39,7 +39,8 @@ def _ms(d: dt.date) -> int:
 
 def parse_time(q: str, now_ms: int | None = None) -> tuple[int | None, int | None]:
     """Window [since, until) in epoch ms from ISO dates, 'since/before/after <date>', 'in <Month> [year]',
-    'last week/month/year', 'last N days', 'yesterday', 'today'. Several expressions intersect."""
+    'last week/month/year', 'last N days', 'yesterday'. Several expressions intersect. "today/now/current/latest" are
+    recency cues for the temporal channel (`channels.RECENT_RE`), never windows."""
     now = now_ms if now_ms is not None else _now_ms()
     today = _ms(dt.datetime.fromtimestamp(now / 1000, dt.timezone.utc).date())
     since, until = [], []
@@ -59,8 +60,6 @@ def parse_time(q: str, now_ms: int | None = None) -> tuple[int | None, int | Non
             r = m["rel"].lower().split()
             if r[0] == "yesterday":
                 s, u = today - _DAY, today
-            elif r[0] == "today":
-                s, u = today, today + _DAY
             else:
                 n, unit = (1, r[1]) if r[1] in _UNIT else (int(r[1]), r[2].rstrip("s"))
                 s, u = now - n * _UNIT[unit] * _DAY, now
