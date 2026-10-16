@@ -1,0 +1,14 @@
+# local model weights (downloaded from Hugging Face, see README)
+/embeddinggemma-2/
+/gliner2.5-base-v1/
+# agent tooling (third-party skills), not project code
+/.claude/
+/skills-lock.json
+# python / runtime
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.rdb
+/.neo/
+.env
