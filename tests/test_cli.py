@@ -120,6 +120,12 @@ def test_hooks_against_daemon(daemon, tmp_path):
     assert "up at" in neo(env, "status")[0].stdout
 
 
+def test_dream_dry_run_via_daemon(daemon):
+    env, _ = daemon
+    r, _ = neo(env, "dream", "--dry-run")
+    assert r.returncode == 0 and "dry run, nothing written" in r.stdout, r.stderr
+
+
 def test_api_rejects_foreign_requests(daemon):
     import urllib.error
     import urllib.request

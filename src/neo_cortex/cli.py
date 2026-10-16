@@ -165,6 +165,8 @@ def parser():
     p.add_argument("--task", action="append", help="repeatable")
     p.add_argument("--from", dest="from_agent", default=_agent())
     add("cypher", "read-only Cypher", "query")
+    p = add("dream", "consolidate memories (merge, promote, decay, conflicts)")
+    p.add_argument("--dry-run", action="store_true", help="report what would change, write nothing")
     p = sub.add_parser("hook", help="Claude Code hook entry point (reads the hook JSON on stdin)")
     p.add_argument("event", choices=list(HOOK_EVENTS))
     p = sub.add_parser("install-claude", help="print (or with --yes merge) the Claude Code hooks and the MCP add command")
@@ -208,6 +210,7 @@ def main(argv=None):
                 "ingest": lambda: {"path_or_text": _abs(a.path)},
                 "handoff": lambda: {"to": a.to, "summary": a.summary, "tasks": a.task, "from_agent": a.from_agent},
                 "cypher": lambda: {"query": a.query},
+                "dream": lambda: {"dry_run": a.dry_run},
             }[a.cmd]() | {"tenant": t})
     except (RuntimeError, OSError) as e:
         print(f"neo {a.cmd}: {e}", file=sys.stderr)

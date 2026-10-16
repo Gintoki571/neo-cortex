@@ -1,4 +1,4 @@
-"""MCP server: one shared Store, 11 tools over stdio or streamable HTTP (127.0.0.1 by default).
+"""MCP server: one shared Store, 12 tools over stdio or streamable HTTP (127.0.0.1 by default).
 
 Run: python -m neo_cortex.mcp_server --transport http --port 8765   (or --transport stdio)
 Sync tools run on SDK worker threads, so a slow ingest does not block other agents.
@@ -19,7 +19,7 @@ from starlette.responses import JSONResponse, PlainTextResponse
 
 from . import tools as T
 
-API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher")
+API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher", "dream")
 
 INSTRUCTIONS = """Neo-Cortex: shared memory, company knowledge graph and multi-hop evidence. It returns cited evidence; you do the reasoning.
 - Start of a session: call brief (pass project/agent) and act on open handoffs.
@@ -103,6 +103,11 @@ def make_server(store, on_shutdown=None) -> MCPServer:
     @s.tool(description="Read-only Cypher, last resort. " + SCHEMA)
     def cypher(query: str, limit: int = 50, max_chars: int = 4000) -> str:
         return T.cypher(store, query, limit, max_chars)
+
+    @s.tool()
+    def dream(dry_run: bool = False, max_chars: int = 4000) -> str:
+        """Consolidate memories: merge duplicates, promote repeated episodes, decay unused ones, flag conflicts. dry_run reports only."""
+        return T.dream(store, dry_run, max_chars)
 
     _add_api(s, store)
     return s

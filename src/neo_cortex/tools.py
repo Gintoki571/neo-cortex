@@ -10,6 +10,7 @@ from pathlib import Path
 
 from . import write
 from .config import settings
+from .dream import dream as _dream
 from .retrieve import channels as ch
 from .retrieve import parse_query
 from .retrieve import recall as _recall
@@ -382,7 +383,8 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
                 "MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.kind, d.date_ms, d.title, count(c)", {"i": eid}, tenant):
             ev.append((dt or 0, f'{_d(dt)} {kind} [{did}] "{_t(title, 70)}" ({n} chunks mention it)'))
         for mid, kind, d, text, st, by, bd in store.query(
-                "MATCH (m:Memory)-[:MENTIONS]->(e:Entity {id:$i}) OPTIONAL MATCH (n:Memory)-[:SUPERSEDES]->(m) "
+                "MATCH (m:Memory)-[:MENTIONS]->(e:Entity {id:$i}) WHERE m.status <> 'merged' "
+                "OPTIONAL MATCH (n:Memory)-[:SUPERSEDES]->(m) WHERE n.status <> 'merged' "
                 "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms)",
                 {"i": eid}, tenant):
             tag = f" SUPERSEDED on {_d(bd)} by [{by}]" if st == "superseded" else ""
@@ -458,3 +460,13 @@ def cypher(store, query, limit=50, max_chars=MAX, tenant=None) -> str:
     out = [f"{len(rows)} rows" + (f" (capped at {limit})" if len(res.result_set) > limit else "") + ": " + " | ".join(str(h[1] if isinstance(h, (list, tuple)) else h) for h in res.header)]
     out += [" | ".join(_val(c) for c in r) for r in rows]
     return _cap(out, max_chars, "RETURN fewer columns or a smaller LIMIT")
+
+
+# ---------------------------------------------------------------- dream
+
+def dream(store, dry_run=False, max_chars=MAX, tenant=None) -> str:
+    """Memory consolidation (merge duplicates, promote recurring episodes, decay, flag conflicts). dry_run writes nothing."""
+    r = _dream(store, tenant=tenant, dry_run=dry_run)
+    what = "dry run, nothing written" if dry_run else r["id"]
+    return _cap([f"# dream ({what}): merged {r['merged']}, promoted {r['promoted']}, decayed {r['decayed']}, conflicts {r['conflicts']}"],
+                max_chars, "a larger max_chars")

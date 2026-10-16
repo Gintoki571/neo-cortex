@@ -142,3 +142,14 @@ def test_ingest_text_and_path(g, monkeypatch, tmp_path):
     assert "documents 1" in tools.ingest(g, "A decision note\nwe use RS256", kind="adr")
     assert calls[0] == f and calls[1].read_text().startswith("---\nkind: adr")
     assert tools.ingest(g, "A decision note\nwe use RS256", kind="adr") and calls[2] == calls[1]  # same text, same file
+
+
+def test_merged_memory_never_surfaces(g):
+    from neo_cortex.retrieve import recall
+    t = "Auth Service sessions expire after 900 seconds"  # a dream duplicate: same topic, so every channel would rank it
+    g.query("CREATE (:Memory {id:'m_merged', kind:'semantic', text:$t, status:'merged', confidence:0.9, created_ms:$d, valid_from_ms:$d, uses:0, emb:vecf32($v)})",
+            {"t": t, "d": ms("2026-03-07T00:00:00"), "v": vec(t).tolist()})
+    g.query("MATCH (m:Memory {id:'m_merged'}),(e:Entity {id:'e_auth'}) CREATE (m)-[:MENTIONS {conf:1.0}]->(e)")
+    for q in ("auth service sessions expire", "what changed about how long auth service sessions expire"):
+        assert "m_merged" not in [r["id"] for r in recall(g, q, k=10)], q  # superseded may come back for temporal intent, merged never
+    assert "m_merged" not in tools.brief(g)

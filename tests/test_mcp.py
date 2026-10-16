@@ -12,7 +12,7 @@ from test_tools import fakes, g  # noqa: F401  (fixtures)
 
 from neo_cortex.mcp_server import make_server
 
-TOOLS = {"brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher"}
+TOOLS = {"brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher", "dream"}
 
 
 def test_inprocess_list_and_call(g):  # noqa: F811

@@ -43,7 +43,7 @@ def keep(store, ranked, f: Filt, tenant, m=None):
         if i not in m:
             continue
         label, kind, d, status = m[i]
-        if status == "superseded" and not f.superseded:
+        if status == "merged" or (status == "superseded" and not f.superseded):  # merged: dream's duplicate, never shown
             continue
         if f.kinds and kind not in f.kinds and label.lower() not in f.kinds:
             continue
