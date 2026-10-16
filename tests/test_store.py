@@ -28,7 +28,7 @@ def test_open_close_no_orphan(tmp_path, monkeypatch):
 def test_bound_to_loopback(store):
     out = subprocess.run(["ss", "-ltn"], capture_output=True, text=True).stdout
     line = [l for l in out.splitlines() if ":" + PORT in l]
-    assert line and all("127.0.0.1:6391" in l for l in line)
+    assert line and all("127.0.0.1:" + PORT in l for l in line)
 
 
 def test_schema_idempotent(store):
