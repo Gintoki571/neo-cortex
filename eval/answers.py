@@ -6,9 +6,8 @@ Tool: tools.who / impact / timeline (current_owner / impact / changes), max_char
 Baseline: top-8 vector chunks (recall channels=["vector"]), each expanded with tools.read, concatenated, capped at 4000 chars.
 Scores: fraction of keys present and all keys present (norm: case, punctuation and hyphens ignored); current_owner also gets
 "correct current": tool = first listed person is the gold owner; baseline = gold owner occurs before any forbidden name.
-Writes eval/answers_results.json (one entry per --label run, kept across runs) and replaces the "## Graph-native answers"
-section at the end of eval/results.md: the "new extraction" run in full, other runs in one line.
-Note: run_eval.py rewrites results.md from scratch, so re-run this script after it.
+Writes eval/answers_results.json (one entry per --label run, kept across runs) and eval/answers.md: this run in full, the other
+runs in one line. eval/results.md is owned by run_eval.py and is never touched here.
 """
 import argparse
 import json
@@ -152,8 +151,8 @@ def render(r):
     return "\n".join(L) + "\n"
 
 
-def write_md(runs):
-    primary = runs.get("new extraction") or next(reversed(list(runs.values())))
+def write_md(runs, label):
+    primary = runs[label]
     text = render(primary)
     for r in runs.values():
         if r is primary:
@@ -162,9 +161,7 @@ def write_md(runs):
         text += (f"\nOther run, `{r['label']}` ({r['home']}): overall all keys tool {s['overall']['tool']['all']:.2f} vs baseline "
                  f"{s['overall']['baseline']['all']:.2f}; impact {s['impact']['tool']['all']:.2f} vs {s['impact']['baseline']['all']:.2f}; "
                  f"changes {s['changes']['tool']['all']:.2f} vs {s['changes']['baseline']['all']:.2f}.\n")
-    p = ROOT / "eval" / "results.md"
-    head = p.read_text(encoding="utf-8").split("\n## Graph-native answers", 1)[0].rstrip("\n") + "\n"
-    p.write_text(head + "\n## Graph-native answers\n\n" + text, encoding="utf-8")
+    (ROOT / "eval" / "answers.md").write_text("# Answer-level eval\n\n## Graph-native answers\n\n" + text, encoding="utf-8")
 
 
 def main():
@@ -189,7 +186,7 @@ def main():
     runs = json.loads(out.read_text(encoding="utf-8")).get("runs", {}) if out.exists() else {}
     runs[result["label"]] = result
     out.write_text(json.dumps({"runs": runs}, indent=1), encoding="utf-8")
-    write_md(runs)
+    write_md(runs, result["label"])
     print(render(result))
 
 

@@ -464,8 +464,9 @@ def read(store, id, max_chars=MAX, tenant=None) -> str:
 
 def who(store, topic, max_chars=MAX, tenant=None) -> str:
     seeds = ch.link_entities(store, [{"name": topic, "type": "other"}], topic, tenant)
+    seeds = {i: v for i, v in seeds.items() if v[1] >= 1.0} or seeds  # an exact Entity.key match wins over fuzzy and embedding seeds
     tids = list(seeds)[:3]
-    score, why = {}, {}
+    score, why, direct = {}, {}, set()
     names = {}
 
     def add(pid, pname, s, reason):
@@ -482,11 +483,15 @@ def who(store, topic, max_chars=MAX, tenant=None) -> str:
         best = {}
         for pid, pname, nodes, rels in rows:
             s = math.prod((r[4] or 0.5) for r in rels) * 0.7 ** (len(rels) - 1) * (1.0 if any(r[0] == "OWNS" for r in rels) else 0.8)
-            if s > best.get(pid, (0,))[0]:
+            # direct current owner, or a current member of the owning team: these rank above any documentary evidence
+            own = all(r[5] is None for r in rels) and rels[-1][0] == "OWNS" and (len(rels) == 1 or (len(rels) == 2 and rels[0][0] == "MEMBER_OF"))
+            if (own, s) > best.get(pid, (False, 0))[:2]:
                 ended = next((r[5] for r in rels if r[5]), None)  # a relation that ended: former owner, not current
-                best[pid] = (s, pname, f"{_trail(nodes, rels)} (src {src.get(rels[-1][2], rels[-1][2] or '?')})" + (f" FORMER, ended {_d(ended)}" if ended else ""))
-        for pid, (s, pname, reason) in best.items():
+                best[pid] = (own, s, pname, f"{_trail(nodes, rels)} (src {src.get(rels[-1][2], rels[-1][2] or '?')})" + (f" FORMER, ended {_d(ended)}" if ended else ""))
+        for pid, (own, s, pname, reason) in best.items():
             add(pid, pname, s, reason)
+            if own:
+                direct.add(pid)
         docs = {r[0]: r[1] for r in store.query("MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(t:Entity) WHERE t.id IN $t RETURN d.id, count(c)",
                                                 {"t": tids}, tenant)}
     else:
@@ -509,41 +514,72 @@ def who(store, topic, max_chars=MAX, tenant=None) -> str:
             add(pid, pname, w, f"{len(ev)} docs on topic ({', '.join(sorted({e[1] for e in ev}))}), latest {_d(ev[0][0])}: " + ", ".join(f"[{e[2]}]" for e in ev[:3]))
     if not score:
         return f'No people found for "{topic}". Try explore("{topic}") or recall.'
-    top = sorted(score, key=lambda p: -score[p])[:8]
+    top = sorted(score, key=lambda p: (p not in direct, -score[p]))[:8]
     out = [f'# who: "{_t(topic, 60)}"' + (f" (entities: {', '.join(n for n, _ in seeds.values())})" if seeds else "") + ", ranked, with evidence"]
     out += [f"{i}. [{p}] {names[p]} score {score[p]:.2f}\n   " + "\n   ".join(why[p]) for i, p in enumerate(top, 1)]
     return _cap(out, max_chars, "a more specific topic")
 
 
 _STOP = set("the a an of in on to for and or is was were what when how did does do who which that this these those it its by with from as at be been are has have had about over time changed change history".split())
-_CUE = re.compile(r"\b(from|to|now|lowered|raised|changed|renamed|replaced|moved|reverted|instead|until|since|effective|increased|decreased|switched|dropped|lifted|set|reversal|replaces|owns|owner)\b", re.I)
+_CHANGE = re.compile(r"\b(raised|lowered|changed?|renamed?|reverted|rolled back|replaced|moved|increased|decreased|switched|dropped|lifted|"
+                     r"reversed|reversal|formerly|now)\b|\bfrom\b.*\bto\b", re.I)
 
 
-def _facts(text, terms, n=2, width=220) -> list[str]:
-    """Up to n sentences of `text` that mention one of `terms` (normalised phrases) and carry a number or a change word, in text order."""
-    cands = []
-    for i, s in enumerate(re.split(r"(?<=[.!?])\s+|\n+", re.sub(r"[*#|`]+", " ", text or ""))):
-        s = re.sub(r"\s+", " ", s).strip(" -_:")
-        if len(s) < 20:
+def _stem(text) -> str:
+    """Normalised words with a plural 's' dropped, so "deploys" matches "deploy"."""
+    return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in normalize_key(text).split())
+
+
+def _sents(text, terms, any_topic=False) -> list[tuple[int, str]]:
+    """Change records of `text`: sentences that carry a number or a change verb and mention the topic (`terms`, normalised phrases; at
+    least two of them, or one when the topic has one). any_topic (chunks that mention the entity) takes a change verb alone. Short
+    fragments (bullets such as "From: 800") join the sentence before them. Returns (score, record)."""
+    units = []
+    for u in re.split(r"(?<=[.!?])\s+|\n+", re.sub(r"[*#|`]+", " ", text or "")):
+        u = re.sub(r"\s+", " ", u).strip(" -_:")
+        if not u:
             continue
-        ns = f" {normalize_key(s)} "
-        hits = sum(f" {t} " in ns for t in terms)
-        num, cue = bool(re.search(r"\d", s)), bool(_CUE.search(s))
-        if hits and (num or cue):
-            cands.append((-(2 * hits + num + cue), i, _t(s, width)))
-    return [c[2] for c in sorted(sorted(cands)[:n], key=lambda c: c[1])]
+        if units and len(units[-1]) < 60:
+            units[-1] += " / " + u
+        else:
+            units.append(u)
+    out, stems = [], [_stem(t) for t in terms]
+    for s in units:
+        hits = sum(f" {t} " in f" {_stem(s)} " for t in stems)
+        num, change = bool(re.search(r"\d", s)), bool(_CHANGE.search(s))
+        ok = change if any_topic else (hits >= max(1, min(2, len(terms))) and (num or change))
+        if len(s) >= 20 and ok:
+            out.append((3 * change + num + hits, _t(s, 240)))
+    return out
+
+
+def _evidence(store, topic, eid, terms, t0, t1, tenant) -> list[tuple[int, str, str, int]]:
+    """Change records from recall hits and from chunks that mention the entity: (date_ms, doc or memory id, record, score), deduplicated."""
+    hits = [(r["date_ms"] or 0, r["source"].get("doc_id") or r["id"], r["text"], False)
+            for r in _recall(store, topic, k=12, since_ms=t0, until_ms=t1, tenant=tenant)]
+    if eid:
+        hits += [(dt or 0, did, text, True) for did, dt, text in store.query(
+            "MATCH (d:Document)-[:HAS_CHUNK]->(c:Chunk)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.date_ms, c.text", {"i": eid}, tenant)]
+    out, seen = [], set()
+    for d, ref, text, ent in sorted(hits, key=lambda h: (h[0], h[1])):
+        for score, s in _sents(text, terms, any_topic=ent):
+            if normalize_key(s) not in seen:
+                seen.add(normalize_key(s))
+                out.append((d, ref, s, score))
+    return out
 
 
 def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -> str:
-    """Dated events about an entity or topic, oldest first, with the values: relation changes (effective dates), the sentences of each
-    document that mention it with numbers or changes, superseded memories. Over the budget, events without values are dropped first."""
+    """Dated events about a topic, oldest first. "Changes:" holds the strongest change sentences (number or change verb, mentioning the
+    topic) from recall and from the entity's chunks, as "YYYY-MM-DD [doc id] sentence". "Events:" holds relation changes with effective
+    dates and superseded memories. Over the budget, the least informative lines go first."""
     e = _resolve(store, topic, tenant)
     t0, t1 = _ms(since), _ms(until, end=True)
-    ev = []  # (date_ms, text, keep-priority)
     tterms = {w for w in normalize_key(topic).split() if len(w) > 2 and w not in _STOP}
+    ev = []  # (date_ms, line, keep-priority, block: 0 Changes, 1 Events)
     if e:
         eid, name, typ = e
-        exact = normalize_key(topic) == normalize_key(name) or topic == eid
+        head = f"# timeline [{eid}] {name} ({typ})"
         edges = store.query("MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf, r.valid_to_ms",
                             {"i": eid}, tenant)
         # same relation type from the same side: a change of the other end is a change of value, not a new fact
@@ -560,48 +596,40 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
                     note += f" (was {g[i - 1][2]})"
                 if i + 1 < len(g) and g[i + 1][1] != o:
                     note += f" REPLACED on {_d(g[i + 1][0])} by {g[i + 1][2]}"
-                ev.append((d, f"{_d(d)} REL {line}{note} (effective {_d(d)}{', ended ' + _d(vt) if vt else ''}) src {src.get(s, s or '?')}", 3))
-        terms = {normalize_key(x) for x in (name, *[a for a in (store.query("MATCH (e:Entity {id:$i}) RETURN e.aliases", {"i": eid}, tenant)[0][0] or [])])} | tterms
-        docs = {}
-        for did, kind, dt, title, cid, text in store.query(
-                "MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.kind, d.date_ms, d.title, c.id, c.text ORDER BY c.id", {"i": eid}, tenant):
-            docs.setdefault(did, [kind, dt, title, [], []])
-            docs[did][3].append(cid)
-            docs[did][4].append(text)
-        seen = {c for v in docs.values() for c in v[3]}
-        for did, (kind, dt, title, cids, texts) in docs.items():
-            fs = _facts("\n".join(texts), terms, 2)
-            head = f'{_d(dt)} {kind} [{cids[0]}] "{_t(title, 60)}"'
-            ev.append((dt or 0, head + (": " + " | ".join(fs) if fs else f" ({len(cids)} chunks mention it)"), 1.5 if fs else 0))
+                ev.append((d, f"{_d(d)} REL {line}{note} (effective {_d(d)}{', ended ' + _d(vt) if vt else ''}) src {src.get(s, s or '?')}", 3, 1))
         for mid, kind, d, text, st, by, bd in store.query(
                 "MATCH (m:Memory)-[:MENTIONS]->(e:Entity {id:$i}) WHERE m.status <> 'merged' "
                 "OPTIONAL MATCH (n:Memory)-[:SUPERSEDES]->(m) WHERE n.status <> 'merged' "
                 "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms)",
                 {"i": eid}, tenant):
             tag = f" SUPERSEDED on {_d(bd)} by [{by}]" if st == "superseded" else ""
-            ev.append((d or 0, f"{_d(d)} memory [{mid}] {kind}{tag}: {_t(text, 200)}", 2))
-        head = f"# timeline [{eid}] {name} ({typ})"
-        extra = not exact  # topic is a phrase that only fuzzily matched an entity: add the dated passages about the phrase itself
+            ev.append((d or 0, f"{_d(d)} memory [{mid}] {kind}{tag}: {_t(text, 200)}", 2, 1))
+        terms = {normalize_key(x) for x in (name, *[a for a in (store.query("MATCH (e:Entity {id:$i}) RETURN e.aliases", {"i": eid}, tenant)[0][0] or [])])} | tterms
     else:
-        seen, extra, head = set(), True, f'# timeline "{_t(topic, 60)}" (no entity match; dated recall hits)'
-    if extra:
-        for r in _recall(store, topic, k=12, since_ms=t0, until_ms=t1, tenant=tenant):
-            if r["id"] in seen:
-                continue
-            fs = _facts(r["text"], tterms, 2) or [_t(r["text"], 160)]
-            ev.append((r["date_ms"] or 0, f"{_d(r['date_ms'])} [{r['id']}] {r['kind']}{' SUPERSEDED' if r['status'] == 'superseded' else ''}: " + " | ".join(fs), 1))
-    ev = [x for x in sorted(ev, key=lambda x: (x[0], x[1])) if (t0 is None or x[0] >= t0) and (t1 is None or x[0] < t1)]
+        eid, terms, head = None, tterms, f'# timeline "{_t(topic, 60)}" (no entity match; dated recall hits)'
+    # the strongest 12 change sentences, shown by date
+    best = sorted(_evidence(store, topic, eid, terms, t0, t1, tenant), key=lambda x: (-x[3], x[0]))[:12]
+    ev += [(d, f"{_d(d)} [{ref}] {s}", 2 + min(score, 5) / 10, 0) for d, ref, s, score in best]
+    ev = [x for x in ev if (t0 is None or x[0] >= t0) and (t1 is None or x[0] < t1)]
     if not ev:
         return f'No dated events for "{topic}" in that window.'
-    lines = [x[1] for x in ev]
-    if sum(len(x) + 1 for x in lines) + len(head) + 20 > max_chars:  # drop the least informative events first, keep chronological order
-        keep = set(range(len(ev)))
-        for i in sorted(range(len(ev)), key=lambda i: (ev[i][2], i)):
-            if sum(len(lines[j]) + 1 for j in keep) + len(head) + 60 <= max_chars:
-                break
-            keep.discard(i)
-        lines = [lines[i] for i in sorted(keep)] + [f"…{len(ev) - len(keep)} more, narrow with since=/until="]
-    return _cap([head + ", oldest first", *lines], max_chars, "since=/until=", tail=True)
+
+    def render(keep):
+        out = [head + ", oldest first"]
+        for blk, title in ((0, "Changes:"), (1, "Events:")):
+            sel = sorted((x for i, x in enumerate(ev) if i in keep and x[3] == blk), key=lambda x: (x[0], x[1]))
+            if sel:
+                out += [title] + [x[1] for x in sel]
+        if len(keep) < len(ev):
+            out.append(f"…{len(ev) - len(keep)} more, narrow with since=/until=")
+        return "\n".join(out)
+
+    keep = set(range(len(ev)))
+    for i in sorted(range(len(ev)), key=lambda i: (ev[i][2], i)):
+        if len(render(keep)) <= max_chars:
+            break
+        keep.discard(i)
+    return _cap(render(keep).split("\n"), max_chars, "since=/until=", tail=True)
 
 
 # ---------------------------------------------------------------- ingest / handoff / cypher

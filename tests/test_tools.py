@@ -74,7 +74,7 @@ def test_timeline_owner_change_in_order(g):
     assert out.index("Payments Team -[OWNS]-> Auth Service") < out.index("Platform Team -[OWNS]-> Auth Service")
     assert "REPLACED on 2026-02-01 by Platform Team" in out and "(was Payments Team)" in out
     assert "SUPERSEDED on 2026-03-06 by [m_new]" in out
-    dates = [l[:10] for l in out.splitlines()[1:] if l[:2] == "20"]
+    dates = [l[:10] for l in out.split("Events:")[1].splitlines() if l[:2] == "20"]
     assert dates == sorted(dates)
     assert "2025-06-01" not in tools.timeline(g, "Auth Service", since="2026-01-01")
 
@@ -226,7 +226,7 @@ def test_read_chunk_memory_document(g):
 def test_timeline_shows_values_and_drops_valueless_events_first(g):
     out = tools.timeline(g, "SESSION_TTL")
     print(out)
-    assert '2026-03-05 doc [d1#1] "Platform runbook": SESSION_TTL is 300 seconds' in out
+    assert "Changes:\n2026-03-05 [d1] SESSION_TTL is 300 seconds" in out
     out = tools.timeline(g, "Auth Service")
     assert "(effective 2025-06-01)" in out and "Auth Service ownership moved to the Platform Team runbook" in out
     full = tools.timeline(g, "Auth Service", max_chars=100000)
@@ -236,3 +236,51 @@ def test_timeline_shows_values_and_drops_valueless_events_first(g):
     # a phrase that only fuzzily matches an entity also gets the dated passages about the phrase itself
     g.query("MATCH (c:Chunk {id:'d2#0'}) SET c.text='Auth Service sessions were lowered from 60 to 300 seconds on the platform'")
     assert "lowered from 60 to 300 seconds" in tools.timeline(g, "auth sessions lowered")
+
+
+def test_timeline_changes_cover_values_in_date_order(g):
+    """Config value changes come from chunks that mention the entity; the change sentence leads, dated, once, and in date order."""
+    q = g.query
+    q("CREATE (:Entity {id:'e_intro', name:'auth.introspection_timeout_ms', key:$k, type:'config_setting', mentions:3, emb:vecf32($e)})",
+      {"k": ch.key_of("auth.introspection_timeout_ms"), "e": vec("auth.introspection_timeout_ms").tolist()})
+    q("CREATE (:Document {id:'d3', kind:'ticket', title:'CFG-4411 timeout change', date_ms:$d}), "
+      "(:Document {id:'d4', kind:'ticket', title:'CFG-4411 rollback', date_ms:$e}), (:Document {id:'d5', kind:'ticket', title:'copy', date_ms:$f})",
+      {"d": ms("2026-04-10T00:00:00"), "e": ms("2026-06-01T00:00:00"), "f": ms("2026-04-12T00:00:00")})
+    for cid, did, text, d in [("d3#0", "d3", "CFG-4411 lowered auth.introspection_timeout_ms from 800 to 80 ms for the mesh.", "2026-04-10"),
+                              ("d3#1", "d3", "The lint team reviews auth.introspection_timeout_ms each sprint.", "2026-04-10"),
+                              ("d4#0", "d4", "The auth.introspection_timeout_ms change from CFG-4411 was rolled back to 800 ms.", "2026-06-01"),
+                              ("d5#0", "d5", "CFG-4411 lowered auth.introspection_timeout_ms from 800 to 80 ms for the mesh.", "2026-04-12")]:
+        q("MATCH (d:Document {id:$d}) CREATE (d)-[:HAS_CHUNK]->(c:Chunk {id:$i, doc_id:$d, pos:0, text:$t, kind:d.kind, date_ms:$m, emb:vecf32($v)}) "
+          "WITH c MATCH (e:Entity {id:'e_intro'}) CREATE (c)-[:MENTIONS {conf:1.0}]->(e)",
+          {"d": did, "i": cid, "t": text, "m": ms(d + "T00:00:00"), "v": vec(text).tolist()})
+    out = tools.timeline(g, "auth.introspection_timeout_ms")
+    print(out)
+    changes = [l for l in out.split("Changes:")[1].split("Events:")[0].splitlines() if l[:2] == "20"]
+    assert changes[0] == "2026-04-10 [d3] CFG-4411 lowered auth.introspection_timeout_ms from 800 to 80 ms for the mesh."
+    assert any(l.startswith("2026-06-01 [d4]") and "rolled back to 800 ms" in l for l in changes)
+    assert [l[:10] for l in changes] == sorted(l[:10] for l in changes)
+    assert out.count("from 800 to 80 ms") == 1 and "lint team" not in out  # duplicate sentence once, no value means not a change
+    assert len(tools.timeline(g, "auth.introspection_timeout_ms", max_chars=260)) <= 260
+
+
+def test_who_exact_entity_beats_fuzzy_neighbour(g):
+    """'payment-gateway' is an exact key; 'api-gateway' is a fuzzy neighbour whose owner (heavy on documents) must not rank first."""
+    q = g.query
+    for i, n, t in [("e_pg", "payment-gateway", "service"), ("e_gw", "api-gateway", "service"),
+                    ("e_dan", "Daniel Kwon", "person"), ("e_vik", "Viktor Sokolov", "person")]:
+        q("CREATE (:Entity {id:$i, name:$n, key:$k, type:$t, mentions:1, emb:vecf32($e)})", {"i": i, "n": n, "k": ch.key_of(n), "t": t, "e": vec(n).tolist()})
+    q("MATCH (d:Entity {id:'e_dan'}), (s:Entity {id:'e_pg'}) CREATE (d)-[:REL {type:'OWNS', conf:0.5, source_id:'d1#0', valid_from_ms:$d}]->(s)",
+      {"d": ms("2026-01-01T00:00:00")})
+    q("MATCH (v:Entity {id:'e_vik'}), (s:Entity {id:'e_gw'}) CREATE (v)-[:REL {type:'OWNS', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(s)",
+      {"d": ms("2026-01-01T00:00:00")})
+    for n in range(3):  # Viktor authors three documents about payment-gateway: documentary evidence outweighs Daniel's 0.5-confidence OWNS
+        did = f"pg{n}"
+        q("CREATE (:Document {id:$d, kind:'doc', title:$d, date_ms:$t})", {"d": did, "t": ms("2026-05-01T00:00:00")})
+        q("MATCH (v:Entity {id:'e_vik'}), (d:Document {id:$d}) CREATE (v)-[:AUTHORED]->(d) "
+          "WITH d CREATE (d)-[:HAS_CHUNK]->(c:Chunk {id:$d+'#0', doc_id:$d, pos:0, text:'payment-gateway retries', kind:'doc', date_ms:$t}) "
+          "WITH c MATCH (p:Entity {id:'e_pg'}) CREATE (c)-[:MENTIONS {conf:1.0}]->(p)", {"d": did, "t": ms("2026-05-01T00:00:00")})
+    out = tools.who(g, "payment-gateway")
+    print(out)
+    assert out.splitlines()[0].endswith("(entities: payment-gateway), ranked, with evidence")  # the fuzzy neighbour is not a seed
+    assert out.splitlines()[1].startswith("1. [e_dan] Daniel Kwon")  # direct current owner first
+    assert out.index("Daniel Kwon") < out.index("Viktor Sokolov")  # Viktor's document score alone is higher than Daniel's 0.5 path
