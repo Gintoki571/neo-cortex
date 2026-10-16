@@ -1,0 +1,30 @@
+{"id": "CO01", "category": "current_owner", "entity": "session-cache", "question": "Who owns session-cache now?", "keys": ["Mateo Alvarez"], "forbidden": ["Lukas Brandt"]}
+{"id": "CO02", "category": "current_owner", "entity": "api-gateway", "question": "Who owns api-gateway?", "keys": ["Viktor Sokolov"], "forbidden": []}
+{"id": "CO03", "category": "current_owner", "entity": "auth-service", "question": "Who owns the auth-service?", "keys": ["Noor Haddad"], "forbidden": []}
+{"id": "CO04", "category": "current_owner", "entity": "config-service", "question": "Who owns config-service?", "keys": ["Chen Wei"], "forbidden": []}
+{"id": "CO05", "category": "current_owner", "entity": "payment-gateway", "question": "Who owns payment-gateway?", "keys": ["Daniel Kwon"], "forbidden": []}
+{"id": "CO06", "category": "current_owner", "entity": "ledger-service", "question": "Who owns ledger-service?", "keys": ["Elif Yildiz"], "forbidden": []}
+{"id": "CO07", "category": "current_owner", "entity": "bank-connector", "question": "Who owns bank-connector?", "keys": ["Sam Okafor"], "forbidden": []}
+{"id": "CO08", "category": "current_owner", "entity": "fraud-scoring", "question": "Who owns fraud-scoring?", "keys": ["Kofi Mensah"], "forbidden": []}
+{"id": "CO09", "category": "current_owner", "entity": "event-pipeline", "question": "Who owns the event-pipeline service?", "keys": ["Samir Haddad"], "forbidden": ["Noor Haddad"]}
+{"id": "CO10", "category": "current_owner", "entity": "reporting-service", "question": "Who owns reporting-service?", "keys": ["Olivia Hartmann"], "forbidden": []}
+{"id": "IM01", "category": "impact", "entity": "session-cache", "question": "Which services are affected if session-cache fails?", "keys": ["auth-service", "api-gateway", "web-dashboard", "payment-gateway"], "forbidden": []}
+{"id": "IM02", "category": "impact", "entity": "config-service", "question": "Which services are affected if config-service fails?", "keys": ["api-gateway", "auth-service", "bank-connector", "notification-service", "web-dashboard", "payment-gateway"], "forbidden": []}
+{"id": "IM03", "category": "impact", "entity": "event-pipeline", "question": "Which services are affected if event-pipeline fails?", "keys": ["ledger-service", "reporting-service", "fraud-scoring", "notification-service", "payment-gateway"], "forbidden": []}
+{"id": "IM04", "category": "impact", "entity": "auth-service", "question": "Which services are affected if auth-service fails?", "keys": ["api-gateway", "payment-gateway", "web-dashboard"], "forbidden": []}
+{"id": "IM05", "category": "impact", "entity": "ledger-service", "question": "Which services are affected if ledger-service fails?", "keys": ["payment-gateway", "reporting-service"], "forbidden": []}
+{"id": "IM06", "category": "impact", "entity": "fraud-scoring", "question": "Which services are affected if fraud-scoring fails?", "keys": ["payment-gateway"], "forbidden": []}
+{"id": "IM07", "category": "impact", "entity": "bank-connector", "question": "Which services are affected if bank-connector fails?", "keys": ["payment-gateway"], "forbidden": []}
+{"id": "IM08", "category": "impact", "entity": "api-gateway", "question": "Which services are affected if api-gateway fails?", "keys": ["web-dashboard"], "forbidden": []}
+{"id": "IM09", "category": "impact", "entity": "bankbridge", "question": "Which services are affected if bankbridge fails?", "keys": ["payment-gateway"], "forbidden": []}
+{"id": "IM10", "category": "impact", "entity": "Redis session cluster", "question": "If the Redis session store goes down, which services break?", "keys": ["auth-service", "api-gateway", "web-dashboard", "payment-gateway"], "forbidden": []}
+{"id": "CH01", "category": "changes", "entity": "session.ttl_seconds", "question": "How did the session idle TTL change, and when?", "keys": ["3600", "900", "300"], "forbidden": []}
+{"id": "CH02", "category": "changes", "entity": "bankbridge", "question": "What was bankbridge renamed to?", "keys": ["bankbridge", "bank-connector"], "forbidden": []}
+{"id": "CH03", "category": "changes", "entity": "production config approvals", "question": "How did the approval rule for production config changes change?", "keys": ["two approvers", "one approver", "cfglint"], "forbidden": []}
+{"id": "CH04", "category": "changes", "entity": "api-gateway", "question": "How did the api-gateway per-tenant rate limit change?", "keys": ["100", "250", "180"], "forbidden": []}
+{"id": "CH05", "category": "changes", "entity": "Friday deploy freeze", "question": "Is the Friday deploy freeze still in force, and what replaced it?", "keys": ["Friday", "14:00 UTC"], "forbidden": []}
+{"id": "CH06", "category": "changes", "entity": "session-cache", "question": "How did session-cache memory change in June 2026?", "keys": ["4 GB", "8 GB"], "forbidden": []}
+{"id": "CH07", "category": "changes", "entity": "event-pipeline", "question": "What was the event-pipeline consumer max poll interval changed from and to?", "keys": ["300000", "60000"], "forbidden": []}
+{"id": "CH08", "category": "changes", "entity": "ledger-service", "question": "What was the ledger-service idempotency key format in v3.8, and what is it now?", "keys": ["txn_id:attempt", "txn_id"], "forbidden": []}
+{"id": "CH09", "category": "changes", "entity": "auth.introspection_timeout_ms", "question": "What was auth.introspection_timeout_ms changed from in the CFG-4411 change, and what was rolled back?", "keys": ["800", "80"], "forbidden": []}
+{"id": "CH10", "category": "changes", "entity": "tidewater cutoff", "question": "Which config key namespace did the Tidewater cutoff move from and to?", "keys": ["bankbridge.banks.tidewater.cutoff", "bank_connector.banks.tidewater.cutoff"], "forbidden": []}

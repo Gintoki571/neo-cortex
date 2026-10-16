@@ -1,0 +1,1435 @@
+{
+ "runs": {
+  "old extraction": {
+   "label": "old extraction",
+   "home": "/home/bindesh/neo-cortex/.neo/eval-new",
+   "port": 6367,
+   "tenant": "eval",
+   "budget_chars": 4000,
+   "db_note": "DB ingested 2026-10-16 21:32, before later source edits (src/neo_cortex/cli.py, src/neo_cortex/extract.py, src/neo_cortex/mcp_server.py, src/neo_cortex/session_mem.py, src/neo_cortex/tools.py, src/neo_cortex/write.py). Its extraction predates those fixes; re-ingest (run_eval.py --reingest) for current numbers.",
+   "summary": {
+    "overall": {
+     "n": 30,
+     "tool": {
+      "keys": 0.5888888888888889,
+      "all": 0.5,
+      "correct": 0.8
+     },
+     "baseline": {
+      "keys": 0.7799999999999999,
+      "all": 0.7333333333333333,
+      "correct": 1.0
+     }
+    },
+    "current_owner": {
+     "n": 10,
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "correct": 0.8
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "correct": 1.0
+     }
+    },
+    "impact": {
+     "n": 10,
+     "tool": {
+      "keys": 0.1,
+      "all": 0.0
+     },
+     "baseline": {
+      "keys": 0.33999999999999997,
+      "all": 0.2
+     }
+    },
+    "changes": {
+     "n": 10,
+     "tool": {
+      "keys": 0.6666666666666667,
+      "all": 0.5
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0
+     }
+    }
+   },
+   "bootstrap": {
+    "all keys, overall": {
+     "delta": -0.23333333333333334,
+     "lo": -0.4,
+     "hi": -0.1,
+     "n": 30,
+     "significant": true
+    },
+    "all keys, current_owner": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 10,
+     "significant": false
+    },
+    "all keys, impact": {
+     "delta": -0.2,
+     "lo": -0.5,
+     "hi": 0.0,
+     "n": 10,
+     "significant": false
+    },
+    "all keys, changes": {
+     "delta": -0.5,
+     "lo": -0.8,
+     "hi": -0.2,
+     "n": 10,
+     "significant": true
+    },
+    "correct current, current_owner": {
+     "delta": -0.2,
+     "lo": -0.5,
+     "hi": 0.0,
+     "n": 10,
+     "significant": false
+    }
+   },
+   "questions": [
+    {
+     "id": "CO01",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 1.0,
+      "correct": 1.0,
+      "chars": 1424
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 1.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO02",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1354
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO03",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1192
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO04",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1171
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO05",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 0.0,
+      "chars": 1358
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO06",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1195
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO07",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1122
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO08",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 0.0,
+      "chars": 1015
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO09",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1097
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO10",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1230
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM01",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "auth-service",
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 696
+     },
+     "baseline": {
+      "keys": 0.25,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM02",
+     "category": "impact",
+     "tool": {
+      "keys": 0.16666666666666666,
+      "all": 0.0,
+      "missing": [
+       "auth-service",
+       "bank-connector",
+       "notification-service",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 932
+     },
+     "baseline": {
+      "keys": 0.16666666666666666,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "bank-connector",
+       "notification-service",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM03",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "ledger-service",
+       "reporting-service",
+       "fraud-scoring",
+       "notification-service",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 572
+     },
+     "baseline": {
+      "keys": 0.4,
+      "all": 0.0,
+      "missing": [
+       "reporting-service",
+       "fraud-scoring",
+       "notification-service"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM04",
+     "category": "impact",
+     "tool": {
+      "keys": 0.3333333333333333,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway",
+       "web-dashboard"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 1067
+     },
+     "baseline": {
+      "keys": 0.3333333333333333,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM05",
+     "category": "impact",
+     "tool": {
+      "keys": 0.5,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 1209
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM06",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 398
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM07",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 614
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM08",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "web-dashboard"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 841
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM09",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 610
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM10",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "auth-service",
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 370
+     },
+     "baseline": {
+      "keys": 0.25,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH01",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1248
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH02",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1524
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH03",
+     "category": "changes",
+     "tool": {
+      "keys": 0.6666666666666666,
+      "all": 0.0,
+      "missing": [
+       "two approvers"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2090
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH04",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2145
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH05",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1964
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH06",
+     "category": "changes",
+     "tool": {
+      "keys": 0.5,
+      "all": 0.0,
+      "missing": [
+       "4 GB"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 3893
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH07",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2346
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH08",
+     "category": "changes",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "txn_id:attempt",
+       "txn_id"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2140
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH09",
+     "category": "changes",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "800",
+       "80"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 259
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH10",
+     "category": "changes",
+     "tool": {
+      "keys": 0.5,
+      "all": 0.0,
+      "missing": [
+       "bank_connector.banks.tidewater.cutoff"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2195
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    }
+   ]
+  },
+  "new extraction": {
+   "label": "new extraction",
+   "home": "/home/bindesh/neo-cortex/.neo/gq",
+   "port": 6365,
+   "tenant": "eval",
+   "budget_chars": 4000,
+   "db_note": "no eval_ingest.json under /home/bindesh/neo-cortex/.neo/gq; build time unknown",
+   "summary": {
+    "overall": {
+     "n": 30,
+     "tool": {
+      "keys": 0.8222222222222223,
+      "all": 0.7666666666666667,
+      "correct": 0.9
+     },
+     "baseline": {
+      "keys": 0.7799999999999999,
+      "all": 0.7333333333333333,
+      "correct": 1.0
+     }
+    },
+    "current_owner": {
+     "n": 10,
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "correct": 0.9
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "correct": 1.0
+     }
+    },
+    "impact": {
+     "n": 10,
+     "tool": {
+      "keys": 0.8,
+      "all": 0.8
+     },
+     "baseline": {
+      "keys": 0.33999999999999997,
+      "all": 0.2
+     }
+    },
+    "changes": {
+     "n": 10,
+     "tool": {
+      "keys": 0.6666666666666667,
+      "all": 0.5
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0
+     }
+    }
+   },
+   "bootstrap": {
+    "all keys, overall": {
+     "delta": 0.03333333333333333,
+     "lo": -0.16666666666666666,
+     "hi": 0.26666666666666666,
+     "n": 30,
+     "significant": false
+    },
+    "all keys, current_owner": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 10,
+     "significant": false
+    },
+    "all keys, impact": {
+     "delta": 0.6,
+     "lo": 0.3,
+     "hi": 0.9,
+     "n": 10,
+     "significant": true
+    },
+    "all keys, changes": {
+     "delta": -0.5,
+     "lo": -0.8,
+     "hi": -0.2,
+     "n": 10,
+     "significant": true
+    },
+    "correct current, current_owner": {
+     "delta": -0.1,
+     "lo": -0.3,
+     "hi": 0.0,
+     "n": 10,
+     "significant": false
+    }
+   },
+   "questions": [
+    {
+     "id": "CO01",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 1.0,
+      "correct": 1.0,
+      "chars": 1544
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 1.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO02",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1354
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO03",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1286
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO04",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1257
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO05",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 0.0,
+      "chars": 1358
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO06",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1327
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO07",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1352
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO08",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1105
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO09",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1189
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CO10",
+     "category": "current_owner",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 1253
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "correct": 1.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM01",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2973
+     },
+     "baseline": {
+      "keys": 0.25,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM02",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 3575
+     },
+     "baseline": {
+      "keys": 0.16666666666666666,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "bank-connector",
+       "notification-service",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM03",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 3165
+     },
+     "baseline": {
+      "keys": 0.4,
+      "all": 0.0,
+      "missing": [
+       "reporting-service",
+       "fraud-scoring",
+       "notification-service"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM04",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2373
+     },
+     "baseline": {
+      "keys": 0.3333333333333333,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM05",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2198
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM06",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1320
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM07",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 1003
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM08",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1824
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM09",
+     "category": "impact",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 999
+     },
+     "baseline": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "IM10",
+     "category": "impact",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2317
+     },
+     "baseline": {
+      "keys": 0.25,
+      "all": 0.0,
+      "missing": [
+       "api-gateway",
+       "web-dashboard",
+       "payment-gateway"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH01",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1248
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH02",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1653
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH03",
+     "category": "changes",
+     "tool": {
+      "keys": 0.6666666666666666,
+      "all": 0.0,
+      "missing": [
+       "two approvers"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2101
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH04",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 2292
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH05",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 1961
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH06",
+     "category": "changes",
+     "tool": {
+      "keys": 0.5,
+      "all": 0.0,
+      "missing": [
+       "4 GB"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 3927
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH07",
+     "category": "changes",
+     "tool": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 3125
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH08",
+     "category": "changes",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "txn_id:attempt",
+       "txn_id"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2846
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH09",
+     "category": "changes",
+     "tool": {
+      "keys": 0.0,
+      "all": 0.0,
+      "missing": [
+       "800",
+       "80"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 259
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    },
+    {
+     "id": "CH10",
+     "category": "changes",
+     "tool": {
+      "keys": 0.5,
+      "all": 0.0,
+      "missing": [
+       "bank_connector.banks.tidewater.cutoff"
+      ],
+      "forbidden_present": 0.0,
+      "chars": 2191
+     },
+     "baseline": {
+      "keys": 1.0,
+      "all": 1.0,
+      "missing": [],
+      "forbidden_present": 0.0,
+      "chars": 4000
+     }
+    }
+   ]
+  }
+ }
+}
