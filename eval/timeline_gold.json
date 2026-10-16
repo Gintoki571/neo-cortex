@@ -1,0 +1,9 @@
+{"_doc": "Old then new value of one entity attribute for temporal gold questions; topic is passed to tools.timeline. Values are checked as normalised substrings.",
+ "Q22": {"topic": "session.ttl_seconds", "values": ["3600", "900"]},
+ "Q65": {"topic": "session.ttl_seconds", "values": ["900", "300"]},
+ "Q23": {"topic": "api-gateway", "values": ["100", "250"]},
+ "Q24": {"topic": "api-gateway", "values": ["250", "180"]},
+ "Q67": {"topic": "api-gateway", "values": ["250", "180"]},
+ "Q26": {"topic": "bank-connector", "values": ["bankbridge", "bank-connector"]},
+ "Q28": {"topic": "session-cache", "values": ["Lukas Brandt", "Mateo Alvarez"]},
+ "Q71": {"topic": "session-cache", "values": ["4 GB", "8 GB"]}}

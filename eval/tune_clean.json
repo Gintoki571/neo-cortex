@@ -1,0 +1,353 @@
+{
+ "setting": "clean",
+ "n_odd": 40,
+ "n_even": 40,
+ "combos": 36,
+ "best": {
+  "vector": 1.0,
+  "bm25": 2.0,
+  "graph": 0.5,
+  "temporal": 2.0
+ },
+ "odd_score": 0.7520833333333333,
+ "odd_default": 0.6479166666666667,
+ "even_score": 0.675,
+ "even_default": 0.69375,
+ "even_delta": -0.01875,
+ "ci": [
+  -0.075,
+  0.0375
+ ],
+ "latency_ms": {
+  "default": 603.9310555241173,
+  "best": 610.2521616499871
+ },
+ "accepted": false,
+ "seconds": 438.7,
+ "trials": [
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 0.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6729166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 0.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6729166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 0.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6666666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6416666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 1.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 2.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6458333333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 2.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6458333333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 0.5,
+    "graph": 2.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6458333333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 0.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6916666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 0.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6916666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 0.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.7083333333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 1.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 2.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6291666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 2.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6291666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 1.0,
+    "graph": 2.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6291666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 0.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.7354166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 0.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.7354166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 0.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.7520833333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6916666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6916666666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.7083333333333333
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.5,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.5,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 1.5,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 2.0,
+    "temporal": 0.5
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 2.0,
+    "temporal": 1.0
+   },
+   "odd_score": 0.6479166666666667
+  },
+  {
+   "weights": {
+    "vector": 1.0,
+    "bm25": 2.0,
+    "graph": 2.0,
+    "temporal": 2.0
+   },
+   "odd_score": 0.6479166666666667
+  }
+ ]
+}

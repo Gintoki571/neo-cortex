@@ -1,6 +1,6 @@
 # Retrieval evaluation
 
-Synthetic Pellucid Pay corpus (102 docs, AI-generated, fictional), 80 gold questions, k=20 chunks collapsed to unique documents, fixed now = 2026-10-16T00:00Z. Hit/Recall/FullCover/MRR are against `gold_docs`; AnswerIn = normalised gold answer found in the retrieved chunk text (full chunk text of the first k unique documents, so it only checks that the answer string was retrieved, not that it is easy to extract).
+Synthetic Pellucid Pay corpus, setting clean (102 docs in the graph, AI-generated, fictional), 80 gold questions, k=20 chunks collapsed to unique documents, fixed now = 2026-10-16T00:00Z. Hit/Recall/FullCover/MRR are against `gold_docs`; AnswerIn = normalised gold answer found in the retrieved chunk text (full chunk text of the first k unique documents, so it only checks that the answer string was retrieved, not that it is easy to extract).
 
 Ingest: {'skipped': True, 'documents_in_graph': 102, 'first_ingest': {'documents': 102, 'skipped': 0, 'chunks': 136, 'mentions': 765, 'rels': 40, 'errors': 0, 'unsupported': 0, 'new_entities': 131, 'seconds': 86.2}}
 
@@ -138,14 +138,14 @@ Ingest: {'skipped': True, 'documents_in_graph': 102, 'first_ingest': {'documents
 
 | config | mean | p95 |
 |---|---|---|
-| vector | 108 | 49 |
+| vector | 104 | 49 |
 | bm25 | 5 | 5 |
-| vector+bm25 | 40 | 42 |
-| vector+bm25+graph | 199 | 227 |
-| vector+bm25+temporal | 90 | 96 |
-| full | 162 | 220 |
-| full-graph | 88 | 92 |
-| auto | 150 | 207 |
+| vector+bm25 | 41 | 43 |
+| vector+bm25+graph | 193 | 215 |
+| vector+bm25+temporal | 83 | 87 |
+| full | 160 | 223 |
+| full-graph | 89 | 96 |
+| auto | 173 | 261 |
 
 ## Paired bootstrap (1000 resamples, seed 0, 95% CI of mean delta)
 
@@ -168,9 +168,10 @@ Ingest: {'skipped': True, 'documents_in_graph': 102, 'first_ingest': {'documents
 
 ## Tools vs vector-only baselines
 
-- `ask` evidence pack vs top-8 vector chunk text, gold answer keys present: tools.ask multi 0.77 / ownership 0.76 (n=26/17); baseline multi 0.85 / ownership 0.82; mean size 3788 vs 9950 chars; ask 204 ms
+- `ask` evidence pack vs top-8 vector chunk text, gold answer keys present: tools.ask multi 0.77 / ownership 0.76 (n=26/17); baseline multi 0.85 / ownership 0.82; mean size 3788 vs 9950 chars; ask 256 ms
 - `who` (topic = whole question): gold person in top 3 (any) 0.82, all gold people 0.71 (n=17)
 - `who` (topic = gold non-person entity): gold person in top 3 (any) 1.00, all gold people 0.88 (n=17)
+- `timeline` on the gold entity (n=8 temporal questions with an old to new value): both values listed 0.50, old before new 0.50, both on dated lines 0.50; baseline top-8 vector text: both values 0.75, both values and at least two ISO dates 0.75
 - `who` baseline (people of the top-10 vector-only docs, scored by 1/rank): any 0.71, all 0.65 (n=17)
 
 ### Paired bootstrap, tool minus baseline
@@ -182,3 +183,55 @@ Ingest: {'skipped': True, 'documents_in_graph': 102, 'first_ingest': {'documents
 - ownership, who top3 all (question topic): `tools.who` vs `vector top-10 people`: delta +0.059 [-0.176, +0.294] (n=17, inside noise)
 - ownership, who top3 any (entity topic): `tools.who` vs `vector top-10 people`: delta +0.294 [+0.118, +0.529] (n=17, significant)
 - ownership, who top3 all (entity topic): `tools.who` vs `vector top-10 people`: delta +0.235 [-0.059, +0.529] (n=17, inside noise)
+- temporal, both old+new value present: `tools.timeline` vs `vector top-8 text`: delta -0.250 [-0.625, +0.250] (n=8, inside noise)
+
+## Clean vs distract
+
+Distract = the synthetic tenant plus data/public/falkordb docs and tickets in the same tenant (507 documents in the graph vs 102 clean). Same 80 questions, same gold docs. R = Recall@10, FC = FullCover@10, M+O = multi + ownership questions (n=43).
+
+| config | clean R | clean FC | clean M+O R | clean M+O FC | distract R | distract FC | distract M+O R | distract M+O FC | ms/q clean / distract |
+|---|---|---|---|---|---|---|---|---|---|
+| vector | 0.73 | 0.53 | 0.65 | 0.33 | 0.71 | 0.51 | 0.65 | 0.33 | 104 / 108 |
+| bm25 | 0.71 | 0.55 | 0.71 | 0.49 | 0.70 | 0.53 | 0.69 | 0.47 | 5 / 25 |
+| vector+bm25 | 0.75 | 0.59 | 0.69 | 0.47 | 0.75 | 0.57 | 0.71 | 0.47 | 41 / 60 |
+| vector+bm25+graph | 0.75 | 0.61 | 0.71 | 0.51 | 0.73 | 0.55 | 0.67 | 0.42 | 193 / 322 |
+| vector+bm25+temporal | 0.75 | 0.60 | 0.72 | 0.51 | 0.74 | 0.55 | 0.70 | 0.44 | 83 / 101 |
+| full | 0.74 | 0.59 | 0.69 | 0.47 | 0.73 | 0.56 | 0.66 | 0.42 | 160 / 269 |
+| full-graph | 0.75 | 0.60 | 0.72 | 0.51 | 0.74 | 0.55 | 0.70 | 0.44 | 89 / 106 |
+| auto | 0.74 | 0.60 | 0.71 | 0.51 | 0.73 | 0.56 | 0.67 | 0.44 | 173 / 302 |
+
+- Bootstrap, clean (paired, 95% CI of mean delta vs the best non-graph config):
+  - all questions, recall@10: `full` vs `vector+bm25+temporal`: delta -0.010 [-0.042, +0.025] (inside noise)
+  - all questions, fullcover@10: `full` vs `vector+bm25+temporal`: delta -0.013 [-0.075, +0.050] (inside noise)
+  - multi+ownership, recall@10: `full` vs `vector+bm25+temporal`: delta -0.031 [-0.089, +0.027] (inside noise)
+  - multi+ownership, fullcover@10: `full` vs `vector+bm25+temporal`: delta -0.047 [-0.163, +0.070] (inside noise)
+  - all questions, recall@10: `auto` vs `vector+bm25+temporal`: delta -0.013 [-0.054, +0.027] (inside noise)
+  - all questions, fullcover@10: `auto` vs `vector+bm25+temporal`: delta +0.000 [-0.075, +0.075] (inside noise)
+  - multi+ownership, recall@10: `auto` vs `vector+bm25+temporal`: delta -0.012 [-0.066, +0.043] (inside noise)
+  - multi+ownership, fullcover@10: `auto` vs `vector+bm25+temporal`: delta +0.000 [-0.116, +0.116] (inside noise)
+- Bootstrap, distract (paired, 95% CI of mean delta vs the best non-graph config):
+  - all questions, recall@10: `full` vs `vector+bm25`: delta -0.021 [-0.052, +0.010] (inside noise)
+  - all questions, fullcover@10: `full` vs `vector+bm25`: delta -0.013 [-0.062, +0.037] (inside noise)
+  - multi+ownership, recall@10: `full` vs `vector+bm25`: delta -0.047 [-0.105, +0.000] (inside noise)
+  - multi+ownership, fullcover@10: `full` vs `vector+bm25`: delta -0.047 [-0.140, +0.047] (inside noise)
+  - all questions, recall@10: `auto` vs `vector+bm25`: delta -0.019 [-0.044, +0.006] (inside noise)
+  - all questions, fullcover@10: `auto` vs `vector+bm25`: delta -0.013 [-0.050, +0.025] (inside noise)
+  - multi+ownership, recall@10: `auto` vs `vector+bm25`: delta -0.035 [-0.081, +0.012] (inside noise)
+  - multi+ownership, fullcover@10: `auto` vs `vector+bm25`: delta -0.023 [-0.093, +0.047] (inside noise)
+
+- Tools, clean: ask answer-in-output multi 0.77 / ownership 0.76 vs vector top-8 text 0.85 / 0.82; who top-3 (question topic) any 0.82 / all 0.71, (entity topic) 1.00 / 0.88, vector baseline 0.71 / 0.65; timeline both values 0.50, ordered 0.50, dated 0.50 vs vector both 0.75 / with dates 0.75 (n=8)
+  - multi+ownership, answer-in-output: `tools.ask` vs `vector top-8 text`: delta -0.070 [-0.163, +0.023] (inside noise)
+  - ownership, answer-in-output: `tools.ask` vs `vector top-8 text`: delta -0.059 [-0.176, +0.000] (inside noise)
+  - ownership, who top3 any (question topic): `tools.who` vs `vector top-10 people`: delta +0.118 [+0.000, +0.294] (inside noise)
+  - ownership, who top3 all (question topic): `tools.who` vs `vector top-10 people`: delta +0.059 [-0.176, +0.294] (inside noise)
+  - ownership, who top3 any (entity topic): `tools.who` vs `vector top-10 people`: delta +0.294 [+0.118, +0.529] (significant)
+  - ownership, who top3 all (entity topic): `tools.who` vs `vector top-10 people`: delta +0.235 [-0.059, +0.529] (inside noise)
+  - temporal, both old+new value present: `tools.timeline` vs `vector top-8 text`: delta -0.250 [-0.625, +0.250] (inside noise)
+- Tools, distract: ask answer-in-output multi 0.81 / ownership 0.76 vs vector top-8 text 0.85 / 0.82; who top-3 (question topic) any 0.41 / all 0.41, (entity topic) 1.00 / 0.88, vector baseline 0.71 / 0.65; timeline both values 0.50, ordered 0.50, dated 0.50 vs vector both 0.75 / with dates 0.75 (n=8)
+  - multi+ownership, answer-in-output: `tools.ask` vs `vector top-8 text`: delta -0.047 [-0.140, +0.047] (inside noise)
+  - ownership, answer-in-output: `tools.ask` vs `vector top-8 text`: delta -0.059 [-0.176, +0.000] (inside noise)
+  - ownership, who top3 any (question topic): `tools.who` vs `vector top-10 people`: delta -0.294 [-0.588, +0.000] (inside noise)
+  - ownership, who top3 all (question topic): `tools.who` vs `vector top-10 people`: delta -0.235 [-0.471, +0.000] (inside noise)
+  - ownership, who top3 any (entity topic): `tools.who` vs `vector top-10 people`: delta +0.294 [+0.118, +0.529] (significant)
+  - ownership, who top3 all (entity topic): `tools.who` vs `vector top-10 people`: delta +0.235 [-0.059, +0.529] (inside noise)
+  - temporal, both old+new value present: `tools.timeline` vs `vector top-8 text`: delta -0.250 [-0.625, +0.250] (inside noise)
