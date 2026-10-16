@@ -81,7 +81,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Project Context
 
 - Neo-Cortex: entry for the WeMakeDevs "Graph Hacks: Context for AI Agents" hackathon (FalkorDB). Submissions close 2026-10-18 18:29 UTC.
-- Planned stack (user decision, see `knowledge/architecture/project-plan.md` for evidence and risks): Python; falkordblite as the DB; graphrag-sdk for GraphRAG; GLiNER2.5 (`fastino/gliner2.5-base-v1`) for extraction and classification, with a LangExtract-style pipeline as fallback; anydoc for Office-to-Markdown; EmbeddingGemma for embeddings (falkordblite vector support is verified).
+- Planned stack (user decision, see `knowledge/architecture/project-plan.md` for evidence and risks): Python; falkordblite as the DB; GLiNER2.5 (`fastino/gliner2.5-base-v1`) for extraction and classification, with a LangExtract-style pipeline as fallback; anydoc for Office-to-Markdown; EmbeddingGemma for embeddings (falkordblite vector support is verified).
 - Entering all three tracks with one system: agent memory + company brain + GraphRAG reasoning, exposed as an MCP server (plus a `neo` CLI for Claude Code hooks). Current plan: `knowledge/architecture/unified-plan.md` (draft).
 - Design rules from the plan: no LLM inside the system (GLiNER extracts, classifies and judges; the calling agent reasons); hybrid retrieval = vector + BM25 (`bm25s`) + graph + temporal fused with RRF; EmbeddingGemma loads text-only, vision/audio encoders only when that modality is ingested; graphrag-sdk is dropped from the core (user decision 2026-10-16). Demo data: a synthetic company (gold eval) plus a public open-source org (real data).
 - All compiled project knowledge lives in `knowledge/` as an OKF v0.2 bundle.
@@ -89,4 +89,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Child DOX Index
 
 - `knowledge/AGENTS.md` - OKF knowledge bundle: research areas, evidence protocol, conformance check. Owns everything under `knowledge/`.
+- `src/neo_cortex/AGENTS.md` - Python package: FalkorDB store, schema, graph data model contract, local models, write/retrieval/MCP modules. Owns `src/neo_cortex/`; `tests/`, `scripts/bench_models.py` and `pyproject.toml` follow it.
+- `data/` - eval and demo corpora: `data/synthetic/` (fictional Pellucid Pay company, AI-generated from `WORLD.md`, format contract in its section 0), `data/public/` (public FalkorDB GitHub data, fetched by `scripts/fetch_public.py`). No local AGENTS.md.
+- `eval/` - 40-question gold set (`gold.jsonl`) and `check_dataset.py`; see `eval/README.md`. No local AGENTS.md.
 - `.claude/skills/` - third-party agent skills (obscura-web, web-search, opensrc, repomix, codegraph, quality-and-security); tooling, not project code, no local AGENTS.md.
