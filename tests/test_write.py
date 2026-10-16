@@ -159,11 +159,11 @@ def test_patterns_and_generic_filter():
     assert not X._junk("Noor Haddad", "person") and not X._junk("session-cache", "service")
 
 
-def _rels(spec, wins, title="", gl=()):
+def _rels(spec, wins, title="", gl=(), kind=""):
     """Relations from the pattern rules alone (GLiNER output is an explicit argument): spec = [(name, type)]."""
     from neo_cortex.util import normalize_key
     ents = {normalize_key(n): {"name": n, "type": t, "conf": 0.9} for n, t in spec}
-    return {(r["head"], r["type"], r["tail"]) for r in X._relations(ents, wins, list(gl), title)}
+    return {(r["head"], r["type"], r["tail"]) for r in X._relations(ents, wins, list(gl), title, kind=kind)}
 
 
 def _ms(y, m, d):
@@ -211,6 +211,15 @@ def test_owns_phrasings():
         [("Mateo Alvarez", "person"), ("orders-service", "service")], ["Mateo Alvarez is on-call for orders-service."])
     assert ("Mateo Alvarez", "OWNS", "orders-service") in _rels(
         [("Mateo Alvarez", "person"), ("orders-service", "service")], ["Mateo Alvarez is responsible for orders-service."])
+
+
+def test_owner_line_is_the_task_owner_in_tickets_and_meetings():
+    spec = [("Olivia Hartmann", "person"), ("ledger-service", "service")]
+    text = ["ledger-service publishes events.", "Owner: Olivia Hartmann."]
+    assert _rels(spec, text, kind="ticket") == set()  # DATA-325: the assignee of a task, not ledger-service's owner
+    assert _rels(spec, text, kind="meeting") == set()
+    assert ("Olivia Hartmann", "OWNS", "ledger-service") in _rels(spec, text, kind="doc")  # a doc describing the service
+    assert ("Olivia Hartmann", "OWNS", "ledger-service") in _rels(spec, ["Owner: Olivia Hartmann (ledger-service)."], kind="ticket")
 
 
 def test_renamed_formerly_and_now_called():
@@ -267,7 +276,7 @@ def test_effective_date_is_the_validity_start():
 def test_effective_owner_change_closes_the_old_edge(store, fake_models, tmp_path, monkeypatch):
     eff = _ms(2026, 8, 15)
 
-    def fake(texts, titles=None, authors=None, teams=()):
+    def fake(texts, titles=None, authors=None, teams=(), kind=""):
         out = []
         for t in texts:
             ents = [{"name": n, "type": "person", "conf": 0.9} for n in ("Lukas Brandt", "Mateo Alvarez")]

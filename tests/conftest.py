@@ -31,7 +31,7 @@ def _fake_embed(texts, titles=None):
     return out
 
 
-def _fake_extract_batch(texts, titles=None, authors=None, teams=()):
+def _fake_extract_batch(texts, titles=None, authors=None, teams=(), kind=""):
     import re
     res = []
     for t in texts:

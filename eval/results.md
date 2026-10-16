@@ -235,3 +235,39 @@ Distract = the synthetic tenant plus data/public/falkordb docs and tickets in th
   - ownership, who top3 any (entity topic): `tools.who` vs `vector top-10 people`: delta +0.294 [+0.118, +0.529] (significant)
   - ownership, who top3 all (entity topic): `tools.who` vs `vector top-10 people`: delta +0.235 [-0.059, +0.529] (inside noise)
   - temporal, both old+new value present: `tools.timeline` vs `vector top-8 text`: delta -0.250 [-0.625, +0.250] (inside noise)
+
+## Graph-native answers
+
+Run `new extraction`. DB: `/home/bindesh/neo-cortex/.neo/gq` (port 6365, tenant `eval`). no eval_ingest.json under /home/bindesh/neo-cortex/.neo/gq; build time unknown
+Tool: `tools.who`/`impact`/`timeline`, max_chars 4000. Baseline: top-8 vector chunks via `tools.read`, capped at 4000 chars.
+
+| category | n | keys, tool | keys, baseline | all keys, tool | all keys, baseline | correct current, tool | correct current, baseline |
+|---|---|---|---|---|---|---|---|
+| overall | 30 | 0.82 | 0.78 | 0.77 | 0.73 | 0.90 | 1.00 |
+| current_owner | 10 | 1.00 | 1.00 | 1.00 | 1.00 | 0.90 | 1.00 |
+| impact | 10 | 0.80 | 0.34 | 0.80 | 0.20 | - | - |
+| changes | 10 | 0.67 | 1.00 | 0.50 | 1.00 | - | - |
+
+Paired bootstrap (1000 resamples, seed 0, 95% CI of mean delta, tool minus baseline):
+- all keys, overall: +0.03 [-0.17, +0.27] (n=30, inside noise)
+- all keys, current_owner: +0.00 [+0.00, +0.00] (n=10, inside noise)
+- all keys, impact: +0.60 [+0.30, +0.90] (n=10, significant)
+- all keys, changes: -0.50 [-0.80, -0.20] (n=10, significant)
+- correct current, current_owner: -0.10 [-0.30, +0.00] (n=10, inside noise)
+
+Questions where a side misses a key (tool / baseline missing):
+- IM01: tool ok; baseline missing ["api-gateway", "web-dashboard", "payment-gateway"]
+- IM02: tool ok; baseline missing ["api-gateway", "bank-connector", "notification-service", "web-dashboard", "payment-gateway"]
+- IM03: tool ok; baseline missing ["reporting-service", "fraud-scoring", "notification-service"]
+- IM04: tool ok; baseline missing ["api-gateway", "web-dashboard"]
+- IM06: tool ok; baseline missing ["payment-gateway"]
+- IM07: tool missing ["payment-gateway"]; baseline missing ["payment-gateway"]
+- IM09: tool missing ["payment-gateway"]; baseline missing ["payment-gateway"]
+- IM10: tool ok; baseline missing ["api-gateway", "web-dashboard", "payment-gateway"]
+- CH03: tool missing ["two approvers"]; baseline ok
+- CH06: tool missing ["4 GB"]; baseline ok
+- CH08: tool missing ["txn_id:attempt", "txn_id"]; baseline ok
+- CH09: tool missing ["800", "80"]; baseline ok
+- CH10: tool missing ["bank_connector.banks.tidewater.cutoff"]; baseline ok
+
+Other run, `old extraction` (/home/bindesh/neo-cortex/.neo/eval-new): overall all keys tool 0.50 vs baseline 0.73; impact 0.00 vs 0.20; changes 0.50 vs 1.00.

@@ -18,6 +18,7 @@ from .util import content_hash, new_id, normalize_key, now_ms
 
 MAX = 4000
 DAY = 86400000
+MAX_HOPS = 5  # variable-length REL paths grow with the hop count; every caller's max_hops is clamped to this
 OWN_TYPES = ["OWNS", "MEMBER_OF", "WORKS_ON", "APPROVED", "DECIDED", "PART_OF"]
 KINDS = ("episodic", "semantic", "procedural", "preference", "decision")
 DOC_KINDS = ("doc", "adr", "ticket", "chat", "meeting", "session", "file")
@@ -113,7 +114,7 @@ def _paths(store, a, b, max_hops, tenant, count=3):
     """Shortest REL paths between entity ids a and b (both directions): [(nodes [[id,name]], rels [[type,start,src,date,conf]])]."""
     return store.query(
         "MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'], "
-        f"maxLen:{int(max_hops)}, relDirection:'both', pathCount:{int(count)}}}) YIELD path "
+        f"maxLen:{min(max(int(max_hops), 1), MAX_HOPS)}, relDirection:'both', pathCount:{int(count)}}}) YIELD path "
         "RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]",
         {"a": a, "b": b}, tenant)
 
@@ -307,7 +308,7 @@ def connect(store, a, b, max_hops=4, max_chars=MAX, tenant=None) -> str:
 def _depends(store, ids, n, up, tenant) -> dict:
     """Transitive DEPENDS_ON over currently valid edges. up=False: entities that depend on `ids`; up=True: what `ids` depend on.
     Returns {entity id: (hops, [[id, name], ...] chain from that entity toward the start (down) or from the start (up), [source ids])}."""
-    pat = ("p=(s:Entity)-[:REL*1..%d]->(a:Entity)" if up else "p=(a:Entity)-[:REL*1..%d]->(s:Entity)") % int(n)
+    pat = ("p=(s:Entity)-[:REL*1..%d]->(a:Entity)" if up else "p=(a:Entity)-[:REL*1..%d]->(s:Entity)") % min(max(int(n), 1), MAX_HOPS)
     rows = store.query(f"MATCH {pat} WHERE s.id IN $s AND all(r IN relationships(p) WHERE r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL) "
                        "RETURN a.id, [x IN nodes(p) | [x.id, x.name]], [r IN relationships(p) | r.source_id] LIMIT 500", {"s": list(ids)}, tenant)
     best = {}

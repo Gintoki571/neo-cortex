@@ -430,10 +430,11 @@ _STATE = {"OWNS", "MEMBER_OF"}          # single-valued relations whose edges ar
 _EFFECTIVE = _STATE | {"RENAMED_TO"}    # relations that carry the stated effective date as valid_from_ms
 _BY = re.compile(r"^(?:decided|approved|signed off|accepted)( by)?:?\s", re.I)
 _SVCT = ("service", "component", "tool")
+_TASK_KINDS = ("ticket", "meeting", "chat")  # their "Owner:" / action-item lines name the task's owner, never a service's
 
 
 def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", author: str = "",
-               speakers: list | None = None, main: str | None = None) -> list[dict]:
+               speakers: list | None = None, main: str | None = None, kind: str = "") -> list[dict]:
     rels: dict[tuple, dict] = {}
 
     def add(hk, rtype, tk, conf, eff=None):
@@ -523,10 +524,15 @@ def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", 
             if ro and ents[keys2[int(ro.group(1))]]["type"] == "team":  # "Leadership: Maggie Ellison (CEO) and Tobias Wren (CTO)"
                 for j in re.findall(r"§(\d+)§", ro.group(2)):
                     add(keys2[int(j)], "MEMBER_OF", keys2[int(ro.group(1))], 0.9)
+            # "Owner: Lukas Brandt" owns a service only on a line that names one, or in a non-task doc whose main service is `topic`
+            ow = re.match(r"\W*(?:owner|maintainer)s?\s*:\s*§(\d+)§", sen2, re.I)
+            if ow and not _FORMER.search(sen2):
+                svc = next((keys2[int(j)] for j in re.findall(r"§(\d+)§", sen2) if ents[keys2[int(j)]]["type"] in _SVCT), None)
+                if svc is None and topic and kind not in _TASK_KINDS:
+                    svc = topic
+                if svc:
+                    add(keys2[int(ow.group(1))], "OWNS", svc, 0.9, eff)
             if topic:
-                ow = re.match(r"\W*(?:owner|maintainer)s?\s*:\s*§(\d+)§", sen2, re.I)  # "Owner: Lukas Brandt" line under a service
-                if ow and not _FORMER.search(sen2):
-                    add(keys2[int(ow.group(1))], "OWNS", topic, 0.9, eff)
                 for mt in _PASS.finditer(sen):  # on the sentence before its subject became the topic: no head entity before the verb
                     if "§" not in sen[:mt.start()]:
                         add(topic, "DEPENDS_ON", keys2[int(mt["t"][1:-1])], 0.9)
@@ -541,7 +547,7 @@ def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", 
 
 
 def extract_batch(texts: list[str], titles: list[str] | None = None, authors: list[str] | None = None,
-                  teams=()) -> list[dict]:
+                  teams=(), kind: str = "") -> list[dict]:
     """Entities per text (GLiNER, batched), then relations per sentence window (GLiNER plus patterns, batched). `titles` and
     `authors` give each text's document context (`teams`: team names already known): "Decided by" targets the title's ADR id, "I own X" names the author."""
     if not texts:
@@ -574,7 +580,7 @@ def extract_batch(texts: list[str], titles: list[str] | None = None, authors: li
     glr = run(flat, _schema(m, False), 16) if flat else []
     out, i = [], 0
     for e, (ws, sp), t, ti, a in zip(ents, wins, texts, titles, authors):
-        rels = _relations(e, ws, glr[i:i + len(ws)], ti, a, sp)
+        rels = _relations(e, ws, glr[i:i + len(ws)], ti, a, sp, kind=kind)
         i += len(ws)
         seen = {(normalize_key(r["head"]), r["type"], normalize_key(r["tail"])) for r in rels}
         for who, rt, thing, _, _ in _table_facts(t):

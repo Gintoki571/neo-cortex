@@ -175,7 +175,7 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
 
     chunks = chunk_text(body, kind) or [body.strip() or title]
     teams = [r[0] for r in store.query("MATCH (e:Entity {type:'team'}) RETURN e.name", tenant=tenant)]
-    ex = X.extract_batch(chunks, [title] * len(chunks), [author or ""] * len(chunks), teams)
+    ex = X.extract_batch(chunks, [title] * len(chunks), [author or ""] * len(chunks), teams, kind=kind)
     embs = embed_docs(chunks, [title] * len(chunks))
 
     # one (name -> type, conf) map for the document, then a single resolution pass
