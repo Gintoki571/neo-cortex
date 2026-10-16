@@ -19,6 +19,13 @@ DEDUPE, CONFLICT = 0.92, 0.75    # memory cosine similarity: at or above DEDUPE 
 _TEXT_EXT = {".md", ".markdown", ".txt"}
 _SKIP_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}  # images are not ingested (embed_images is available)
 _KINDS = {"doc", "adr", "ticket", "chat", "meeting", "session", "file"}
+_NUM = re.compile(r"\d+(?:\.\d+)?")
+_NEG = re.compile(r"\b(?:not|no|never|none|nothing|cannot|without)\b|n't\b", re.I)
+
+
+def _differ(a: str, b: str) -> bool:
+    """Two near-identical statements that differ in a number or a negation contradict each other: never a duplicate."""
+    return set(_NUM.findall(a)) != set(_NUM.findall(b)) or bool(_NEG.search(a)) != bool(_NEG.search(b))
 
 
 def _vec(a) -> list:
@@ -135,10 +142,11 @@ def _supersede(store, eids: list[str], tenant) -> None:
     for rtype, side in _SINGLE:
         key, other = ("b", "a") if side == "tail" else ("a", "b")
         rows = store.query(f"MATCH (a:Entity)-[r:REL {{type:$t}}]->(b:Entity) WHERE {key}.id IN $e "
-                           f"RETURN id(r), {key}.id, {other}.id, r.valid_from_ms, r.valid_to_ms", {"t": rtype, "e": eids}, tenant)
-        groups: dict[str, list] = {}
-        for rid, k, o, vf, vt in rows:
-            groups.setdefault(k, []).append((vf or 0, o, rid, vt))
+                           f"RETURN id(r), {key}.id, {other}.id, r.valid_from_ms, r.valid_to_ms, a.type = 'person'",
+                           {"t": rtype, "e": eids}, tenant)
+        groups: dict[tuple, list] = {}
+        for rid, k, o, vf, vt, person in rows:  # a team and a person can both own a thing: one current owner of each kind
+            groups.setdefault((k, person if rtype == "OWNS" else None), []).append((vf or 0, o, rid, vt))
         upd = []
         for edges in groups.values():
             edges.sort()
@@ -166,7 +174,8 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
     author = str(fm["author"]) if fm.get("author") else None
 
     chunks = chunk_text(body, kind) or [body.strip() or title]
-    ex = X.extract_batch(chunks, [title] * len(chunks))
+    teams = [r[0] for r in store.query("MATCH (e:Entity {type:'team'}) RETURN e.name", tenant=tenant)]
+    ex = X.extract_batch(chunks, [title] * len(chunks), [author or ""] * len(chunks), teams)
     embs = embed_docs(chunks, [title] * len(chunks))
 
     # one (name -> type, conf) map for the document, then a single resolution pass
@@ -205,7 +214,8 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
         for r in e["relations"]:
             hk, tk = normalize_key(r["head"]), normalize_key(r["tail"])
             if hk in ids and tk in ids:
-                rels.append({"h": ids[hk], "t": ids[tk], "type": r["type"], "conf": r["conf"], "src": cid[i]})
+                rels.append({"h": ids[hk], "t": ids[tk], "type": r["type"], "conf": r["conf"], "src": cid[i],
+                             "vf": r.get("valid_from_ms") or date_ms})
     lab = {normalize_key(x) for x in labels}  # frontmatter labels that name known entities (auth-service, identity)
     if lab:
         known = store.query("MATCH (e:Entity) WHERE e.key IN $k RETURN e.id", {"k": list(lab)}, tenant)
@@ -217,7 +227,7 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
                     "CREATE (c)-[:MENTIONS {conf:r.conf}]->(e)", {"rows": men}, tenant)
     if rels:
         store.query("UNWIND $rows AS r MATCH (a:Entity {id:r.h}), (b:Entity {id:r.t}) CREATE (a)-[:REL {type:r.type, "
-                    "conf:r.conf, source_id:r.src, valid_from_ms:$t}]->(b)", {"rows": rels, "t": date_ms}, tenant)
+                    "conf:r.conf, source_id:r.src, valid_from_ms:r.vf}]->(b)", {"rows": rels}, tenant)
     for who, edge in ([(author, "AUTHORED")] if author else []) + [(p, "PARTICIPATED") for p in people if p != author]:
         if normalize_key(who) in ids:
             store.query(f"MATCH (e:Entity {{id:$e}}), (d:Document {{id:$d}}) MERGE (e)-[:{edge}]->(d)",
@@ -275,18 +285,17 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
         "CALL db.idx.vector.queryNodes('Memory','emb',8,vecf32($e)) YIELD node, score "
         "RETURN node.id, node.text, score, node.status ORDER BY score", {"e": _vec(emb)})
         if r[3] == "active" and r[0] != supersedes]
-    if cands and cands[0][2] >= DEDUPE and not supersedes:
-        mid = cands[0][0]
+    dup = next((c for c in cands if c[2] >= DEDUPE and not _differ(text, c[1])), None)
+    if dup and not supersedes:
+        mid = dup[0]
         same_src = source_id and q("MATCH (m:Memory {id:$m})-[:DERIVED_FROM]->(s {id:$s}) RETURN 1", {"m": mid, "s": source_id})
         if not same_src:  # re-ingesting the same session must not count as another use
             q("MATCH (m:Memory {id:$m}) SET m.uses = m.uses + 1, m.last_used_ms = $t", {"m": mid, "t": now_ms()})
         return {"id": mid, "status": "reinforced", "kind": kind, "entities": [n for n, _ in names.values()], "conflicts": []}
-    conflicts = []
-    if eids:
-        shared = {r[0] for r in q("MATCH (m:Memory)-[:MENTIONS]->(e:Entity) WHERE e.id IN $e AND m.status='active' "
-                                  "RETURN DISTINCT m.id", {"e": eids})}
-        conflicts = [{"id": i, "text": t, "sim": round(s, 4)} for i, t, s, _ in cands
-                     if CONFLICT <= s < DEDUPE and i in shared]
+    shared = {r[0] for r in q("MATCH (m:Memory)-[:MENTIONS]->(e:Entity) WHERE e.id IN $e AND m.status='active' "
+                              "RETURN DISTINCT m.id", {"e": eids})} if eids else set()
+    # a near-duplicate that differs in a number or negation ("24 hours" vs "48 hours") is a conflict, shared entity or not
+    conflicts = [{"id": i, "text": t, "sim": round(s, 4)} for i, t, s, _ in cands if s >= CONFLICT and (s >= DEDUPE or i in shared)]
     mid, t = new_id("mem"), now_ms()
     q("CREATE (:Memory {id:$id, text:$text, kind:$kind, confidence:$conf, created_ms:$t, valid_from_ms:$vf, "
       "status:'active', uses:0, last_used_ms:$t, source_id:$src, agent:$agent, project:$project, emb:vecf32($e)})",
