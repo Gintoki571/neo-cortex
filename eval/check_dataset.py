@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 KINDS = {"doc", "adr", "ticket", "chat", "meeting", "session"}
-TYPES = {"single": 8, "multi": 12, "temporal": 8, "ownership": 7, "procedural": 5}
+TYPES = {"single": 12, "multi": 26, "temporal": 16, "ownership": 17, "procedural": 9}
 errors, warns = [], []
 err = errors.append
 
@@ -67,6 +67,8 @@ for n, line in enumerate((ROOT / "eval/gold.jsonl").read_text().splitlines(), 1)
         elif f not in used: err(f"{qid}: fact {f} appears in no manifest doc")
         elif f not in covered: err(f"{qid}: fact {f} not covered by its gold_docs")
     if q.get("type") in ("multi", "ownership"):
+        ks = q.get("keys")  # short strings that must all appear in a retrieved text / `ask` output (the verbose `answer` rarely matches verbatim)
+        if not (isinstance(ks, list) and ks and all(isinstance(k, str) and k.strip() for k in ks)): err(f"{qid}: needs non-empty `keys` list")
         if len(gd) < 2: err(f"{qid}: needs >=2 gold docs")
         for g, dd in docs.items():  # any doc in the corpus, not only gold ones
             if set(q.get("facts", [])) <= set(dd.get("facts", [])):

@@ -82,18 +82,47 @@ def by_type(rows):
     return out
 
 
+def doc_people():
+    """doc id -> participants parsed from the frontmatter of the corpus files (author is always a participant)."""
+    out = {}
+    for f in (ROOT / "data" / "synthetic").glob("*/*.md"):
+        m = re.search(r"^participants: \[(.*)\]\s*$", f.read_text(), re.M)
+        out[f.stem] = [p.strip() for p in m[1].split(",")] if m else []
+    return out
+
+
+def vector_who(ranked, people_of, n=10):
+    """Baseline for `who`: people of the top-n vector-only docs, scored sum(1/rank), ties by earliest doc rank."""
+    sc, first = {}, {}
+    for r, d in enumerate(ranked[:n], 1):
+        for p in people_of.get(d, []):
+            sc[p] = sc.get(p, 0) + 1 / r
+            first.setdefault(p, r)
+    return [p for p in sorted(sc, key=lambda p: (-sc[p], first[p], p))]
+
+
 def tool_eval(store, gold):
     from neo_cortex import tools
+    from neo_cortex.retrieve import recall
+    people_of = doc_people()
     ask_rows, who_rows = [], []
     for q in gold:
         if q["type"] in ("multi", "ownership"):
             t = time.perf_counter()
             out = tools.ask(store, q["question"], tenant=TENANT)
-            ask_rows.append({"id": q["id"], "type": q["type"], "answer_in_ask": M.answer_in(out, q["answer"]),
-                             "ms": (time.perf_counter() - t) * 1000})
+            ms = (time.perf_counter() - t) * 1000
+            items = recall(store, q["question"], k=8, channels=["vector"], tenant=TENANT, now_ms=NOW_MS)  # baseline: top-8 vector chunks
+            full = dict(store.query("MATCH (c:Chunk) WHERE c.id IN $i RETURN c.id, c.text", {"i": [it["id"] for it in items]}, TENANT))
+            vtext = " ".join(full.get(it["id"], it["text"]) for it in items)
+            ask_rows.append({"id": q["id"], "type": q["type"], "answer_in_ask": M.hit_answer(out, q), "answer_in_vec": M.hit_answer(vtext, q),
+                             "chars_ask": len(out), "chars_vec": len(vtext), "ms": ms})
         if q["type"] == "ownership":
             gold_people = M.people(q["answer"])
             row = {"id": q["id"], "gold": gold_people}
+            vec = M.unique_docs(recall(store, q["question"], k=K, channels=["vector"], tenant=TENANT, now_ms=NOW_MS))
+            vtop = [M.norm(p) for p in vector_who(vec, people_of)][:3]
+            got = [M.norm(p) in vtop for p in gold_people]
+            row["vector"] = {"top3": vtop, "any": float(any(got)), "all": float(all(got))}
             # variants: the whole question as topic (what a lazy agent passes) and the gold non-person entity (linking ceiling)
             ents = [e for e in q["gold_entities"] if e not in gold_people]
             for tag, topic in (("question", q["question"]), ("entity", ents[0] if ents else q["question"])):
@@ -103,6 +132,22 @@ def tool_eval(store, gold):
                 row[tag] = {"topic": topic, "top3": top, "any": float(any(got)), "all": float(all(got))}
             who_rows.append(row)
     return ask_rows, who_rows
+
+
+def tool_boots(ask_rows, who_rows):
+    """Paired bootstrap of the graph tools against their vector-only baselines (delta = tool - baseline)."""
+    boots = []
+    if ask_rows:
+        for sub, ok in (("multi+ownership", lambda r: True), ("multi", lambda r: r["type"] == "multi"), ("ownership", lambda r: r["type"] == "ownership")):
+            rs = [r for r in ask_rows if ok(r)]
+            boots.append({"subset": sub, "metric": "answer-in-output", "a": "tools.ask", "b": "vector top-8 text",
+                          **M.paired_bootstrap([r["answer_in_ask"] for r in rs], [r["answer_in_vec"] for r in rs])})
+    for tag in ("question", "entity"):
+        for m in ("any", "all"):
+            if who_rows:
+                boots.append({"subset": "ownership", "metric": f"who top3 {m} ({tag} topic)", "a": "tools.who", "b": "vector top-10 people",
+                              **M.paired_bootstrap([r[tag][m] for r in who_rows], [r["vector"][m] for r in who_rows])})
+    return boots
 
 
 def mean(xs):
@@ -128,12 +173,19 @@ def render(res):
     for b in res["bootstrap"]:
         L.append(f"- {b['subset']}, {b['metric']}: `{b['a']}` vs `{b['b']}`: delta {b['delta']:+.3f} [{b['lo']:+.3f}, {b['hi']:+.3f}] "
                  f"(n={b['n']}, {'significant' if b['significant'] else 'inside noise'})")
-    L += ["", "## Tools", ""]
-    a = res["tools"]["ask"]
-    L.append(f"- `ask` evidence pack, gold answer string present: multi {a['multi']:.2f} (n={a['n_multi']}), ownership {a['ownership']:.2f} (n={a['n_ownership']}); mean {a['ms']:.0f} ms")
-    for tag, desc in (("question", "topic = whole question"), ("entity", "topic = gold non-person entity")):
-        w = res["tools"]["who"][tag]
-        L.append(f"- `who` ({desc}): gold person in top 3 (any) {w['any']:.2f}, all gold people {w['all']:.2f} (n={w['n']})")
+    if res["tools"]:
+        L += ["", "## Tools vs vector-only baselines", ""]
+        a, w = res["tools"]["ask"], res["tools"]["who"]
+        L.append(f"- `ask` evidence pack vs top-8 vector chunk text, gold answer keys present: tools.ask multi {a['multi']:.2f} / ownership {a['ownership']:.2f} "
+                 f"(n={a['n_multi']}/{a['n_ownership']}); baseline multi {a['vec_multi']:.2f} / ownership {a['vec_ownership']:.2f}; "
+                 f"mean size {a['chars_ask']:.0f} vs {a['chars_vec']:.0f} chars; ask {a['ms']:.0f} ms")
+        for tag, desc in (("question", "topic = whole question"), ("entity", "topic = gold non-person entity")):
+            L.append(f"- `who` ({desc}): gold person in top 3 (any) {w[tag]['any']:.2f}, all gold people {w[tag]['all']:.2f} (n={w['n']})")
+        L.append(f"- `who` baseline (people of the top-10 vector-only docs, scored by 1/rank): any {w['vector']['any']:.2f}, all {w['vector']['all']:.2f} (n={w['n']})")
+        L += ["", "### Paired bootstrap, tool minus baseline", ""]
+        for b in res["tool_bootstrap"]:
+            L.append(f"- {b['subset']}, {b['metric']}: `{b['a']}` vs `{b['b']}`: delta {b['delta']:+.3f} [{b['lo']:+.3f}, {b['hi']:+.3f}] "
+                     f"(n={b['n']}, {'significant' if b['significant'] else 'inside noise'})")
     return "\n".join(L) + "\n"
 
 
@@ -167,14 +219,17 @@ def main():
             lat[n] = {"mean": mean(ms), "p95": ms[int(0.95 * (len(ms) - 1))]}
             print(f"{n:24s} recall@10 {agg[n]['overall']['recall@10']:.3f} fullcover@10 {agg[n]['overall']['fullcover@10']:.3f} "
                   f"answerin@10 {agg[n]['overall']['answerin@10']:.3f}  {lat[n]['mean']:.0f} ms/q", flush=True)
-        tools_res = {}
+        tools_res, tboots = {}, []
         if not a.no_tools:
             ask_rows, who_rows = tool_eval(store, gold)
-            sub = lambda t: [r["answer_in_ask"] for r in ask_rows if r["type"] == t]  # noqa: E731
+            sub = lambda t, k="answer_in_ask": [r[k] for r in ask_rows if r["type"] == t]  # noqa: E731
             tools_res = {"ask": {"multi": mean(sub("multi")), "ownership": mean(sub("ownership")), "n_multi": len(sub("multi")),
-                                 "n_ownership": len(sub("ownership")), "ms": mean([r["ms"] for r in ask_rows]), "rows": ask_rows},
-                         "who": {tag: {"any": mean([r[tag]["any"] for r in who_rows]), "all": mean([r[tag]["all"] for r in who_rows]),
-                                       "n": len(who_rows)} for tag in ("question", "entity")} | {"rows": who_rows}}
+                                 "n_ownership": len(sub("ownership")), "vec_multi": mean(sub("multi", "answer_in_vec")),
+                                 "vec_ownership": mean(sub("ownership", "answer_in_vec")), "chars_ask": mean([r["chars_ask"] for r in ask_rows]),
+                                 "chars_vec": mean([r["chars_vec"] for r in ask_rows]), "ms": mean([r["ms"] for r in ask_rows]), "rows": ask_rows},
+                         "who": {tag: {"any": mean([r[tag]["any"] for r in who_rows]), "all": mean([r[tag]["all"] for r in who_rows])}
+                                 for tag in ("question", "entity", "vector")} | {"n": len(who_rows), "rows": who_rows}}
+            tboots = tool_boots(ask_rows, who_rows)
     # bootstrap: full and auto vs the best config that has no graph channel
     boots = []
     nog = [n for n in names if CONFIGS[n] is not None and "graph" not in CONFIGS[n] and n in per_q]
@@ -190,13 +245,13 @@ def main():
                 r = M.paired_bootstrap([per_q[cfg][i][m] for i in idx], [per_q[best][i][m] for i in idx])
                 boots.append({"subset": subset, "metric": m, "a": cfg, "b": best, **r})
     res = {"now_ms": NOW_MS, "k": K, "n_questions": len(gold), "ingest": ing, "configs": names, "aggregate": agg, "latency": lat,
-           "bootstrap": boots, "tools": tools_res, "per_question": per_q, "gold": {q["id"]: q["gold_docs"] for q in gold},
+           "bootstrap": boots, "tools": tools_res, "tool_bootstrap": tboots, "per_question": per_q, "gold": {q["id"]: q["gold_docs"] for q in gold},
            "total_seconds": round(time.time() - t0, 1)}
     out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(res, indent=1))
-    if tools_res:
-        (out / "results.md").write_text(render(res))
-    for b in boots:
+    (out / "results.md").write_text(render(res))
+    for b in boots + tboots:
         print(f"bootstrap {b['subset']} {b['metric']}: {b['a']} vs {b['b']} delta {b['delta']:+.3f} [{b['lo']:+.3f}, {b['hi']:+.3f}]")
     print(f"total {res['total_seconds']} s; wrote {out}/results.md, results.json")
 

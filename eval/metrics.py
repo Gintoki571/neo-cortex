@@ -43,6 +43,13 @@ def answer_in(text: str, answer: str) -> float:
     return float(bool(a) and f" {a} " in f" {norm(text)} ")
 
 
+def hit_answer(text: str, q: dict) -> float:
+    """Containment used for `ask` and its vector baseline: every short `keys` string present when the question has them
+    (the verbose `answer` of multi-part questions rarely matches verbatim), else the whole normalised `answer`."""
+    ks = q.get("keys")
+    return float(all(f" {norm(k)} " in f" {norm(text)} " for k in ks)) if ks else answer_in(text, q["answer"])
+
+
 def question_metrics(ranked, gold, texts_by_doc, answer, ks=(5, 10)) -> dict:
     """Metrics per k for one question. texts_by_doc: doc id -> concatenated retrieved chunk text."""
     m = {}
