@@ -55,21 +55,22 @@ neo who "session cache"
 ```
 Say: "Current owner Mateo, with the document that says so. Lukas owned it until the reorg decision ADR-006 (2026-08-11); `OWNS` is an edge with a validity window, not a sentence in a doc." (The ownership moved on 2026-09-01; the edge closes on the date of the document that announced it.)
 
-**Shot 2, timeline (0:35 to 0:55).** Point at the rename chain, then the policy reversal.
+**Shot 2, timeline (0:35 to 0:55).** Point at the rename chain, then at the dated config value changes.
 
 ```bash
 neo timeline "bankbridge"
-neo timeline "config approval"
+neo timeline "session.ttl_seconds"
 ```
 ```
 2026-07-10 REL bank-connector <-[RENAMED_TO]- bankbridge src "PAY-455: Rename bankbridge to bank-connector" [tkt-11]
-2026-07-17 REL bank-connector <-[RENAMED_TO]- bankbridge src "ADR-005: Rename bankbridge to bank-connector" [adr-005]
-2026-07-20 chat [chat-08] "#payments: rename day"
+2026-07-17 REL bank-connector <-[REPLACED_BY]- bankbridge src "ADR-005: Rename bankbridge to bank-connector" [adr-005]
+2026-07-20 REL bank-connector <-[RENAMED_TO]- bankbridge src "ADR-005: Rename bankbridge to bank-connector" [adr-005]
 ...
-2026-08-14 [adr-008#0] adr: # ADR-008: Two approvals for production config changes ## Status Accepted, 2026-08-14. ...
-2026-10-06 [adr-011#0] adr: # ADR-011: One approver plus automated validation for config ... a partial reversal of the two-approver rule ...
+2026-06-18 [tkt-05] Key: session.ttl_seconds / From: 3600 / To: 900 / Environment: prod
+2026-06-18 [chat-04] platform / [2026-06-18 11:00] Beatrice Oyelaran: heads up, session.ttl_seconds is now 900.
+2026-08-12 [adr-007] Decision / Set session.ttl_seconds from 900 to 300 in production, effective immediately on 2026-08-12.
 ```
-Say: "Old docs still say bankbridge; the graph knows it is bank-connector since 2026-07-20. The config rule went from one engineer, to two approvals after an outage, to one approver plus cfglint. Newest decision wins, with its source."
+Say: "Old docs still say bankbridge; the graph knows it is bank-connector since 2026-07-20. session.ttl_seconds moved from 3600 to 900 on 2026-06-18 (CFG-4380) and to 300 on 2026-08-12 (ADR-007) — each change dated, with its source. (Gold CH01: tool gets it right; baseline ties on value changes, so show timeline here, not recall.)"
 
 **Shot 3, ask (0:55 to 1:15).** Point at "Facts among them" (decision edges) and the cited ids.
 
@@ -88,7 +89,7 @@ Say: "Tobias decided, Ravi approved, because of audit finding AF-12 from Ashgrov
 
 ## 1:15 to 2:25  Track 01: Agents that act (Claude Code, `triage-agent`)
 
-Terminal: `cd demo/work/pellucid-ops && NEO_AGENT=triage-agent $CC` (interactive) or `-p` with the same prompt. Paste `demo/prompts/01_triage.txt`. The agent should call `ask`, `cypher` (read the cut snippet), `connect`, `who`, then `handoff` and `remember`. Show the tool calls scrolling; do not wait for every token (cut in editing).
+Terminal: `cd demo/work/pellucid-ops && NEO_AGENT=triage-agent $CC` (interactive) or `-p` with the same prompt. Paste `demo/prompts/01_triage.txt`. The agent should call `ask`, `cypher` (read the cut snippet), `connect`, `who`, then `impact`, `relate --supersede`, `handoff` and `remember`. Show the tool calls scrolling; do not wait for every token (cut in editing).
 
 The same calls with the CLI (what the agent sees):
 
@@ -118,11 +119,38 @@ Point at: "This is the path behind the answer: the broken report depends on ledg
 
 The cited postmortem is longer than the 240-character snippet, so the agent reads it with read-only Cypher (`substring(c.text,190,190)`): "the ledger-service outbox republished after a broker rebalance on 2026-09-08 ... a different key format ... reverted 2026-09-09" (mtg-05).
 
+Then it checks the blast radius of the root-cause service:
+
+```bash
+neo impact ledger-service
+```
+```
+# impact [ent_e008439ebc28] ledger-service (service): 3 depend on it, it needs 1 (DEPENDS_ON, current, max_hops 3; A -> B = A depends on B)
+## Breaks if it fails (nearest first)
+- hop 1 [ent_2be85f58af52] fraud-scoring: fraud-scoring -> ledger-service  src: "Data platform overview" [doc-04] 2026-06-10
+- hop 1 [ent_3c9c407d2f43] reporting-service: reporting-service -> ledger-service  src: "Data platform overview" [doc-04] 2026-06-10
+- hop 2 [ent_87a96b949720] payment-gateway: payment-gateway -> fraud-scoring -> ledger-service  src: "Data platform overview" [doc-04] 2026-06-10; ...
+## Owners to tell (current OWNS)
+- [ent_96d19728f58b] Elif Yildiz owns: ledger-service since 2026-09-08 src "PAY-501: Release ledger-service v3.8" [tkt-22]
+- [ent_d2e23dc9c1f6] Olivia Hartmann owns: reporting-service since 2026-09-11 src "Runbook: dedupe and backfill reporting totals" [doc-10]
+- [ent_c88d9b752e2c] Kofi Mensah owns: fraud-scoring since 2026-06-10 src "Data platform overview" [doc-04]
+- [ent_0bc9dc87247d] Daniel Kwon owns: payment-gateway since 2026-06-08 src "Payments architecture" [doc-03]
+## Incidents linked ...
+- INC-04: ledger-service 3x [tkt-24#0]; reporting-service 3x [tkt-24#0]
+```
+Say: "If ledger-service dies, reporting-service, fraud-scoring and (through fraud-scoring) payment-gateway break — notify Elif Yildiz, Olivia Hartmann, Kofi Mensah and Daniel Kwon, each edge cited to its source doc. (Gold IM05: impact is the one category where the graph clearly beats text search.)"
+
 Then it **acts** (point at the two write calls, they are the "action based on what the graph shows"):
 
+```bash
+neo relate "Elif Yildiz" "OWNS" "reporting-service" --supersede --source "INC-04 postmortem (tkt-24): dedupe contract moves to Payments after the v3.8 fix" --agent triage-agent
+neo handoff "INC-04: Northgate totals doubled. ledger-service v3.8 changed the idempotency key from txn_id to txn_id:attempt, so reporting-service could not dedupe. Confirm the txn_id-only key is live (ADR-009) and review the contract test." --from triage-agent --to payments-agent --task "Confirm txn_id-only key is live in ledger-service" --task "Review the consumer contract test"
 ```
+```
+created [ent_96d19728f58b] Elif Yildiz -[OWNS]-> [ent_3c9c407d2f43] reporting-service valid from 2026-10-16 by triage-agent, src INC-04 postmortem (tkt-24): dedupe contract moves to Payments after the v3.8 fix
+closed Olivia Hartmann -[OWNS]-> reporting-service (valid since 2026-09-11, ended 2026-10-16)
+closed Olivia Hartmann -[OWNS]-> reporting-service (valid since 2026-06-10, ended 2026-10-16)
 handoff [hand_...] open for payments-agent: it appears in their brief.
-created [mem_...] decision about: INC-04, ledger-service, event-pipeline, reporting-service, Elif Yildiz, Payments
 ```
 Close the shot by starting the receiving agent (what its SessionStart hook injects):
 ```bash
@@ -231,10 +259,13 @@ Eval table (`eval/results.md`, 80 gold questions, recall@10):
 | vector            | 0.73 | 1.00 | 0.61 | 0.62 | 0.71 | 0.93 |
 | bm25              | 0.71 | 0.92 | 0.65 | 0.53 | 0.79 | 0.81 |
 | vector+bm25       | 0.75 | 1.00 | 0.65 | 0.66 | 0.76 | 0.85 |
-| vector+bm25+graph | 0.75 | 0.92 | 0.69 | 0.66 | 0.74 | 0.89 |
-| auto (product)    | 0.74 | 0.92 | 0.69 | 0.62 | 0.74 | 0.89 |
+| vector+bm25+graph | 0.75 | 0.92 | 0.70 | 0.69 | 0.74 | 0.85 |
+| vector+bm25+temporal | 0.75 | 1.00 | 0.67 | 0.59 | 0.79 | 0.89 |
+| full              | 0.75 | 1.00 | 0.68 | 0.62 | 0.74 | 0.89 |
+| full-graph        | 0.75 | 1.00 | 0.67 | 0.59 | 0.79 | 0.89 |
+| auto (product)    | 0.75 | 0.92 | 0.70 | 0.62 | 0.76 | 0.85 |
 ```
-Say only what the table shows: the graph channel helps the multi-hop column (0.65 to 0.69); the single-fact column is a control.
+Say only what the table shows: the graph channel helps the multi-hop column (0.65 to 0.70); the single-fact column is a control.
 
 ---
 
@@ -244,8 +275,9 @@ Say only what the table shows: the graph channel helps the multi-hop column (0.6
 |---|---|---|
 | `who "session cache"` | Mateo Alvarez current, Lukas Brandt FORMER | Q29, Q28 |
 | `timeline "bankbridge"` | renamed to bank-connector, rename day 2026-07-20 | Q26 |
-| `timeline "config approval"` | ADR-008 two approvals (2026-08-14), ADR-011 one approver plus cfglint (2026-10-06) | Q25 |
+| `timeline "session.ttl_seconds"` | 3600 → 900 (2026-06-18, CFG-4380), then 900 → 300 (2026-08-12, ADR-007) | CH01 |
 | `ask` TTL 300 | Tobias Wren decided, Ravi approved, AF-12 Ashgrove Assurance | Q15 |
+| `impact ledger-service` | reporting-service, fraud-scoring, payment-gateway break; owners Elif Yildiz, Olivia Hartmann, Kofi Mensah, Daniel Kwon, each edge cited | IM05 |
 | `ask` INC-04 + `connect` | reporting-service depends on ledger-service, owner Elif Yildiz; Olivia Hartmann owns reporting-service | Q13, Q44, Q57 |
 
 ## Known gaps to avoid on camera

@@ -24,9 +24,9 @@ ctx()  { python3 -c 'import json,sys; print(json.load(sys.stdin)["hookSpecificOu
 seg "TRACK 03  Company Brain (graph built from docs, tickets, chats, ADRs)"
 say "Who should review a change to the session cache? The owner changed in September."
 run who "session cache"
-say "Names change too: what happened to bankbridge, and how did the config approval rule evolve?"
+say "Names change too: what happened to bankbridge, and how did session.ttl_seconds evolve?"
 run timeline "bankbridge"
-run timeline "config approval"
+run timeline "session.ttl_seconds"
 say "Why is the session TTL 300 seconds, and who decided it? Decision edges and the cited ADR, ticket and audit finding."
 run ask "Why was the session idle TTL lowered to 300 seconds, and who decided it?"
 end
@@ -40,7 +40,10 @@ say "The snippets are 240 characters: read the cited postmortem chunk in full wi
 run cypher "MATCH (c:Chunk {id:'mtg-05#0'}) RETURN substring(c.text,0,190) AS a, substring(c.text,190,190) AS b, substring(c.text,380,190) AS c, substring(c.text,570,190) AS d"
 say "who: confirm the owner of the root-cause service."
 run who "ledger-service"
-say "ACT: hand the fix to the owning team's agent and record the decision."
+say "ACT: blast radius — if ledger-service fails, what breaks, who to tell, with sources."
+run impact ledger-service
+say "ACT: record the ownership change the fix forces — the reporting-service dedupe contract moves to Payments — then hand off to the owner."
+run relate "Elif Yildiz" "OWNS" "reporting-service" --supersede --source "INC-04 postmortem (tkt-24): dedupe contract moves to Payments after the v3.8 fix" --agent triage-agent
 run handoff "INC-04: Northgate totals doubled. ledger-service v3.8 changed the idempotency key from txn_id to txn_id:attempt, so reporting-service could not dedupe. Confirm the txn_id-only key is live (ADR-009) and review the contract test." --from triage-agent --to payments-agent --task "Confirm txn_id-only key is live in ledger-service" --task "Review the consumer contract test"
 run remember "INC-04 root cause: the ledger-service v3.8 idempotency key change (txn_id to txn_id:attempt) after the event-pipeline rebalance made reporting-service count events twice. Owner of the fix: Elif Yildiz (Payments)." --kind decision --agent triage-agent --project reporting-service --about "ledger-service" --about "INC-04"
 say "payments-agent starts a session: its SessionStart hook injects the brief with the handoff."
