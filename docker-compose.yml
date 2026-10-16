@@ -1,0 +1,18 @@
+# FalkorDB in Docker for Neo-Cortex (optional; the default is embedded falkordblite, no Docker needed).
+#   docker compose up -d falkordb
+#   export NEO_FALKORDB_URL=redis://localhost:6379
+# Both ports bind to loopback only. FalkorDB Browser: http://127.0.0.1:3000
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    ports:
+      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:3000:3000"
+    # Volume target follows the FalkorDB FAQ for falkordb/falkordb. The FalkorDB persistence example uses /data
+    # with the server-only image instead; confirm with `docker exec <id> ls` before relying on restarts keeping data.
+    volumes:
+      - falkordb_data:/var/lib/falkordb/data
+    restart: unless-stopped
+
+volumes:
+  falkordb_data:
