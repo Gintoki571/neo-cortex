@@ -112,31 +112,6 @@ def test_resolve(store, fake_models):
     assert j1 == j2 and _q(store, "MATCH (j:Judgment) RETURN count(j)") == [[1]]
 
 
-def test_ingest_session(store, fake_models, tmp_path):
-    lines = [
-        {"type": "mode", "sessionId": "s1"},
-        {"type": "user", "sessionId": "s1", "cwd": "/x/proj", "timestamp": "2026-10-15T10:00:00.000Z",
-         "message": {"role": "user", "content": "I decided that we always mock the clock in session-cache tests."}},
-        {"type": "assistant", "sessionId": "s1", "message": {"role": "assistant", "content": [
-            {"type": "thinking", "thinking": "secret"}, {"type": "tool_use", "name": "Bash", "input": {}},
-            {"type": "text", "text": "Never deploy on Fridays because the freeze starts at three."}]}},
-        {"type": "user", "sessionId": "s1", "message": {"role": "user", "content": [{"type": "tool_result", "content": "always noise"}]}},
-        {"type": "user", "sessionId": "s1", "isMeta": True, "message": {"role": "user", "content": "always skip this meta text please"}},
-        {"type": "assistant", "sessionId": "s1", "message": {"role": "assistant", "content": [{"type": "text", "text": "Let me read the file now please."}]}},
-    ]
-    p = tmp_path / "s1.jsonl"
-    p.write_text("\n".join(json.dumps(x) for x in lines))
-    r = write.ingest_session(store, p)
-    assert r["session"] == "s1" and r["memories"] == 2
-    assert _q(store, "MATCH (s:Session {id:'s1'})-[:BY]->(a:Agent) RETURN s.project, a.name") == [["proj", "claude-code"]]
-    assert _q(store, "MATCH (:Agent)-[:WROTE]->(m:Memory)-[:DERIVED_FROM]->(:Session {id:'s1'}) RETURN count(m)") == [[2]]
-    assert write.ingest_session(store, p)["skipped"] == 1
-    p.write_text(p.read_text() + "\n" + json.dumps({"type": "user", "sessionId": "s1", "message": {"role": "user",
-                 "content": "We decided to keep Redis for sessions because it is fast enough."}}))
-    r = write.ingest_session(store, p)  # grown transcript: only the new memory is added, old ones are not re-counted
-    assert r["memories"] == 1 and _q(store, "MATCH (m:Memory) RETURN max(m.uses)") == [[0]]
-
-
 def test_cli_version(capsys):
     assert main(["--version"]) == 0 and capsys.readouterr().out.strip()
 

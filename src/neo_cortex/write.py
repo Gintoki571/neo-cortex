@@ -1,6 +1,6 @@
 """Write path: documents (markdown + YAML frontmatter, other formats via anydoc), agent memories, session transcripts."""
-import json
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,13 +10,12 @@ import yaml
 from . import extract as X
 from .models import embed_docs
 from .resolve import _RANK, resolve_many
+from .session_mem import read_transcript, select
 from .util import content_hash, new_id, normalize_key, now_ms
 
 CHUNK_MIN, CHUNK_MAX = 120, 250  # words
 MAX_CHARS = 2500                 # a code block or URL soup can be few words but many tokens
 DEDUPE, CONFLICT = 0.92, 0.75    # memory cosine similarity: at or above DEDUPE reinforce; CONFLICT..DEDUPE flag
-MAX_SESSION_MEMORIES = 15
-SESSION_WORTH = 0.6
 _TEXT_EXT = {".md", ".markdown", ".txt"}
 _SKIP_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}  # images are not ingested (embed_images is available)
 _KINDS = {"doc", "adr", "ticket", "chat", "meeting", "session", "file"}
@@ -256,7 +255,7 @@ def _agent_edge(store, agent: str, mid: str, tenant):
 
 def remember(store, text: str, kind: str | None = None, about=None, supersedes: str | None = None,
              agent: str | None = None, project: str | None = None, source_id: str | None = None, tenant=None,
-             confidence: float | None = None) -> dict:
+             confidence: float | None = None, valid_from_ms: int | None = None) -> dict:
     """Write a memory. Near-duplicates (cosine >= 0.92) reinforce the existing one; similar memories that share an
     entity come back as `conflicts` (0.75..0.92); `supersedes` retires an older memory and links SUPERSEDES."""
     q = lambda c, p=None: store.query(c, p or {}, tenant)  # noqa: E731
@@ -289,9 +288,9 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
         conflicts = [{"id": i, "text": t, "sim": round(s, 4)} for i, t, s, _ in cands
                      if CONFLICT <= s < DEDUPE and i in shared]
     mid, t = new_id("mem"), now_ms()
-    q("CREATE (:Memory {id:$id, text:$text, kind:$kind, confidence:$conf, created_ms:$t, valid_from_ms:$t, "
+    q("CREATE (:Memory {id:$id, text:$text, kind:$kind, confidence:$conf, created_ms:$t, valid_from_ms:$vf, "
       "status:'active', uses:0, last_used_ms:$t, source_id:$src, agent:$agent, project:$project, emb:vecf32($e)})",
-      {"id": mid, "text": text, "kind": kind, "conf": kconf, "t": t, "src": source_id, "agent": agent,
+      {"id": mid, "text": text, "kind": kind, "conf": kconf, "t": t, "vf": valid_from_ms or t, "src": source_id, "agent": agent,
        "project": project, "e": _vec(emb)})
     if eids:
         q("UNWIND $e AS i MATCH (m:Memory {id:$m}), (e:Entity {id:i}) CREATE (m)-[:MENTIONS {conf:1.0}]->(e)",
@@ -310,43 +309,12 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
 
 # ---------------------------------------------------------------- sessions
 
-_NOISE = re.compile(r"<(system-reminder|local-command-[a-z]+|command-[a-z]+|task-notification)[^>]*>.*?</\1>", re.S)
-_CODE = re.compile(r"```.*?```", re.S)
-
-
-def _transcript_segments(path: Path) -> tuple[dict, list[tuple[str, str]]]:
-    """(meta, [(role, segment)]) from a Claude Code JSONL transcript: user/assistant text only, tool traffic skipped."""
-    meta, segs = {}, []
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        try:
-            d = json.loads(line)
-        except ValueError:
-            continue
-        for k, f in (("session_id", "sessionId"), ("cwd", "cwd")):
-            if d.get(f) and k not in meta:
-                meta[k] = d[f]
-        if d.get("timestamp") and "started" not in meta:
-            meta["started"] = d["timestamp"]
-        m = d.get("message")
-        if d.get("type") not in ("user", "assistant") or d.get("isMeta") or d.get("isSidechain") or not isinstance(m, dict):
-            continue
-        c = m.get("content")
-        blocks = [c] if isinstance(c, str) else [b.get("text", "") for b in c or [] if isinstance(b, dict) and b.get("type") == "text"]
-        for b in blocks:
-            b = _CODE.sub(" ", _NOISE.sub(" ", b))
-            for par in re.split(r"\n\s*\n|\n(?=\s*(?:[-*]|\d+\.)\s)", b):
-                par = re.sub(r"\s+", " ", par).strip(" -*#>|")
-                if par.startswith(("|", "http")) or len(par.split()) < 6:
-                    continue
-                segs += [(d["type"], s) for s in (_sentences(par) if len(par.split()) > 60 else [par])]
-    return meta, segs
-
-
 def ingest_session(store, transcript_path, agent: str = "claude-code", project: str | None = None, tenant=None) -> dict:
-    """Session node + up to 15 auto-extracted Memories. Idempotent per session id and transcript hash."""
+    """Session node + up to 15 memories from `session_mem.select` (preferences, decisions, lessons, outcomes), each stored
+    through `remember` with valid_from = its message time. Idempotent per session id and transcript hash."""
     p = Path(transcript_path)
     raw = p.read_bytes().decode("utf-8", errors="replace")
-    meta, segs = _transcript_segments(p)
+    meta, ev = read_transcript(p)
     sid = str(meta.get("session_id") or p.stem)
     h = content_hash(raw)
     old = store.query("MATCH (s:Session {id:$s}) RETURN s.hash", {"s": sid}, tenant)
@@ -357,16 +325,12 @@ def ingest_session(store, transcript_path, agent: str = "claude-code", project: 
                 "WITH s MERGE (g:Agent {id:$gid}) SET g.name=$a MERGE (s)-[:BY]->(g)",
                 {"s": sid, "a": agent, "p": project, "t": _ms(meta.get("started")) or now_ms(), "path": str(p), "h": h,
                  "gid": "agent:" + normalize_key(agent)}, tenant)
-    uniq = list(dict.fromkeys(s for _, s in segs))[:600]  # shortcut: first 600 unique segments, raise for very long sessions
-    kept = []
-    if uniq:
-        scores = X.worth_keeping_batch(uniq)
-        kept = sorted([(s, t) for s, t in zip(scores, uniq) if s >= SESSION_WORTH], reverse=True)[:MAX_SESSION_MEMORIES]
-    kinds = X.classify_memory_batch([t for _, t in kept]) if kept else []
+    kept = select(ev)
     created = reinforced = 0
-    for (score, text), (kind, kconf) in zip(kept, kinds):
-        r = remember(store, text, kind=kind, agent=agent, project=project, source_id=sid, tenant=tenant,
-                     confidence=kconf)
+    for c in kept:
+        r = remember(store, c["text"], kind=c["kind"], agent=agent, project=project, source_id=sid, tenant=tenant,
+                     confidence=c["conf"], valid_from_ms=c["ts"])
         created += r["status"] == "created"
         reinforced += r["status"] == "reinforced"
-    return {"session": sid, "skipped": 0, "segments": len(uniq), "memories": created, "reinforced": reinforced}
+    return {"session": sid, "skipped": 0, "segments": len(ev), "memories": created, "reinforced": reinforced,
+            "kinds": dict(Counter(c["kind"] for c in kept))}
