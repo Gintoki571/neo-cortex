@@ -16,13 +16,44 @@ Neo-Cortex enters all three tracks with one system.
 
 The graph is the only store. Memories, documents, entities and relations all live in FalkorDB, and the retrieval channels read from it:
 
-- Personalized PageRank over typed entity relations and mentions (graph channel) finds evidence two or three hops from the query.
+- Personalized PageRank over typed entity relations and mentions (graph channel) finds evidence two or three hops from the query. On document retrieval it ties text search (Table B).
 - `algo.SPpaths` and variable-length paths produce the bridging paths for `ask`, `connect` and `who`.
-- Ownership and supersession are edges (`OWNS`, `SUPERSEDES`, `valid_to_ms`), so "current owner" and "what changed" are graph queries, not text search.
+- Ownership and supersession are edges (`OWNS`, `SUPERSEDES`, `valid_to_ms`), so "current owner" and "what changed" are graph queries, not text search. Measured, impact (blast radius) is the one category where the graph clearly beats text search (Table A). Current owner ties, and value-change answers did not beat the baseline.
 
-Ablation on the 80-question gold set over the synthetic company corpus (see [eval/README.md](eval/README.md) and [eval/results.md](eval/results.md)):
+Setup: a synthetic company corpus of 102 documents (`data/synthetic`, AI-generated, fictional), 80 retrieval questions and 30 structured-answer questions. Gold labels were written from a world spec (`data/synthetic/WORLD.md`) that the product never reads. Every comparison is a paired bootstrap (1000 resamples, seed 0) with 95% CIs over questions.
 
-<!-- EVAL_TABLE -->
+**Table A: graph-native answers vs text search** (30 questions, 4000-char budget on both sides; baseline = top-8 vector chunks). "Keys" = share of expected keys present; "all keys" = every key present.
+
+| Category (n) | Tool, all keys | Baseline, all keys | Tool minus baseline, 95% CI |
+|---|---|---|---|
+| Impact / blast radius (10) | 0.80 | 0.20 | +0.60 [+0.30, +0.90], significant |
+| Current owner (10) | 1.00 | 1.00 | +0.00 [+0.00, +0.00], tie (correct current owner 1.00 vs 1.00) |
+| Value changes (10) | 0.80 | 1.00 | -0.20 [-0.50, +0.00], inside noise, tool lower |
+| Overall (30) | 0.87 | 0.73 | +0.13 [-0.03, +0.33], inside noise |
+
+Keys (partial) scores, tool vs baseline: impact 0.80 vs 0.34, current owner 1.00 vs 1.00, value changes 0.92 vs 1.00, overall 0.91 vs 0.78.
+
+**Table B: document retrieval** (80 questions, top 10 unique documents). Recall@10 = share of gold documents found, averaged; FullCover@10 = share of questions where every gold document is found.
+
+| Config | Recall@10 | FullCover@10 |
+|---|---|---|
+| vector | 0.73 | 0.53 |
+| bm25 | 0.71 | 0.55 |
+| vector+bm25 | 0.75 | 0.59 |
+| auto (graph-routed, product default) | 0.75 | 0.59 |
+| full (all four channels, intent weights) | 0.75 | 0.60 |
+
+Graph routing ties text retrieval on finding documents; the CIs include 0. Against the same channels without graph (vector+bm25+temporal), Recall@10 deltas are auto -0.006 [-0.048, +0.033] and full -0.002 [-0.031, +0.031].
+
+**Extraction** (`eval/graph_quality.py`, graded relation types on the ingested graph): relation precision 0.88, recall 0.83.
+
+Reproduce: measurement details in [eval/README.md](eval/README.md); numbers in [eval/results.md](eval/results.md) and [eval/answers.md](eval/answers.md).
+
+```bash
+NEO_DEVICE=cuda uv run --no-sync python eval/run_eval.py     # retrieval (ingests the corpus first)
+NEO_DEVICE=cuda uv run --no-sync python eval/answers.py      # graph-native answers
+NEO_DEVICE=cuda uv run --no-sync python eval/graph_quality.py --ingest   # extraction
+```
 
 ## Quickstart
 
