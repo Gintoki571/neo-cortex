@@ -1,0 +1,3 @@
+You are agent-a. Your session on reporting-service just finished: the duplicate-ratio alert is in reporting/alerts/dup_ratio.py and 4 tests pass with `pytest -q tests/alerts`. Two things are still open: Olivia Hartmann has not confirmed the 1 percent threshold, and the dup_ratio rule is not yet in deploy/alerts.yaml.
+
+Leave the work for agent-b with the neo-cortex handoff tool: to="agent-b", from_agent="agent-a", a one-sentence summary and those two items as tasks. Then reply with the handoff id only.

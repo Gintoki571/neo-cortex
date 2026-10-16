@@ -318,14 +318,15 @@ def who(store, topic, max_chars=MAX, tenant=None) -> str:
     if tids:
         rows = store.query(
             "MATCH p=(x:Entity {type:'person'})-[:REL*1..2]->(t:Entity) WHERE t.id IN $t AND all(r IN relationships(p) WHERE r.type IN $ty) "
-            "RETURN x.id, x.name, [n IN nodes(p) | [n.id, n.name]], [r IN relationships(p) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]",
+            "RETURN x.id, x.name, [n IN nodes(p) | [n.id, n.name]], [r IN relationships(p) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf, r.valid_to_ms]]",
             {"t": tids, "ty": OWN_TYPES}, tenant)
         src = _src_names(store, [r[2] for *_, rels in rows for r in rels], tenant)
         best = {}
         for pid, pname, nodes, rels in rows:
             s = math.prod((r[4] or 0.5) for r in rels) * 0.7 ** (len(rels) - 1) * (1.0 if any(r[0] == "OWNS" for r in rels) else 0.8)
             if s > best.get(pid, (0,))[0]:
-                best[pid] = (s, pname, f"{_trail(nodes, rels)} (src {src.get(rels[-1][2], rels[-1][2] or '?')})")
+                ended = next((r[5] for r in rels if r[5]), None)  # a relation that ended: former owner, not current
+                best[pid] = (s, pname, f"{_trail(nodes, rels)} (src {src.get(rels[-1][2], rels[-1][2] or '?')})" + (f" FORMER, ended {_d(ended)}" if ended else ""))
         for pid, (s, pname, reason) in best.items():
             add(pid, pname, s, reason)
         docs = {r[0]: r[1] for r in store.query("MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(t:Entity) WHERE t.id IN $t RETURN d.id, count(c)",

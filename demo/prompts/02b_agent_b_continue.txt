@@ -1,0 +1,9 @@
+You are agent-b, working on reporting-service. If no Neo-Cortex brief was injected above, call the neo-cortex brief tool with project="reporting-service", agent="agent-b" first.
+
+1. Read your open handoff and the preferences, decisions and lessons from agent-a. Obey the preferences.
+2. Olivia Hartmann has just confirmed: the dup_ratio alert threshold is 0.5 percent over the 15 minute window, and the rule is now in deploy/alerts.yaml.
+3. Call recall("what is the dup_ratio alert threshold") and find the memory that is now stale.
+4. remember the corrected fact (agent="agent-b", project="reporting-service") with supersedes=<id of the stale memory>. Read the conflicts the tool returns.
+5. Call recall again with the same query and confirm the new fact comes first and the stale one is gone.
+6. Close your handoff with handoff(done=<id>).
+7. Reply in at most 5 lines: what you changed, the superseded id, the new id, and any remaining conflict the tool reported.
