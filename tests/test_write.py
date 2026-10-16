@@ -151,3 +151,33 @@ def test_chunk_hard_split():
     cs = write.chunk_text(code)
     assert len(cs) > 1 and all(len(c.split()) <= write.CHUNK_MAX and len(c) <= write.MAX_CHARS for c in cs)
     assert len(write.chunk_text("x" * 20000)) > 1
+
+
+def _doc(i, date, body, labels="[]"):
+    return f"---\nid: {i}\nkind: doc\ntitle: {i}\ndate: {date}\nauthor: Ann Lee\nlabels: {labels}\n---\n\n{body}\n"
+
+
+def test_single_valued_owner_is_closed_by_a_later_one(store, fake_models, tmp_path):
+    (tmp_path / "a.md").write_text(_doc("a", "2026-06-01T09:00:00Z", "Lukas Brandt owns session-cache."))
+    (tmp_path / "b.md").write_text(_doc("b", "2026-09-01T09:00:00Z", "Mateo Alvarez owns session-cache.", "[session-cache]"))
+    write.ingest_path(store, tmp_path)
+    rows = _q(store, "MATCH (a:Entity)-[r:REL {type:'OWNS'}]->(:Entity) RETURN a.name, r.valid_from_ms, r.valid_to_ms ORDER BY r.valid_from_ms")
+    assert rows[0][0] == "Lukas Brandt" and rows[0][2] == rows[1][1] and rows[1][2] is None
+    # label session-cache on doc b: its chunk mentions the entity once
+    assert _q(store, "MATCH (:Chunk {doc_id:'b'})-[m:MENTIONS]->(e:Entity {key:'session cache'}) RETURN count(m)") == [[1]]
+
+
+def test_patterns_and_generic_filter():
+    from neo_cortex import extract as X
+    ents = {k: {"name": n, "type": t, "conf": 0.9} for k, n, t in [
+        ("viktor sokolov", "Viktor Sokolov", "person"), ("api gateway", "api-gateway", "service"),
+        ("auth service", "auth-service", "service"), ("bankbridge", "bankbridge", "service"),
+        ("bank connector", "bank-connector", "service"), ("tobias wren", "Tobias Wren", "person"),
+        ("adr 005", "ADR-005", "decision")]}
+    wins = ["Viktor owns the gateway.", "The gateway calls auth-service on every request.",
+            "bank-connector (formerly bankbridge) is live.", "Decided by: Tobias Wren (CTO)"]
+    got = {(r["head"], r["type"], r["tail"]) for r in X._relations(ents, wins, [], "ADR-005: rename")}
+    assert got == {("Viktor Sokolov", "OWNS", "api-gateway"), ("api-gateway", "DEPENDS_ON", "auth-service"),
+                   ("bankbridge", "RENAMED_TO", "bank-connector"), ("Tobias Wren", "DECIDED", "ADR-005")}
+    assert all(X._junk(n, "component") for n in ["other services", "Platform engineer", "new file", "config file"])
+    assert not X._junk("Noor Haddad", "person") and not X._junk("session-cache", "service")

@@ -128,6 +128,29 @@ def _refresh_entities(store, eids: list[str], tenant) -> None:
                     "e.last_seen_ms = coalesce(l, e.last_seen_ms)", {"ids": eids}, tenant)
 
 
+_SINGLE = (("OWNS", "tail"), ("MEMBER_OF", "head"))  # one current owner per thing, one current team per person
+
+
+def _supersede(store, eids: list[str], tenant) -> None:
+    """Close the validity of single-valued relations: an edge ends when a later document names a different counterpart."""
+    for rtype, side in _SINGLE:
+        key, other = ("b", "a") if side == "tail" else ("a", "b")
+        rows = store.query(f"MATCH (a:Entity)-[r:REL {{type:$t}}]->(b:Entity) WHERE {key}.id IN $e "
+                           f"RETURN id(r), {key}.id, {other}.id, r.valid_from_ms, r.valid_to_ms", {"t": rtype, "e": eids}, tenant)
+        groups: dict[str, list] = {}
+        for rid, k, o, vf, vt in rows:
+            groups.setdefault(k, []).append((vf or 0, o, rid, vt))
+        upd = []
+        for edges in groups.values():
+            edges.sort()
+            for vf, o, rid, vt in edges:
+                nxt = next((e[0] for e in edges if e[0] > vf and e[1] != o), None)
+                if nxt != vt:
+                    upd.append({"i": rid, "v": nxt})
+        if upd:
+            store.query("UNWIND $r AS x MATCH ()-[r:REL]->() WHERE id(r) = x.i SET r.valid_to_ms = x.v", {"r": upd}, tenant)
+
+
 def _ingest_doc(store, path: Path, tenant) -> dict:
     fm, body, raw = _load(path)
     kind = fm.get("kind") if fm.get("kind") in _KINDS else ("doc" if path.suffix.lower() in _TEXT_EXT else "file")
@@ -144,7 +167,7 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
     author = str(fm["author"]) if fm.get("author") else None
 
     chunks = chunk_text(body, kind) or [body.strip() or title]
-    ex = X.extract_batch(chunks)
+    ex = X.extract_batch(chunks, [title] * len(chunks))
     embs = embed_docs(chunks, [title] * len(chunks))
 
     # one (name -> type, conf) map for the document, then a single resolution pass
@@ -184,6 +207,12 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
             hk, tk = normalize_key(r["head"]), normalize_key(r["tail"])
             if hk in ids and tk in ids:
                 rels.append({"h": ids[hk], "t": ids[tk], "type": r["type"], "conf": r["conf"], "src": cid[i]})
+    lab = {normalize_key(x) for x in labels}  # frontmatter labels that name known entities (auth-service, identity)
+    if lab:
+        known = store.query("MATCH (e:Entity) WHERE e.key IN $k RETURN e.id", {"k": list(lab)}, tenant)
+        have = {(m["c"], m["e"]) for m in men}
+        men += [{"c": c, "e": r[0], "conf": 1.0} for r in known for c in cid if (c, r[0]) not in have]
+        ids.update({f"label:{i}": r[0] for i, r in enumerate(known)})
     if men:
         store.query("UNWIND $rows AS r MATCH (c:Chunk {id:r.c}), (e:Entity {id:r.e}) "
                     "CREATE (c)-[:MENTIONS {conf:r.conf}]->(e)", {"rows": men}, tenant)
@@ -194,7 +223,9 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
         if normalize_key(who) in ids:
             store.query(f"MATCH (e:Entity {{id:$e}}), (d:Document {{id:$d}}) MERGE (e)-[:{edge}]->(d)",
                         {"e": ids[normalize_key(who)], "d": doc_id}, tenant)
-    _refresh_entities(store, list({*ids.values(), *stale}), tenant)
+    touched = list({*ids.values(), *stale})
+    _refresh_entities(store, touched, tenant)
+    _supersede(store, touched, tenant)
     return {"documents": 1, "chunks": len(chunks), "mentions": len(men), "rels": len(rels)}
 
 

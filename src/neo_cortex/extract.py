@@ -89,6 +89,8 @@ _IDS = [(re.compile(r"\bADR-\d+\b"), "decision"), (re.compile(r"\bINC-\d+\b"), "
         (re.compile(r"\b(?!ADR|INC)[A-Z]{2,5}-\d{1,5}\b"), "ticket")]
 
 
+# hyphenated service names the model sometimes misses: <word>-service, api-gateway, bank-connector ...
+_SVC = re.compile(r"\b[a-z][a-z0-9]+(?:-[a-z0-9]+)*-(?:service|gateway|cache|pipeline|connector|dashboard|scoring|bridge)\b")
 _VERSION = re.compile(r"\s+v?\d+(\.\d+)+$")
 _ROLE_TAIL = re.compile(r"\s+(team|teams)$", re.I)
 # fuzzy types need a proper-noun shape (capital letter, or a - _ . / digit inside); plain lowercase words are noise
@@ -106,16 +108,28 @@ def _proper(name: str) -> bool:
     return any(c.isupper() or c in "-_./" or c.isdigit() for c in name)
 
 
+# generic phrases ("Platform engineer", "other services", "config file", "new file") are descriptions, not named things
+_GEN_HEAD = {"other", "new", "old", "same", "this", "that", "some", "all", "each", "every", "any", "current", "main", "enterprise"}
+_GEN_TAIL = {"channel", "engineer", "engineers", "manager", "managers", "file", "files", "note", "notes", "harness", "services",
+             "customers", "accounts", "handbook", "record", "records", "page", "pages", "doc", "docs", "policy", "rules", "rule",
+             "issue", "issues", "request", "requests", "process", "workflow", "team", "teams", "group", "layer", "side", "path"}
+
+
 def _junk(name: str, etype: str = "other") -> bool:
     k = normalize_key(name)
-    return (len(k) < 2 or k in _JUNK or k.isdigit() or len(k.split()) > 4
-            or (etype in _STRICT and not _proper(name)))
+    ws = k.split()
+    if len(k) < 2 or k in _JUNK or k.isdigit() or len(ws) > 4 or (etype in _STRICT and not _proper(name)):
+        return True
+    if etype in ("person", "ticket", "incident", "decision", "customer"):
+        return False
+    return ws[0] in _GEN_HEAD or (len(ws) > 1 and ws[-1] in _GEN_TAIL and "." not in name and "/" not in name)
 
 
-def _schema(m):
-    return (m.create_schema()
-            .entities({k: d for k, (_, d) in ENTITY_LABELS.items()})
-            .relations({k: d for k, (_, d) in REL_LABELS.items()}))
+def _schema(m, entities: bool):
+    sch = m.create_schema()
+    if entities:
+        return sch.entities({k: d for k, (_, d) in ENTITY_LABELS.items()})
+    return sch.relations({k: d for k, (_, d) in REL_LABELS.items()})
 
 
 _NAME = re.compile(r"[A-Z][\w'.-]+(?: [A-Z][\w'.-]+)+")
@@ -144,11 +158,24 @@ def _table_owners(text: str) -> list[tuple[str, str, str]]:
     return out
 
 
-def _shape(raw: dict, text: str = "") -> dict:
+def _ctx_entity(title: str) -> dict | None:
+    """The document's own ADR/ticket/incident id from its title ("ADR-005: ..."), used as the target of "Decided by"."""
+    for pat, etype in _IDS:
+        mt = pat.search(title or "")
+        if mt:
+            return {"name": mt.group(), "type": etype, "conf": 0.95}
+
+
+def _entities(raw: dict, text: str, title: str = "") -> dict[str, dict]:
     ents: dict[str, dict] = {}
     for pat, etype in _IDS:
         for mt in pat.findall(text):
             ents[normalize_key(mt)] = {"name": mt, "type": etype, "conf": 0.95}
+    ctx = _ctx_entity(title)
+    if ctx:
+        ents[normalize_key(ctx["name"])] = ctx
+    for mt in _SVC.findall(text):
+        ents.setdefault(normalize_key(mt), {"name": mt, "type": "service", "conf": 0.9})
     for label, items in raw.get("entities", {}).items():
         etype = ENTITY_LABELS[label][0]
         for it in items:
@@ -161,44 +188,169 @@ def _shape(raw: dict, text: str = "") -> dict:
                 continue
             if k not in ents or conf > ents[k]["conf"]:
                 ents[k] = {"name": name, "type": etype, "conf": round(conf, 4)}
-    rels: dict[tuple, dict] = {}
-    for label, items in raw.get("relation_extraction", {}).items():
-        rtype = REL_LABELS[label][0]
-        heads, tails = REL_TYPES[rtype]
-        for it in items:
-            h, t = _clean(it["head"]["text"]), _clean(it["tail"]["text"])
-            hk, tk = normalize_key(h), normalize_key(t)
-            if it["confidence"] < REL_CONF[rtype] or hk == tk or hk not in ents or tk not in ents:
-                continue  # both ends must be entities that survived typing and the junk filter
-            if ents[hk]["type"] not in heads or ents[tk]["type"] not in tails:
-                continue
-            if rtype == "DEPENDS_ON":  # a dependency endpoint is a service whatever else it was called
-                for k in (hk, tk):
-                    ents[k]["type"] = "service"
-            key = (hk, rtype, tk)
-            if key not in rels or it["confidence"] > rels[key]["conf"]:
-                rels[key] = {"head": ents[hk]["name"], "type": rtype, "tail": ents[tk]["name"],
-                             "conf": round(it["confidence"], 4)}
+    if ctx:
+        ents[normalize_key(ctx["name"])] = ctx
     for who, thing, ttype in _table_owners(text):
         for n, t in ((who, "person"), (thing, ttype)):
             ents[normalize_key(n)] = {"name": n, "type": t, "conf": 0.95}
-        rels[(normalize_key(who), "OWNS", normalize_key(thing))] = {"head": who, "type": "OWNS", "tail": thing, "conf": 0.9}
-    return {"entities": list(ents.values()), "relations": list(rels.values())}
+    return ents
 
 
-def extract_batch(texts: list[str]) -> list[dict]:
-    """One batched GLiNER pass (entities + relations) per text; long texts are split by the library."""
+def _windows(text: str) -> list[str]:
+    """Sentence-sized relation windows: GLiNER pairs entities far better inside one or two sentences than in a chunk."""
+    out = []
+    for line in text.splitlines():
+        line = re.sub(r"^\s*(?:[-*>#]+|\d+\.)\s*", "", line.strip())
+        line = re.sub(r"^\*\*\[[^\]]*\]\s*[^:*]*:\*\*\s*|\*\*|`", "", line)  # chat "**[time] Name:**" prefix, bold, ticks
+        if not line or line.startswith("|") or line.startswith("---"):
+            continue
+        cur = ""
+        for sen in _SENT.split(line):
+            if cur and len((cur + " " + sen).split()) > 40:
+                out.append(cur)
+                cur = ""
+            cur = (cur + " " + sen).strip()
+        if cur:
+            out.append(cur)
+    return [w for w in out if len(w.split()) >= 3]
+
+
+_SENT = re.compile(r"(?<=[.!?])\s+")
+_H, _T = r"(?P<h>§\d+§)", r"(?P<t>§\d+§)"
+_DET = r"(?:the |its |their )?(?:current |new |old |previous |former |sole )?"
+# deterministic patterns over a window whose entity mentions are replaced by §i§; (regex, relation type)
+_PATTERNS = [(re.compile(p, re.I), r) for p, r in [
+    (_H + r",? (?:now |still |also |currently |will )?(?:owns|own|maintains|is responsible for|is on the hook for|took over|takes over|has taken over|is taking over|inherits) " + _T, "OWNS"),
+    (_H + r" (?:is|was|becomes|became|is now|stays|remains) " + _DET + r"(?:owner|maintainer|point person|steward) (?:of|for) " + _T, "OWNS"),
+    (_T + r" (?:is |was |now )?(?:owned|maintained) by " + _H, "OWNS"),
+    (r"owner of " + _T + r" (?:is|was|becomes|became|will be|changes to|moves to) " + _H, "OWNS"),
+    (_T + r" (?:owner|maintainer)(?: is|:| =|,)? " + _H, "OWNS"),
+    (_T + r" (?:moves|moved|is moving|transfers|transferred|is transferred|is handed over|handed over|hands over) from §\d+§ to " + _H, "OWNS"),
+    (_H + r" (?:now |still |also |will )?(?:depends on|relies on|calls|reads (?:its |the |all )?(?:\w+ )?(?:settings|config|configuration|values|keys) from|reads from|talks to|authenticates (?:via|through|against|with)|consumes from|publishes (?:events )?to|needs|requires) " + _T, "DEPENDS_ON"),
+    (r"(?:rename|renamed|renaming|renames) " + _H + r" (?:to|as|into) " + _T, "RENAMED_TO"),
+    (_H + r" (?:was |is |has been |gets |will be |is being )?renamed (?:to|as|into) " + _T, "RENAMED_TO"),
+    (_T + r" \((?:formerly|previously|was|ex-|née|aka|also known as|renamed from)[ :]*(?:called |named |known as )?" + _H + r"\)", "RENAMED_TO"),
+    (_T + r",? (?:formerly|previously|which was|which used to be|used to be|was formerly|was previously|was called|was named)[ :]*(?:called |named |known as )?" + _H, "RENAMED_TO"),
+    (_H + r" (?:is |was |has been |gets |will be )?(?:replaced|superseded) by " + _T, "REPLACED_BY"),
+    (_H + r" (?:has |have )?(?:approved|signed off on|signed off|okayed|ok'd|accepted|green-?lit|gave (?:the )?(?:go-?ahead|approval) (?:for|to|on)) " + _T, "APPROVED"),
+    (_T + r" (?:was |were |is |got )?(?:approved|signed off|accepted) by " + _H, "APPROVED"),
+]]
+
+
+_SELF = [(re.compile(p, re.I), r) for p, r in [
+    (_H + r" (?:made|took) the (?:final )?decision", "DECIDED"),
+    (_H + r" (?:decided|ruled)(?: on it|\b)", "DECIDED"),
+    (_H + r" (?:has |have )?(?:approved|signed off on|signed off|accepted|okayed) (?:it|this|that|the (?:decision|change|proposal|rename|request|plan|record))", "APPROVED"),
+]]
+
+
+def _locate(win: str, ents: dict[str, dict]) -> tuple[str, list[str]]:
+    """Replace entity mentions in `win` by §i§ placeholders (longest first); persons also match by first name."""
+    names = {e["name"]: k for k, e in ents.items()}
+    for k, e in ents.items():
+        if e["type"] == "person" and " " in e["name"]:
+            names.setdefault(e["name"].split()[0], k)
+    tails = {}
+    for k, e in ents.items():  # "the gateway" for api-gateway, when that tail word is unambiguous
+        t = k.split()[-1]
+        if e["type"] in ("service", "component", "tool") and len(k.split()) > 1 and len(t) >= 4 and t not in _JUNK:
+            tails.setdefault(t, []).append(k)
+    names.update({t: ks[0] for t, ks in tails.items() if len(ks) == 1 and t not in names})
+    keys: list[str] = []
+    for n in sorted(names, key=len, reverse=True):
+        if len(n) < 3:
+            continue
+        pat = re.compile(r"(?<![\w§-])" + re.escape(n) + r"(?![\w§-])", 0 if " " not in n and n[0].isupper() else re.I)
+        def sub(_m, k=names[n]):
+            keys.append(k)
+            return f"§{len(keys) - 1}§"
+        win = pat.sub(sub, win)
+    return re.sub(r"\b(?:the|its|their|our|this|that) (§\d+§)", r"\1", win, flags=re.I), keys
+
+
+def _find(ents: dict, text: str) -> str | None:
+    """Entity key for a relation endpoint: exact key, else the unique person whose first/last name it is."""
+    k = normalize_key(text)
+    if k in ents:
+        return k
+    hit = [c for c, e in ents.items() if (e["type"] == "person" and k in (c.split()[0], c.split()[-1]))
+           or (e["type"] in ("service", "component", "tool") and len(k) >= 4 and c.endswith(" " + k))]
+    return hit[0] if len(hit) == 1 else None
+
+
+_BY = re.compile(r"^(?:decided|approved|signed off|accepted)( by)?:?\s", re.I)
+
+
+def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "") -> list[dict]:
+    rels: dict[tuple, dict] = {}
+
+    def add(hk, rtype, tk, conf):
+        heads, tails = REL_TYPES[rtype]
+        if hk == tk or hk not in ents or tk not in ents or ents[hk]["type"] not in heads or ents[tk]["type"] not in tails:
+            return
+        if rtype == "DEPENDS_ON":  # a dependency endpoint is a service whatever else it was called
+            ents[hk]["type"] = ents[tk]["type"] = "service"
+        key = (hk, rtype, tk)
+        if key not in rels or conf > rels[key]["conf"]:
+            rels[key] = {"head": ents[hk]["name"], "type": rtype, "tail": ents[tk]["name"], "conf": round(conf, 4)}
+
+    for raw in gl:  # GLiNER relations, windowed
+        for label, items in raw.get("relation_extraction", {}).items():
+            rtype = REL_LABELS[label][0]
+            for it in items:
+                if it["confidence"] >= REL_CONF[rtype]:
+                    hk, tk = _find(ents, _clean(it["head"]["text"])), _find(ents, _clean(it["tail"]["text"]))
+                    if hk and tk:
+                        add(hk, rtype, tk, it["confidence"])
+    ctx = _ctx_entity(title)
+    ck = normalize_key(ctx["name"]) if ctx else None
+    for win in windows:  # deterministic patterns
+        marked, keys = _locate(win, ents)
+        by = _BY.match(win)
+        if by and ck and by.group(1):  # ADR sections "Decided by: A (CTO)" / "Approved by: B": the target is the document itself
+            rtype = "DECIDED" if win.lower().startswith("decided") else "APPROVED"
+            for i in re.findall(r"§(\d+)§", marked.split("(")[0]):
+                add(keys[int(i)], rtype, ck, 0.9)
+        if ck:  # "A made the decision", "B approved it": the target is the document's own decision or ticket
+            for pat, rtype in _SELF:
+                for mt in pat.finditer(marked):
+                    add(keys[int(mt["h"][1:-1])], rtype, ck, 0.9)
+        for pat, rtype in _PATTERNS:
+            for mt in pat.finditer(marked):
+                add(keys[int(mt["h"][1:-1])], rtype, keys[int(mt["t"][1:-1])], 0.9)
+    return list(rels.values())
+
+
+def extract_batch(texts: list[str], titles: list[str] | None = None) -> list[dict]:
+    """Entities per text (GLiNER, batched), then relations per sentence window (GLiNER plus patterns, batched)."""
     if not texts:
         return []
     m = gliner()
-    run = lambda ts, bs: m.batch_extract_long(ts, _schema(m), batch_size=bs, threshold=0.4,  # noqa: E731
-                                              include_confidence=True, chunk_size=MAX_WORDS)
-    try:
-        raws = run(texts, 4)
-    except torch.cuda.OutOfMemoryError:  # a long chunk batch can exceed a 6 GB card: retry one text at a time
-        torch.cuda.empty_cache()
-        raws = [run([t], 1)[0] for t in texts]
-    return [_shape(r, t) for r, t in zip(raws, texts)]
+
+    def run(ts, schema, bs, **kw):
+        try:
+            return m.batch_extract_long(ts, schema, batch_size=bs, threshold=0.4, include_confidence=True,
+                                        chunk_size=MAX_WORDS, **kw)
+        except torch.cuda.OutOfMemoryError:  # a long batch can exceed a 6 GB card: retry one text at a time
+            torch.cuda.empty_cache()
+            return [m.batch_extract_long([t], schema, batch_size=1, threshold=0.4, include_confidence=True,
+                                         chunk_size=MAX_WORDS)[0] for t in ts]
+
+    titles = titles or [""] * len(texts)
+    ents = [_entities(r, t, ti) for r, t, ti in zip(run(texts, _schema(m, True), 4), texts, titles)]
+    wins = [_windows(t) for t in texts]
+    flat = [w for ws in wins for w in ws]
+    glr = run(flat, _schema(m, False), 16) if flat else []
+    out, i = [], 0
+    for e, ws, t, ti in zip(ents, wins, texts, titles):
+        rels = _relations(e, ws, glr[i:i + len(ws)], ti)
+        i += len(ws)
+        seen = {(normalize_key(r["head"]), r["type"], normalize_key(r["tail"])) for r in rels}
+        for who, thing, _ in _table_owners(t):
+            if (normalize_key(who), "OWNS", normalize_key(thing)) not in seen:
+                rels.append({"head": who, "type": "OWNS", "tail": thing, "conf": 0.9})
+        out.append({"entities": list(e.values()), "relations": rels})
+    return out
 
 
 def extract(text: str) -> dict:
