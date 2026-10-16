@@ -112,7 +112,7 @@ _GENERIC = set("engineer developer manager executive owner reviewer person peopl
                "thing bug error problem rule decision file module library project work month year week day".split())
 ALPHA, BETA, LAMBDA = 0.5, 0.5, 0.5  # PPR restart prob.; share of an entity's mass sent along REL; weight of anchor seeds
 SPEC_POW = 2.0  # idf-like weight squared: hub entities (people on every ticket) must not carry mass
-HOPS, MAX_NODES, PER_ENT, SEEDS = 3, 500, 25, 5
+HOPS, MAX_NODES, PER_ENT, SEEDS, REL_LIMIT = 3, 500, 25, 5, 1000  # REL_LIMIT: strongest neighbour edges read per hop
 
 
 def _content(name):
@@ -203,14 +203,19 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
     nb, ch_of, ent_of = {}, {}, {}  # entity -> {entity: [w, type, fwd]}, entity -> {chunk: conf}, chunk -> {entity: conf}
     front, done = set(ents), set()
     cond = "AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)" if current else ""
+    new_c = set()  # chunks admitted this hop, counted before their entities are added
+    room = lambda: MAX_NODES - len(ents) - len(ent_of) - len(new_c)  # noqa: E731  nodes still allowed; the matrix is this size squared
     for _ in range(HOPS):
-        if not front or len(ents) + len(ent_of) > MAX_NODES:
+        if not front or room() <= 0:
             break
         done |= front
         fe, new_c = set(), set()
         for a, b, bn, bm, t, c, st in store.query(
                 f"MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $ids {cond} RETURN a.id, b.id, b.name, b.mentions, r.type, "
-                "coalesce(r.conf, 0.5), startNode(r).id", {"ids": list(front), "now": now or 0}, tenant):
+                f"coalesce(r.conf, 0.5), startNode(r).id ORDER BY coalesce(r.conf, 0.5) DESC LIMIT {REL_LIMIT}",
+                {"ids": list(front), "now": now or 0}, tenant):
+            if b not in ents and room() <= 0:
+                continue
             ents.setdefault(b, (bn, bm))
             cur = nb.setdefault(a, {}).get(b)
             nb[a][b] = [1 - (1 - (cur[0] if cur else 0)) * (1 - c), t if not cur or c > cur[0] else cur[1], st == a]  # corroborated
@@ -218,23 +223,29 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
         for n, e, mc in store.query(
                 "MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE e.id IN $ids AND (n:Chunk OR n:Memory) RETURN n.id, e.id, coalesce(m.conf, 1.0) "
                 "ORDER BY m.conf DESC LIMIT 3000", {"ids": list(front)}, tenant):  # shortcut: hub entities keep their PER_ENT best chunks
-            if len(ch_of.setdefault(e, {})) < PER_ENT:
-                ch_of[e][n] = mc
-                if n not in ent_of:
-                    new_c.add(n)
+            if len(ch_of.setdefault(e, {})) >= PER_ENT:
+                continue
+            if n not in ent_of and n not in new_c:
+                if room() <= 0:
+                    continue
+                new_c.add(n)
+            ch_of[e][n] = mc
         if new_c:
             for n, e, en, em, mc in store.query(
                     "MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE n.id IN $ids RETURN n.id, e.id, e.name, e.mentions, coalesce(m.conf, 1.0)",
                     {"ids": list(new_c)}, tenant):
-                ent_of.setdefault(n, {})[e] = mc
                 if e not in ents:
+                    if room() <= 0:  # the admitted chunks' slots are already reserved in room()
+                        continue
                     ents[e] = (en, em)
                     fe.add(e)
+                ent_of.setdefault(n, {})[e] = mc
         front = fe - done
-    idx = {k: i for i, k in enumerate([*ents, *ent_of])}
+    idx = {k: i for i, k in enumerate([*ents, *ent_of])}  # a chunk or edge that lost the node budget is dropped here
     P = np.zeros((len(idx), len(idx)))
     for e in ents:
-        r_, m_ = nb.get(e, {}), ch_of.get(e, {})
+        r_ = {b: v for b, v in nb.get(e, {}).items() if b in idx}
+        m_ = {c: mc for c, mc in ch_of.get(e, {}).items() if c in idx}
         wr, wm = sum(v[0] for v in r_.values()), sum(m_.values())
         for b, v in r_.items():
             P[idx[e], idx[b]] += (BETA if wm else 1) * v[0] / wr

@@ -15,6 +15,17 @@ HERE = Path(__file__).parent
 DB_PORT = int(os.environ.get("NEO_TEST_PORT", "6391"))
 
 
+@pytest.fixture(autouse=True)
+def isolated_daemon_url(monkeypatch):
+    """No CLI test reaches the daemon on the default port (a demo may run there): each starts with an unused port, and the daemon
+    fixture or a test's own fake daemon overrides it."""
+    monkeypatch.setenv("NEO_DAEMON_URL", f"http://127.0.0.1:{_free_port()}")
+
+
+def test_no_test_uses_the_default_daemon():
+    assert cli.daemon_url() != cli.DEFAULT_URL  # red without the autouse fixture: NEO_DAEMON_URL unset means 8765
+
+
 def test_parse_args():
     ap = cli.parser()
     a = ap.parse_args(["recall", "who owns auth", "-k", "3", "--tenant", "t"])
@@ -56,7 +67,7 @@ def test_install_claude_prints_and_merges(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     assert cli.install_claude("user", False) == 0
     out = capsys.readouterr().out
-    assert "claude mcp add --transport http --scope user neo-cortex http://127.0.0.1:8765/mcp" in out
+    assert f"claude mcp add --transport http --scope user neo-cortex {cli.daemon_url()}/mcp" in out
     assert not (tmp_path / ".claude").exists()  # nothing written without --yes
     f = tmp_path / ".claude" / "settings.json"
     f.parent.mkdir()
@@ -165,3 +176,25 @@ def test_hook_without_daemon_is_silent(tmp_path):
     assert (r.returncode, r.stdout) == (0, "")
     assert neo(env, "status")[0].returncode == 1
     assert not list(tmp_path.iterdir()), "a hook must never open the DB"
+
+
+def test_cli_rejects_bad_tenant(capsys, monkeypatch):
+    monkeypatch.setattr(cli, "_post", lambda *a, **k: pytest.fail("no daemon call for an invalid tenant"))  # refused before any network
+    assert cli.main(["recall", "x", "--tenant", "acme.eu"]) == 2
+    assert 'tenant "acme.eu" is invalid' in capsys.readouterr().err
+
+
+def test_job_not_found(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_post", lambda *a, **k: json.dumps({"queued": "x", "job": "job_9"}))
+    monkeypatch.setattr(cli, "_get", lambda *a, **k: [])
+    assert cli.ingest(str(tmp_path), None, None, True) == 1
+    assert "job not found" in capsys.readouterr().out
+
+
+def test_status_label_and_empty_graph(monkeypatch, capsys):
+    import io
+    monkeypatch.setattr(cli.urllib.request, "urlopen", lambda url, timeout=0: io.BytesIO(json.dumps({"ok": True, "pending": 0, "done": 1, "errors": 0}).encode()))
+    monkeypatch.setattr(cli, "_post", lambda *a, **k: "0 rows: label | n")
+    assert cli.status() == 0
+    out = capsys.readouterr().out
+    assert "jobs: pending 0, done 1, errors 0" in out and "graph is empty" in out and "ingest-session" not in out

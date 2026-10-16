@@ -8,7 +8,10 @@ GET /health, POST /api/<tool> (JSON args, returns the tool's text), POST /api/in
 GET /api/jobs[?id=] (job status).
 """
 import argparse
+import inspect
+import ipaddress
 import json
+import os
 import queue
 import sys
 import threading
@@ -20,6 +23,8 @@ from starlette.responses import JSONResponse, PlainTextResponse
 
 from . import tools as T
 from .util import now_ms
+
+MAX_BODY = 1_000_000  # bytes; a larger /api body is refused with 413 before it is read
 
 API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "impact", "relate", "read", "ingest", "handoff", "cypher", "dream")
 
@@ -101,7 +106,8 @@ def make_server(store, on_shutdown=None) -> MCPServer:
     @s.tool()
     def relate(head: str, type: str, tail: str, source: str | None = None, supersede: bool = False, agent: str | None = None,
                max_chars: int = 4000) -> str:
-        """Write or correct a typed edge head -[type]-> tail (OWNS, MEMBER_OF, DEPENDS_ON, RENAMED_TO, ...). supersede closes the same-type edge it replaces; source = id or doc."""
+        """Write or correct a typed edge head -[type]-> tail (OWNS, MEMBER_OF, DEPENDS_ON, RENAMED_TO, ...). source = id or doc. supersede=True closes the
+        edge it replaces, only for single-valued types: OWNS, RENAMED_TO, REPLACED_BY (refused for DEPENDS_ON and other multi-valued types)."""
         return T.relate(store, head, type, tail, source, supersede, agent, max_chars)
 
     @s.tool()
@@ -145,7 +151,8 @@ class Jobs:
         job = {"id": f"job_{self.n}", "kind": kind, "target": target, "status": "queued", "queued_ms": now_ms()}
         with self.lock:
             self.byid[job["id"]] = job
-            for old in list(self.byid)[:-100]:  # keep the last 100
+            finished = [k for k, j in self.byid.items() if j["status"] in ("done", "error")]
+            for old in finished[:-100]:  # keep the last 100 finished; a queued or running job is never evicted
                 del self.byid[old]
             if not self.started:
                 self.started = True
@@ -162,7 +169,7 @@ class Jobs:
                 res = fn()
                 job.update(status="done", result=res if isinstance(res, str) else json.dumps(res, separators=(",", ":")))
                 self.stats["done"] += 1
-            except Exception as e:
+            except BaseException as e:  # a SystemExit or KeyboardInterrupt in one job must not kill the worker thread
                 job.update(status="error", error=repr(e))
                 self.stats["errors"] += 1
                 print(f"{job['kind']} {job['target']}: {e!r}", file=sys.stderr, flush=True)
@@ -196,6 +203,9 @@ def _add_api(s, store):
         import anyio
         if (bad := guard(req)):
             return bad
+        n = req.headers.get("content-length", "")
+        if n.isdigit() and int(n) > MAX_BODY:
+            return PlainTextResponse("body over 1 MB", 413)
         tool = req.path_params["tool"]
         try:
             args = await req.json()
@@ -208,21 +218,31 @@ def _add_api(s, store):
             from . import write
             if args.pop("background", False):
                 return JSONResponse({"queued": args["transcript_path"], "job": jobs.submit("session", args["transcript_path"], lambda: write.ingest_session(store, **args))})
-            fn = lambda **a: json.dumps(write.ingest_session(store, **a), separators=(",", ":"))  # noqa: E731
+            fn, target = (lambda **a: json.dumps(write.ingest_session(store, **a), separators=(",", ":"))), write.ingest_session  # noqa: E731
         elif tool == "ingest" and args.pop("background", False):  # a directory ingest can run for minutes: queue it, poll /api/jobs
             if "path_or_text" not in args:
                 return PlainTextResponse("path_or_text required", 400)
             return JSONResponse({"queued": args["path_or_text"], "job": jobs.submit("ingest", args["path_or_text"], lambda: T.ingest(store, **args))})
         elif tool in API_TOOLS:
-            fn = lambda **a: getattr(T, tool)(store, **a)  # noqa: E731
+            target = getattr(T, tool)
+            fn = lambda **a: target(store, **a)  # noqa: E731
         else:
             return PlainTextResponse(f"unknown tool {tool}", 404)
         try:
-            return PlainTextResponse(await anyio.to_thread.run_sync(lambda: fn(**args)))
-        except TypeError as e:  # bad argument names
+            inspect.signature(target).bind(store, **args)
+        except TypeError as e:  # bad argument names; a TypeError raised inside the tool is a server error
             return PlainTextResponse(f"bad arguments: {e}", 400)
+        try:
+            return PlainTextResponse(await anyio.to_thread.run_sync(lambda: fn(**args)))
         except Exception as e:
             return PlainTextResponse(f"{tool} failed: {e!r}", 500)
+
+
+def _loopback(host: str) -> bool:
+    try:
+        return host == "localhost" or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def main(argv=None):
@@ -232,6 +252,10 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--warm", action="store_true", help="load GLiNER and EmbeddingGemma at start instead of on first use")
     a = ap.parse_args(argv)
+    if not _loopback(a.host):
+        if os.environ.get("NEO_ALLOW_REMOTE") != "1":
+            raise SystemExit(f"refusing --host {a.host}: the API has no authentication; bind loopback, or set NEO_ALLOW_REMOTE=1")
+        print(f"WARNING: serving on {a.host} with no authentication (NEO_ALLOW_REMOTE=1)", file=sys.stderr, flush=True)
     from .store import Store
     store = Store()
     lock, closed = threading.Lock(), []

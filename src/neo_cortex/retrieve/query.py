@@ -45,9 +45,14 @@ def parse_time(q: str, now_ms: int | None = None) -> tuple[int | None, int | Non
     today = _ms(dt.datetime.fromtimestamp(now / 1000, dt.timezone.utc).date())
     since, until = [], []
     if m := _BETWEEN.search(q):
-        since.append(_ms(dt.date.fromisoformat(m[1])))
-        until.append(_ms(dt.date.fromisoformat(m[2])) + _DAY)
         q = q[:m.start()] + q[m.end():]
+        try:
+            s0, u0 = _ms(dt.date.fromisoformat(m[1])), _ms(dt.date.fromisoformat(m[2])) + _DAY
+        except ValueError:  # 2026-02-31 is not a date: no window, as the ISO branch below
+            s0 = None
+        if s0 is not None:
+            since.append(s0)
+            until.append(u0)
     for m in _EXPR.finditer(q):
         mod = (m["mod"] or "").lower()
         if m["iso"]:
@@ -69,8 +74,11 @@ def parse_time(q: str, now_ms: int | None = None) -> tuple[int | None, int | Non
             mon = _MONTHS[m["mon"].lower()]
             nd = dt.datetime.fromtimestamp(now / 1000, dt.timezone.utc)
             yr = int(m["yr"]) if m["yr"] else nd.year - (mon > nd.month)
-            s = _ms(dt.date(yr, mon, 1))
-            u = _ms(dt.date(yr + (mon == 12), mon % 12 + 1, 1))
+            try:
+                s = _ms(dt.date(yr, mon, 1))
+                u = _ms(dt.date(yr + (mon == 12), mon % 12 + 1, 1))
+            except (ValueError, OverflowError):  # "December 9999": the next month is past the calendar
+                continue
         if mod in ("since", "from"):
             since.append(s)
         elif mod == "after":

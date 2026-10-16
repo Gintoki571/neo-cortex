@@ -75,7 +75,11 @@ def ingest(path, tenant, max_chars, wait):
         print(f"{job} queued {path}; follow with `neo jobs {job}`")
         return 0
     while True:
-        j = _get(f"/api/jobs?id={job}")[0]
+        js = _get(f"/api/jobs?id={job}")
+        if not js:
+            print("job not found")
+            return 1
+        j = js[0]
         if j["status"] in ("done", "error"):
             print(j.get("result") or j.get("error"))
             return int(j["status"] == "error")
@@ -164,8 +168,9 @@ def status():
     except Exception:
         print(f"daemon: down at {daemon_url()} (start it with `neo serve`)")
         return 1
-    print(f"daemon: up at {daemon_url()}  ingest-session queue: pending {h['pending']}, done {h['done']}, errors {h['errors']}")
-    print(_post("/api/cypher", {"query": "MATCH (n) RETURN labels(n)[0] AS label, count(n) AS n ORDER BY n DESC"}, 30))
+    print(f"daemon: up at {daemon_url()}  jobs: pending {h['pending']}, done {h['done']}, errors {h['errors']}")
+    counts = _post("/api/cypher", {"query": "MATCH (n) RETURN labels(n)[0] AS label, count(n) AS n ORDER BY n DESC"}, 30)
+    print("graph is empty" if counts.startswith("0 rows") else counts)
     return 0
 
 
@@ -204,7 +209,7 @@ def parser():
     p.add_argument("--max-hops", type=int, default=3)
     p = add("relate", "write or correct a typed edge: HEAD TYPE TAIL", "head", "type", "tail")
     p.add_argument("--source", help="chunk/doc/memory id or free text recorded on the edge")
-    p.add_argument("--supersede", action="store_true", help="close the same-type edge it replaces (OWNS: other owners of tail)")
+    p.add_argument("--supersede", action="store_true", help="close the edge it replaces; OWNS, RENAMED_TO, REPLACED_BY only")
     p.add_argument("--agent", default=_agent())
     add("read", "full text of a chunk, memory or document by id", "id")
     p = add("remember", "store one memory", "text")
@@ -257,6 +262,11 @@ def main(argv=None):
         mcp_server.main(["--transport", "http", "--port", str(a.port)] + ["--warm"] * a.warm)
         return 0
     t = a.tenant
+    if t is not None:
+        from .tools import TENANT_RE  # imported only for tool commands; the hooks never reach here
+        if not TENANT_RE.fullmatch(t):
+            print(f'neo: tenant "{t}" is invalid: use only letters, digits, "_" and "-"', file=sys.stderr)
+            return 2
     try:
         if a.cmd == "ingest":
             return ingest(a.path, t, a.max_chars, a.wait)

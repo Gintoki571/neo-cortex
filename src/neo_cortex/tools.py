@@ -3,6 +3,8 @@
 Every line carries ids (pass them back as arguments), kind, date, source and why it matched. Every tool takes
 `max_chars` and truncates with a "narrow with" hint. No LLM here: the calling agent reasons over this evidence.
 """
+import contextlib
+import functools
 import math
 import re
 from datetime import datetime, timedelta, timezone
@@ -30,11 +32,35 @@ def _d(ms) -> str:
     return datetime.fromtimestamp(ms / 1000, timezone.utc).strftime("%Y-%m-%d") if ms else "undated"
 
 
+TENANT_RE = re.compile(r"[A-Za-z0-9_-]+")  # the tenant names the graph neo_<tenant>; other characters would collide (acme.eu vs acme_eu)
+
+
+class BadDate(ValueError):
+    """A since/until that is not an ISO date; tools answer it as text."""
+
+
+def _guarded(fn):
+    """Tool wrapper: an invalid tenant or date becomes a plain text answer instead of an exception."""
+    @functools.wraps(fn)
+    def inner(*a, **k):
+        t = k.get("tenant")
+        if t is not None and not (isinstance(t, str) and TENANT_RE.fullmatch(t)):
+            return f'tenant "{t}" is invalid: use only letters, digits, "_" and "-"'
+        try:
+            return fn(*a, **k)
+        except BadDate as e:
+            return str(e)
+    return inner
+
+
 def _ms(v: str | None, end=False) -> int | None:
     """ISO date or datetime to epoch-ms. A date-only `until` includes that whole day."""
     if not v:
         return None
-    dt = datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+    try:
+        dt = datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+    except ValueError:
+        raise BadDate(f'bad date "{v}": use ISO YYYY-MM-DD (or YYYY-MM-DDTHH:MM)') from None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return int(dt.timestamp() * 1000) + (DAY if end and len(v.strip()) == 10 else 0)
@@ -111,12 +137,14 @@ def _trail(nodes, rels) -> str:
 
 
 def _paths(store, a, b, max_hops, tenant, count=3):
-    """Shortest REL paths between entity ids a and b (both directions): [(nodes [[id,name]], rels [[type,start,src,date,conf]])]."""
-    return store.query(
+    """Shortest current REL paths between entity ids a and b (both directions): [(nodes [[id,name]], rels [[type,start,src,date,conf,ended]])]."""
+    rows = store.query(
         "MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'], "
-        f"maxLen:{min(max(int(max_hops), 1), MAX_HOPS)}, relDirection:'both', pathCount:{int(count)}}}) YIELD path "
-        "RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]",
+        f"maxLen:{min(max(int(max_hops), 1), MAX_HOPS)}, relDirection:'both', pathCount:{int(count) * 4}}}) YIELD path "
+        "RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf, r.valid_to_ms]]",
         {"a": a, "b": b}, tenant)
+    # shortcut: SPpaths cannot filter ended edges, so over-fetch and drop paths through them; a current path longer than the over-fetch is missed
+    return [p for p in rows if all(r[5] is None for r in p[1])][:count]
 
 
 def _path_lines(store, paths, tenant, lead="") -> list[str]:
@@ -130,6 +158,7 @@ def _path_lines(store, paths, tenant, lead="") -> list[str]:
 
 # ---------------------------------------------------------------- brief
 
+@_guarded
 def brief(store, project=None, agent=None, max_chars=MAX, tenant=None) -> str:
     """Session-start context: open handoffs, preferences, decisions, lessons, facts, recent episodes, recent documents."""
     p = {"p": project}
@@ -172,6 +201,7 @@ def brief(store, project=None, agent=None, max_chars=MAX, tenant=None) -> str:
 
 # ---------------------------------------------------------------- recall / remember
 
+@_guarded
 def recall(store, query, k=8, since=None, until=None, kinds=None, max_chars=MAX, tenant=None) -> str:
     rs = _recall(store, query, k=k, since_ms=_ms(since), until_ms=_ms(until, end=True), kinds=kinds, tenant=tenant)
     if not rs:
@@ -180,6 +210,7 @@ def recall(store, query, k=8, since=None, until=None, kinds=None, max_chars=MAX,
                 + [_item(i, r) for i, r in enumerate(rs, 1)], max_chars, "kinds=, since=, or a smaller k")
 
 
+@_guarded
 def remember(store, text, kind=None, about=None, supersedes=None, agent=None, project=None, max_chars=MAX, tenant=None) -> str:
     if kind is not None and kind not in KINDS:
         return f"kind must be one of {', '.join(KINDS)}"
@@ -202,6 +233,7 @@ def remember(store, text, kind=None, about=None, supersedes=None, agent=None, pr
 
 # ---------------------------------------------------------------- ask / explore / connect
 
+@_guarded
 def ask(store, question, max_chars=MAX, tenant=None) -> str:
     """Multi-hop evidence pack. It does not answer: the caller reasons over seeds, paths, facts and cited evidence."""
     pq = parse_query(question)
@@ -226,12 +258,13 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
     if ids:
         facts = store.query(
             "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE (a.id IN $i AND b.id IN $i) OR ((a.id IN $r OR b.id IN $r) AND r.type IN $ty) "
-            "RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id "
-            "ORDER BY r.conf DESC LIMIT 15", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them
+            "RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms "
+            "ORDER BY r.valid_to_ms IS NULL DESC, r.conf DESC LIMIT 15", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them; current first
         if facts:
             src = _src_names(store, [f[5] for f in facts], tenant)
             out.append("## Facts among them")
-            out += [f"- {a} -[{t}]-> {b} ({_d(d)}, conf {c or 0:.2f}) src {src.get(s, s or '?')}" for a, t, b, c, d, s in facts]
+            out += [f"- {a} -[{t}]-> {b} ({_d(d)}{', ended ' + _d(vt) if vt else ''}, conf {c or 0:.2f}) src {src.get(s, s or '?')}"
+                    for a, t, b, c, d, s, vt in facts]
     if ginfo.get("entities"):  # reached by the Personalized PageRank walk: bridging answers (people, owners) show up here
         out.append("## Related entities (graph walk from the seeds, strongest first)")
         out += [f"- [{e}] {n}: {tr}" for e, n, _, tr in ginfo["entities"][:6]]
@@ -254,6 +287,7 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
     return _cap(out, max_chars, "a narrower question")
 
 
+@_guarded
 def explore(store, entity, hops=1, since=None, max_chars=MAX, tenant=None) -> str:
     e = _resolve(store, entity, tenant)
     if not e:
@@ -264,21 +298,21 @@ def explore(store, entity, hops=1, since=None, max_chars=MAX, tenant=None) -> st
     for h in range(1, max(1, min(int(hops), 3)) + 1):
         got = store.query(
             "MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $f RETURN a.name, b.id, b.name, b.type, r.type, startNode(r).id = a.id, "
-            "r.conf, r.valid_from_ms, r.source_id", {"f": front}, tenant)
+            "r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms", {"f": front}, tenant)
         front = []
-        for an, bid, bn, bt, rt, fwd, c, d, s in got:
+        for an, bid, bn, bt, rt, fwd, c, d, s, vt in got:
             if (t0 and (d or 0) < t0) or bid in seen:
                 continue
             front.append(bid)
-            rows.append((h, an, bid, bn, bt, rt, fwd, c, d, s))
+            rows.append((h, an, bid, bn, bt, rt, fwd, c, d, s, vt))
         seen |= set(front)
     src = _src_names(store, [r[9] for r in rows], tenant)
     out = [f"# [{eid}] {name} ({typ})"]
     if rows:
         out.append("## Neighbours")
-        for h, an, bid, bn, bt, rt, fwd, c, d, s in rows:
+        for h, an, bid, bn, bt, rt, fwd, c, d, s, vt in rows:
             arrow = f"-[{rt}]->" if fwd else f"<-[{rt}]-"
-            out.append(f"- {'  ' * (h - 1)}{an} {arrow} [{bid}] {bn} ({bt}) {_d(d)} conf {c or 0:.2f} src {src.get(s, s or '?')}")
+            out.append(f"- {'  ' * (h - 1)}{an} {arrow} [{bid}] {bn} ({bt}) {_d(d)}{', ended ' + _d(vt) if vt else ''} conf {c or 0:.2f} src {src.get(s, s or '?')}")
     docs = store.query("MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.kind, d.date_ms, d.title, count(c) "
                        "ORDER BY count(c) DESC, d.date_ms DESC LIMIT 6", {"i": eid}, tenant)
     if docs:
@@ -292,6 +326,7 @@ def explore(store, entity, hops=1, since=None, max_chars=MAX, tenant=None) -> st
     return _cap(out, max_chars, "hops=1 or since=")
 
 
+@_guarded
 def connect(store, a, b, max_hops=4, max_chars=MAX, tenant=None) -> str:
     ra, rb = _resolve(store, a, tenant), _resolve(store, b, tenant)
     if not ra or not rb:
@@ -305,19 +340,37 @@ def connect(store, a, b, max_hops=4, max_chars=MAX, tenant=None) -> str:
 
 # ---------------------------------------------------------------- impact / relate / read
 
-def _depends(store, ids, n, up, tenant) -> dict:
-    """Transitive DEPENDS_ON over currently valid edges. up=False: entities that depend on `ids`; up=True: what `ids` depend on.
-    Returns {entity id: (hops, [[id, name], ...] chain from that entity toward the start (down) or from the start (up), [source ids])}."""
-    pat = ("p=(s:Entity)-[:REL*1..%d]->(a:Entity)" if up else "p=(a:Entity)-[:REL*1..%d]->(s:Entity)") % min(max(int(n), 1), MAX_HOPS)
-    rows = store.query(f"MATCH {pat} WHERE s.id IN $s AND all(r IN relationships(p) WHERE r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL) "
-                       "RETURN a.id, [x IN nodes(p) | [x.id, x.name]], [r IN relationships(p) | r.source_id] LIMIT 500", {"s": list(ids)}, tenant)
-    best = {}
-    for aid, nodes, srcs in rows:
-        if aid not in ids and (aid not in best or len(nodes) < len(best[aid][1])):
-            best[aid] = (len(nodes) - 1, nodes, srcs)
-    return best
+def _depends(store, ids, n, up, tenant) -> tuple[dict, bool]:
+    """Transitive DEPENDS_ON over current edges, breadth-first in Python: one query per hop with the frontier as an IN list, a visited set.
+    up=False: entities that depend on `ids`; up=True: what `ids` depend on. Returns ({entity id: (hops, [[id, name], ...] chain from that
+    entity toward the start (down) or from the start (up), [source ids])}, capped) where capped means a hop beyond n had entities."""
+    names = {r[0]: r[1] for r in store.query("MATCH (e:Entity) WHERE e.id IN $s RETURN e.id, e.name", {"s": list(ids)}, tenant)}
+    seen, front, best, capped = set(ids), {i: ([[i, names.get(i)]], []) for i in ids}, {}, False
+    for h in range(1, n + 2):
+        if not front:
+            break
+        if up:
+            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE a.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL "
+                              "RETURN b.id, b.name, a.id, r.source_id", {"f": list(front)}, tenant)
+        else:
+            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE b.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL "
+                              "RETURN a.id, a.name, b.id, r.source_id", {"f": list(front)}, tenant)
+        nxt = {}
+        for x, xn, y, src in got:
+            if x in seen or x in nxt:
+                continue
+            p, srcs = front[y]
+            nxt[x] = (p + [[x, xn]], srcs + [src]) if up else ([[x, xn]] + p, [src] + srcs)
+        if h > n:
+            capped = bool(nxt)
+            break
+        best.update({x: (h, p, srcs) for x, (p, srcs) in nxt.items()})
+        seen |= nxt.keys()
+        front = nxt
+    return best, capped
 
 
+@_guarded
 def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
     """Blast radius of `entity` failing: who depends on it (transitively, current DEPENDS_ON edges), what it needs, the current owners of each
     affected component, and the customers and incidents recorded near them. Every edge carries its source."""
@@ -327,7 +380,7 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
     eid, name, typ = e
     n = max(1, min(int(max_hops), 5))
     same = {eid, *(r[0] for r in store.query("MATCH (x:Entity {id:$i})-[r:REL]-(y:Entity) WHERE r.type IN ['RENAMED_TO','REPLACED_BY'] RETURN y.id", {"i": eid}, tenant))}
-    down, up = _depends(store, same, n, False, tenant), _depends(store, same, n, True, tenant)
+    (down, cap_down), (up, cap_up) = _depends(store, same, n, False, tenant), _depends(store, same, n, True, tenant)
     src = _src_names(store, [s for d in (down, up) for *_, ss in d.values() for s in ss], tenant)
 
     def chain(nodes, srcs, rev):
@@ -335,6 +388,8 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
         return " -> ".join(names[::-1] if rev else names) + "  src: " + "; ".join(src.get(s, s or "?") for s in srcs)
 
     out = [f"# impact [{eid}] {name} ({typ}): {len(down)} depend on it, it needs {len(up)} (DEPENDS_ON, current, max_hops {n}; A -> B = A depends on B)"]
+    if cap_down or cap_up:
+        out.append(f"(cut at max_hops {n}: more dependencies exist beyond; raise max_hops, up to {MAX_HOPS})")
     if same - {eid}:
         out.append("(also counting its other names: " + ", ".join(r[0] for r in store.query("MATCH (x:Entity) WHERE x.id IN $i RETURN x.name", {"i": list(same - {eid})}, tenant)) + ")")
     out.append("## Breaks if it fails (nearest first)" if down else "## Breaks if it fails\n- nothing depends on it in the graph")
@@ -347,18 +402,26 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
     for cid, oid, on, ot, d, s in store.query(
             "MATCH (o:Entity)-[r:REL {type:'OWNS'}]->(c:Entity) WHERE c.id IN $c AND r.valid_to_ms IS NULL RETURN c.id, o.id, o.name, o.type, r.valid_from_ms, r.source_id",
             {"c": list(comps) + list(same)}, tenant):
-        owners.setdefault(cid, []).append((oid, on, ot, d, s))
+        if oid not in [o[0] for o in owners.get(cid, [])]:  # one line per owner, however many OWNS edges say so
+            owners.setdefault(cid, []).append((oid, on, ot, d, s))
     teams = [o[0] for os_ in owners.values() for o in os_ if o[2] == "team"]
     members = {}
     if teams:
         for tid, pn in store.query("MATCH (p:Entity)-[r:REL {type:'MEMBER_OF'}]->(t:Entity) WHERE t.id IN $t AND r.valid_to_ms IS NULL RETURN t.id, p.name", {"t": teams}, tenant):
             members.setdefault(tid, []).append(pn)
     osrc = _src_names(store, [o[4] for os_ in owners.values() for o in os_], tenant)
-    out.append("## Owners to tell (current OWNS)")
+    by_owner, none = {}, []  # one line per owner, with every affected component they own
     for cid, cn in comps.items():
         os_ = owners.get(cid) or next((owners[s] for s in same if s in owners and cid == eid), None)
-        out.append(f"- {cn}: " + ("; ".join(f"[{o[0]}] {o[1]}{' (' + ', '.join(members[o[0]][:6]) + ')' if o[0] in members else ''} since {_d(o[3])} src {osrc.get(o[4], o[4] or '?')}" for o in os_)
-                                  if os_ else "no current owner recorded"))
+        if not os_:
+            none.append(cn)
+        for o in os_ or []:
+            by_owner.setdefault(o[0], (o, []))[1].append(f"{cn} since {_d(o[3])} src {osrc.get(o[4], o[4] or '?')}")
+    out.append("## Owners to tell (current OWNS)")
+    for oid, (o, owned) in by_owner.items():
+        out.append(f"- [{oid}] {o[1]}" + (f" ({', '.join(members[oid][:6])})" if oid in members else "") + " owns: " + "; ".join(owned))
+    if none:
+        out.append("- no current owner recorded: " + ", ".join(none))
     near = {}
     for kid, kn, kt, an, cnt, cids in store.query(
             "MATCH (c:Chunk)-[:MENTIONS]->(a:Entity), (c)-[:MENTIONS]->(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND k.id <> a.id "
@@ -381,17 +444,22 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
 
 
 REL_NAMES = ("OWNS", "MEMBER_OF", "DEPENDS_ON", "CAUSED_BY", "FIXED_BY", "APPROVED", "DECIDED", "PART_OF", "WORKS_ON", "REPORTED", "REPLACED_BY", "RENAMED_TO", "RELATED_TO")
+SUPERSEDABLE = ("OWNS", "RENAMED_TO", "REPLACED_BY")  # single-valued: a new one replaces the current one
 _ENDS = {"OWNS": ("person", "service"), "MEMBER_OF": ("person", "team"), "DEPENDS_ON": ("service", "service"), "CAUSED_BY": ("incident", "other"),
          "FIXED_BY": ("incident", "other"), "APPROVED": ("person", "decision"), "DECIDED": ("person", "decision"), "PART_OF": ("service", "service"),
          "WORKS_ON": ("person", "ticket"), "REPORTED": ("person", "incident"), "REPLACED_BY": ("service", "service"), "RENAMED_TO": ("service", "service")}
 
 
+@_guarded
 def relate(store, head, type, tail, source=None, supersede=False, agent=None, max_chars=MAX, tenant=None) -> str:
     """Write (or correct) one typed edge head -[type]-> tail from now on. Names or ids; unknown names become new entities. supersede=True first
-    closes the current same-type edge it replaces (OWNS: other owners of `tail`; other types: other `type` edges from `head`)."""
+    closes the current edge it replaces: OWNS (other owners of `tail`), RENAMED_TO and REPLACED_BY (other edges from `head`). Other types
+    are multi-valued, so supersede is refused for them."""
     t = re.sub(r"\W+", "_", type.strip()).upper()
     if t not in REL_NAMES:
         return f"type must be one of {', '.join(REL_NAMES)}"
+    if supersede and t not in SUPERSEDABLE:
+        return f"supersede only applies to single-valued types ({', '.join(SUPERSEDABLE)}); {t} edges accumulate, so add it without supersede"
     from .resolve import resolve_entity
     ids = []
     for n, ty in zip((head, tail), _ENDS.get(t, ("other", "other"))):
@@ -404,22 +472,24 @@ def relate(store, head, type, tail, source=None, supersede=False, agent=None, ma
     if a == b:
         return "head and tail are the same entity"
     names = {r[0]: r[1] for r in store.query("MATCH (e:Entity) WHERE e.id IN $i RETURN e.id, e.name", {"i": ids}, tenant)}
-    cur = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL RETURN r.valid_from_ms, r.source_id", {"a": a, "b": b, "t": t}, tenant)
-    line = f"[{a}] {names[a]} -[{t}]-> [{b}] {names[b]}"
-    if cur:
-        return f"already current since {_d(cur[0][0])}: {line} (nothing written)"
-    now, closed = now_ms(), []
-    if supersede:
-        pat = ("(x:Entity)-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE x.id <> $a" if t == "OWNS" else "(x:Entity {id:$a})-[r:REL {type:$t}]->(y:Entity) WHERE y.id <> $b")
-        for xn, yn, vf in store.query(f"MATCH {pat} AND r.valid_to_ms IS NULL SET r.valid_to_ms=$n RETURN {'x.name, b.name' if t == 'OWNS' else 'x.name, y.name'}, r.valid_from_ms",
-                                      {"a": a, "b": b, "t": t, "n": now}, tenant):
-            closed.append(f"closed {xn} -[{t}]-> {yn} (valid since {_d(vf)}, ended {_d(now)})")
-    store.query("MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CREATE (a)-[:REL {type:$t, conf:1.0, source_id:$s, valid_from_ms:$n, agent:$g, created_ms:$n}]->(b)",
-                {"a": a, "b": b, "t": t, "s": source, "n": now, "g": agent}, tenant)
+    with getattr(store, "write_lock", contextlib.nullcontext()):  # check and create must not interleave with another writer
+        cur = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL RETURN r.valid_from_ms, r.source_id", {"a": a, "b": b, "t": t}, tenant)
+        line = f"[{a}] {names[a]} -[{t}]-> [{b}] {names[b]}"
+        if cur:
+            return f"already current since {_d(cur[0][0])}: {line} (nothing written)"
+        now, closed = now_ms(), []
+        if supersede:
+            pat = ("(x:Entity)-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE x.id <> $a" if t == "OWNS" else "(x:Entity {id:$a})-[r:REL {type:$t}]->(y:Entity) WHERE y.id <> $b")
+            for xn, yn, vf in store.query(f"MATCH {pat} AND r.valid_to_ms IS NULL SET r.valid_to_ms=$n RETURN {'x.name, b.name' if t == 'OWNS' else 'x.name, y.name'}, r.valid_from_ms",
+                                          {"a": a, "b": b, "t": t, "n": now}, tenant):
+                closed.append(f"closed {xn} -[{t}]-> {yn} (valid since {_d(vf)}, ended {_d(now)})")
+        store.query("MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CREATE (a)-[:REL {type:$t, conf:1.0, source_id:$s, valid_from_ms:$n, agent:$g, created_ms:$n}]->(b)",
+                    {"a": a, "b": b, "t": t, "s": source, "n": now, "g": agent}, tenant)
     src = _src_names(store, [source], tenant).get(source, source) if source else "none given"
     return _cap([f"created {line} valid from {_d(now)} by {agent or 'unknown agent'}, src {src}", *closed], max_chars, "a smaller max_chars")
 
 
+@_guarded
 def read(store, id, max_chars=MAX, tenant=None) -> str:
     """Full text of a Chunk, Memory or Document by id, with metadata and neighbours (recall/ask cut evidence at 240 characters)."""
     q = lambda c: store.query(c, {"i": id}, tenant)  # noqa: E731
@@ -463,6 +533,7 @@ def read(store, id, max_chars=MAX, tenant=None) -> str:
 
 # ---------------------------------------------------------------- who / timeline
 
+@_guarded
 def who(store, topic, max_chars=MAX, tenant=None) -> str:
     seeds = ch.link_entities(store, [{"name": topic, "type": "other"}], topic, tenant)
     seeds = {i: v for i, v in seeds.items() if v[1] >= 1.0} or seeds  # an exact Entity.key match wins over fuzzy and embedding seeds
@@ -560,7 +631,8 @@ def _evidence(store, topic, eid, terms, t0, t1, tenant) -> list[tuple[int, str, 
             for r in _recall(store, topic, k=12, since_ms=t0, until_ms=t1, tenant=tenant)]
     if eid:
         hits += [(dt or 0, did, text, True) for did, dt, text in store.query(
-            "MATCH (d:Document)-[:HAS_CHUNK]->(c:Chunk)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.date_ms, c.text", {"i": eid}, tenant)]
+            "MATCH (d:Document)-[:HAS_CHUNK]->(c:Chunk)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.date_ms, c.text "
+            "ORDER BY coalesce(d.date_ms, 0) DESC LIMIT 200", {"i": eid}, tenant)]
     out, seen = [], set()
     for d, ref, text, ent in sorted(hits, key=lambda h: (h[0], h[1])):
         for score, s in _sents(text, terms, any_topic=ent):
@@ -570,6 +642,7 @@ def _evidence(store, topic, eid, terms, t0, t1, tenant) -> list[tuple[int, str, 
     return out
 
 
+@_guarded
 def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -> str:
     """Dated events about a topic, oldest first. "Changes:" holds the strongest change sentences (number or change verb, mentioning the
     topic) from recall and from the entity's chunks, as "YYYY-MM-DD [doc id] sentence". "Events:" holds relation changes with effective
@@ -581,8 +654,8 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
     if e:
         eid, name, typ = e
         head = f"# timeline [{eid}] {name} ({typ})"
-        edges = store.query("MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf, r.valid_to_ms",
-                            {"i": eid}, tenant)
+        edges = store.query("MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf, r.valid_to_ms "
+                            "ORDER BY coalesce(r.valid_from_ms, 0) DESC LIMIT 200", {"i": eid}, tenant)  # shortcut: the newest 200 per query bound the render
         # same relation type from the same side: a change of the other end is a change of value, not a new fact
         groups = {}
         for o, on, t, fwd, d, s, c, vt in edges:
@@ -601,8 +674,8 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
         for mid, kind, d, text, st, by, bd in store.query(
                 "MATCH (m:Memory)-[:MENTIONS]->(e:Entity {id:$i}) WHERE m.status <> 'merged' "
                 "OPTIONAL MATCH (n:Memory)-[:SUPERSEDES]->(m) WHERE n.status <> 'merged' "
-                "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms)",
-                {"i": eid}, tenant):
+                "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms) "
+                "ORDER BY coalesce(m.valid_from_ms, m.created_ms) DESC LIMIT 200", {"i": eid}, tenant):
             tag = f" SUPERSEDED on {_d(bd)} by [{by}]" if st == "superseded" else ""
             ev.append((d or 0, f"{_d(d)} memory [{mid}] {kind}{tag}: {_t(text, 200)}", 2, 1))
         terms = {normalize_key(x) for x in (name, *[a for a in (store.query("MATCH (e:Entity {id:$i}) RETURN e.aliases", {"i": eid}, tenant)[0][0] or [])])} | tterms
@@ -625,16 +698,20 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
             out.append(f"…{len(ev) - len(keep)} more, narrow with since=/until=")
         return "\n".join(out)
 
+    # drop the least informative events until the estimated size fits, then render once (the estimate ignores the headers and the note)
+    size = sum(len(x[1]) + 1 for x in ev) + len(head) + 80
     keep = set(range(len(ev)))
     for i in sorted(range(len(ev)), key=lambda i: (ev[i][2], i)):
-        if len(render(keep)) <= max_chars:
+        if size <= max_chars:
             break
         keep.discard(i)
+        size -= len(ev[i][1]) + 1
     return _cap(render(keep).split("\n"), max_chars, "since=/until=", tail=True)
 
 
 # ---------------------------------------------------------------- ingest / handoff / cypher
 
+@_guarded
 def ingest(store, path_or_text, kind=None, max_chars=MAX, tenant=None) -> str:
     if kind is not None and kind not in DOC_KINDS:
         return f"kind must be one of {', '.join(DOC_KINDS)}"
@@ -651,6 +728,7 @@ def ingest(store, path_or_text, kind=None, max_chars=MAX, tenant=None) -> str:
     return _cap([f"ingested {p}: " + ", ".join(f"{k} {v}" for k, v in c.items())], max_chars, "a smaller path")
 
 
+@_guarded
 def handoff(store, to=None, summary=None, tasks=None, from_agent=None, done=None, max_chars=MAX, tenant=None) -> str:
     """Create a Handoff for agent `to` (shown in its brief), or mark handoff `done` complete."""
     if done:
@@ -658,6 +736,8 @@ def handoff(store, to=None, summary=None, tasks=None, from_agent=None, done=None
         return f"handoff [{done}] marked done: {_t(r[0][0], 120)}" if r else f"handoff {done} not found"
     if not to or not summary:
         return "handoff needs `to` and `summary` (or `done=<id>`)"
+    to, from_agent, summary = (None if v is None else str(v) for v in (to, from_agent, summary))  # JSON callers may send numbers
+    tasks = [str(t) for t in tasks or []]
     hid = new_id("hand")
     store.query("CREATE (:Handoff {id:$i, summary:$s, tasks:$t, status:'open', created_ms:$c})",
                 {"i": hid, "s": summary, "t": list(tasks or []), "c": now_ms()}, tenant)
@@ -679,24 +759,29 @@ def _val(v) -> str:
     return _t(str(v), 200)
 
 
+@_guarded
 def cypher(store, query, limit=50, max_chars=MAX, tenant=None) -> str:
     """Read-only Cypher via GRAPH.RO_QUERY; adds LIMIT when missing, caps rows and characters."""
     q = query.strip().rstrip(";")
     limit = max(1, min(int(limit), 500))
-    if not re.search(r"\blimit\s+\d+\s*$", q, re.I):
-        q += f" LIMIT {limit}"
+    m = re.search(r"\blimit\s+(\d+)\s*$", q, re.I)
+    if m:  # the query's own LIMIT, if smaller, is the cap; one extra row shows whether more exist
+        q, cap = q[:m.start()].rstrip(), min(int(m[1]), limit)
+    else:
+        cap = limit
     try:
-        res = store.graph(tenant).ro_query(q, timeout=10000)
+        res = store.graph(tenant).ro_query(f"{q} LIMIT {cap + 1}", timeout=10000)
     except Exception as e:
         return f"rejected or failed (read-only): {_t(str(e), 300)}"
-    rows = res.result_set[:limit]
-    out = [f"{len(rows)} rows" + (f" (capped at {limit})" if len(res.result_set) > limit else "") + ": " + " | ".join(str(h[1] if isinstance(h, (list, tuple)) else h) for h in res.header)]
+    rows = res.result_set[:cap]
+    out = [f"{len(rows)} rows" + (f" (capped at {cap})" if len(res.result_set) > cap else "") + ": " + " | ".join(str(h[1] if isinstance(h, (list, tuple)) else h) for h in res.header)]
     out += [" | ".join(_val(c) for c in r) for r in rows]
     return _cap(out, max_chars, "RETURN fewer columns or a smaller LIMIT")
 
 
 # ---------------------------------------------------------------- dream
 
+@_guarded
 def dream(store, dry_run=False, max_chars=MAX, tenant=None) -> str:
     """Memory consolidation (merge duplicates, promote recurring episodes, decay, flag conflicts). dry_run writes nothing."""
     r = _dream(store, tenant=tenant, dry_run=dry_run)

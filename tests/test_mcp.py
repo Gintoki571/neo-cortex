@@ -82,3 +82,63 @@ def test_http_subprocess_no_orphan(tmp_path, sig):
             raise
     time.sleep(0.5)
     assert not _redis_pids(db_port), "orphan redis-server after shutdown"
+
+
+def test_api_type_error_inside_tool_is_500(g):  # noqa: F811
+    from starlette.testclient import TestClient
+    http = TestClient(make_server(g).streamable_http_app(), base_url="http://127.0.0.1")
+    r = http.post("/api/handoff", json={"to": "codex", "summary": "x", "tasks": 5})  # the tool itself raises TypeError
+    assert r.status_code == 500 and "failed" in r.text
+    r = http.post("/api/handoff", json={"to": "codex", "summary": "x", "tsks": ["a"]})  # a wrong argument name is the caller's fault
+    assert r.status_code == 400 and "bad arguments" in r.text
+
+
+def test_remote_host_needs_opt_in(monkeypatch, capsys, tmp_path):
+    from neo_cortex import mcp_server, store
+    monkeypatch.setenv("NEO_HOME", str(tmp_path))  # never the user's default DB
+    monkeypatch.delenv("NEO_ALLOW_REMOTE", raising=False)
+    with pytest.raises(SystemExit, match="NEO_ALLOW_REMOTE"):  # refused before the store is opened
+        mcp_server.main(["--host", "0.0.0.0"])
+    monkeypatch.setenv("NEO_ALLOW_REMOTE", "1")
+    monkeypatch.setattr(store, "Store", lambda: (_ for _ in ()).throw(RuntimeError("store reached")))
+    with pytest.raises(RuntimeError, match="store reached"):
+        mcp_server.main(["--host", "0.0.0.0"])
+    assert "no authentication" in capsys.readouterr().err  # the opt-in is announced
+
+
+def test_api_body_over_1mb_is_413(g):  # noqa: F811
+    from starlette.testclient import TestClient
+    http = TestClient(make_server(g).streamable_http_app(), base_url="http://127.0.0.1")
+    assert http.post("/api/recall", json={"query": "auth"}).status_code == 200
+    assert http.post("/api/recall", json={"query": "x" * 1_100_000}).status_code == 413
+
+
+def test_jobs_evict_only_finished():
+    import threading as th
+    from neo_cortex.mcp_server import Jobs
+    j, block = Jobs(), th.Event()
+    ids = [j.submit("x", "t", lambda: block.wait(5))]  # holds the single worker
+    ids += [j.submit("x", "t", lambda: "ok") for _ in range(105)]  # queued, unfinished
+    assert all(i in j.byid for i in ids)  # an unfinished job is never evicted
+    block.set()
+    for _ in range(100):
+        if j.stats["done"] + j.stats["errors"] == 106:
+            break
+        time.sleep(0.05)
+    j.submit("x", "t", lambda: "ok")
+    assert len(j.byid) <= 101 and ids[-1] in j.byid  # finished ones beyond the newest 100 go
+
+
+def test_worker_survives_base_exception():
+    from neo_cortex.mcp_server import Jobs
+    j = Jobs()
+
+    def boom():
+        raise SystemExit(3)  # a BaseException, not an Exception: must not kill the worker
+    bad = j.submit("x", "t", boom)
+    good = j.submit("x", "t", lambda: "ok")
+    for _ in range(100):
+        if j.byid[good]["status"] == "done":
+            break
+        time.sleep(0.05)
+    assert j.byid[bad]["status"] == "error" and j.byid[good]["status"] == "done"

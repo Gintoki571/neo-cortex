@@ -253,3 +253,23 @@ def test_linking_drops_generic_and_junk(g):
     assert ch.link_entities(g, e("configuration edit"), "zzz") == {}
     assert "e_auth" in ch.link_entities(g, e("auth"), "how does the auth flow work")  # a rare content word of the entity name
     assert len(ch.link_entities(g, e("checkout"), "checkout auth platform team session ttl", cap=2)) <= 2
+
+
+def test_ppr_bounds_nodes_within_a_hop(g):
+    """A hub with 1500 REL neighbours must not grow the dense matrix past MAX_NODES inside one hop."""
+    g.query("CREATE (:Entity {id:'e_big', name:'Big Hub', key:'big hub', type:'service', mentions:1})")
+    ids = [f"n{i}" for i in range(1500)]
+    g.query("UNWIND $ids AS i CREATE (:Entity {id:i, name:i, key:i, type:'service', mentions:1})", {"ids": ids})
+    g.query("UNWIND $ids AS i MATCH (a:Entity {id:'e_big'}), (b:Entity {id:i}) "
+            "CREATE (a)-[:REL {type:'RELATED_TO', conf:0.5, source_id:'x', valid_from_ms:1}]->(b)", {"ids": ids})
+    mass, _, _ = ch.ppr(g, {"e_big": 1.0}, {})
+    assert 0 < len(mass) <= ch.MAX_NODES
+    assert abs(sum(mass.values()) - 1) < 1e-6
+
+
+def test_invalid_calendar_dates_skipped():
+    assert parse_time("between 2026-02-30 and 2026-03-02") == (None, None)  # not a date: no window, no exception
+    assert parse_time("events in 2026-02-31") == (None, None)
+    assert parse_time("December 9999") == (None, None)  # the month after December 9999 is out of range
+    assert parse_time("since December 9999") == (None, None)
+    assert parse_time("between 2026-03-01 and 2026-03-02")[0] is not None  # valid ranges still work

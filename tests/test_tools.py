@@ -196,12 +196,10 @@ def test_relate_creates_supersedes_and_validates(g):
     cur = g.query("MATCH (x:Entity)-[r:REL {type:'OWNS'}]->(:Entity {id:'e_auth'}) WHERE r.valid_to_ms IS NULL RETURN x.name")
     assert cur == [["Priya Shah"]]
     assert "Priya Shah -[OWNS]-> Auth Service" in tools.who(g, "Auth Service")
-    # unknown names become entities; an unsupported type is refused; supersede on a non-OWNS type closes the head's same-type edges
+    # unknown names become entities; an unsupported type is refused
     assert tools.relate(g, "Zed Service", "DEPENDS_ON", "Checkout").startswith("created")
     assert g.query("MATCH (e:Entity {key:'zed service'}) RETURN e.type") == [["service"]]
     assert tools.relate(g, "Zed Service", "LOVES", "Checkout").startswith("type must be")
-    out = tools.relate(g, "Zed Service", "DEPENDS_ON", "Auth Service", supersede=True)
-    assert out.count("closed") == 1 and "closed Zed Service -[DEPENDS_ON]-> Checkout" in out
     assert "same entity" in tools.relate(g, "Checkout", "PART_OF", "e_ck")
     assert "Zed Service" in tools.impact(g, "Auth Service")  # a written edge is immediately part of the graph
 
@@ -284,3 +282,107 @@ def test_who_exact_entity_beats_fuzzy_neighbour(g):
     assert out.splitlines()[0].endswith("(entities: payment-gateway), ranked, with evidence")  # the fuzzy neighbour is not a seed
     assert out.splitlines()[1].startswith("1. [e_dan] Daniel Kwon")  # direct current owner first
     assert out.index("Daniel Kwon") < out.index("Viktor Sokolov")  # Viktor's document score alone is higher than Daniel's 0.5 path
+
+
+def test_ask_marks_ended_edges_and_skips_ended_paths(g):
+    g.query("MATCH (:Entity {id:'e_ck'})-[r:REL {type:'DEPENDS_ON'}]->(:Entity {id:'e_auth'}) SET r.valid_to_ms=$d", {"d": ms("2026-09-01T00:00:00")})
+    out = tools.ask(g, "who owns Auth Service and how does Checkout connect to it")
+    print(out)
+    assert "Checkout -[DEPENDS_ON]-> Auth Service (2025-09-01, ended 2026-09-01, conf" in out  # ended, not presented as current
+    assert "## Bridging paths" not in out  # the only Checkout-Auth path is an ended edge
+    assert "ended 2026-09-01" in tools.explore(g, "Checkout")  # explore marks ended neighbours like read does
+    assert "No path" in tools.connect(g, "Priya Shah", "Checkout")
+
+
+def test_impact_bfs_caps_dedupes_owners_and_customers(g):
+    _chain(g)
+    q = g.query
+    q("CREATE (:Entity {id:'e_y1', name:'Ledger Export', key:'ledger export', type:'service', mentions:1}), "
+      "(:Entity {id:'e_y2', name:'Ledger Sync', key:'ledger sync', type:'service', mentions:1}), "
+      "(:Entity {id:'e_y3', name:'Ledger Store', key:'ledger store', type:'service', mentions:1}), "
+      "(:Entity {id:'e_wid', name:'Widget Works', key:'widget works', type:'product', mentions:1})")
+    q("MATCH (a:Entity {id:'e_y1'}), (b:Entity {id:'e_y2'}), (c:Entity {id:'e_y3'}), (s:Entity {id:'e_auth'}) "
+      "CREATE (a)-[:REL {type:'DEPENDS_ON', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(b), "
+      "(b)-[:REL {type:'DEPENDS_ON', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(c), "
+      "(c)-[:REL {type:'DEPENDS_ON', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(s)", {"d": ms("2026-04-01T00:00:00")})
+    q("MATCH (w:Entity {id:'e_wid'}), (c:Chunk {id:'d1#0'}) CREATE (c)-[:MENTIONS {conf:1.0}]->(w)")
+    for src in ("d1#0", "d1#1", "d2#0"):  # Zoe's ownership of Web recorded three times
+        q("MATCH (z:Entity {id:'e_zoe'}), (a:Entity {id:'e_web'}) CREATE (z)-[:REL {type:'OWNS', conf:0.9, source_id:$s, valid_from_ms:$d}]->(a)",
+          {"s": src, "d": ms("2026-04-01T00:00:00")})
+    out = tools.impact(g, "Auth Service", max_hops=2)
+    print(out)
+    assert "Ledger Export" not in out and "Ledger Sync" in out  # hop 3 is beyond max_hops 2
+    assert "cut at max_hops 2" in out  # the cap is reported, not silent
+    assert out.split("## Owners to tell")[1].count("[e_zoe] Zoe Park") == 1  # one line per owner, however many OWNS edges
+    assert "Widget Works" not in out  # only entities typed customer are listed as customers
+    assert "Acme Corp" in out
+    full = tools.impact(g, "Auth Service", max_hops=3)
+    assert "Ledger Export" in full and "cut at" not in full
+
+
+def test_relate_supersede_only_single_valued(g):
+    out = tools.relate(g, "Zed Service", "DEPENDS_ON", "Auth Service", supersede=True)
+    assert out.startswith("supersede only applies to single-valued types") and "DEPENDS_ON" in out
+    assert g.query("MATCH (e:Entity {key:'zed service'}) RETURN count(e)") == [[0]]  # refused before anything is written
+    assert tools.relate(g, "Auth Service", "RENAMED_TO", "Checkout", supersede=True).startswith("created")  # single-valued: allowed
+
+
+def test_handoff_coerces_fields(g):
+    out = tools.handoff(g, to=7, summary=42, tasks=[1, "x"], from_agent=None)
+    assert out.startswith("handoff [")  # non-string fields from the JSON API are stored as strings
+    brief = tools.brief(g, agent="7")
+    assert "42" in brief and "tasks: 1; x" in brief  # and brief still renders them
+
+
+def test_tenant_name_validated(g):
+    out = tools.brief(g, tenant="acme.eu")  # "acme.eu" and "acme_eu" would share a graph name: refused, not coerced
+    assert out.startswith('tenant "acme.eu" is invalid')
+    assert tools.recall(g, "auth", tenant="acme eu").startswith("tenant")
+    assert not tools.brief(g, tenant="acme-eu").startswith("tenant")
+
+
+def test_bad_since_is_text(g):
+    assert tools.recall(g, "auth", since="2026-02-31") == 'bad date "2026-02-31": use ISO YYYY-MM-DD (or YYYY-MM-DDTHH:MM)'
+    assert tools.timeline(g, "Auth Service", until="soon").startswith('bad date "soon"')
+    assert tools.explore(g, "Auth Service", since="next week").startswith("bad date")
+
+
+def test_timeline_caps_to_newest_events(g):
+    rows = [{"id": f"mx{i:03d}", "t": "Auth Service note was recorded", "d": ms("2025-01-01T00:00:00") + i * 86400000} for i in range(260)]  # no digits: not a change record
+    g.query("UNWIND $r AS x CREATE (:Memory {id:x.id, kind:'semantic', text:x.t, status:'active', confidence:0.9, created_ms:x.d, valid_from_ms:x.d, uses:0})",
+            {"r": rows})
+    g.query("UNWIND $r AS x MATCH (m:Memory {id:x.id}), (e:Entity {id:'e_auth'}) CREATE (m)-[:MENTIONS {conf:1.0}]->(e)", {"r": rows})
+    out = tools.timeline(g, "Auth Service", max_chars=100000)
+    assert "[mx259]" in out and "[mx000]" not in out  # the newest 200 events are queried, not the whole history
+    assert len(out) <= 100000
+
+
+def test_cypher_limit_in_query(g, monkeypatch):
+    seen, real = [], g.graph
+
+    class Spy:
+        def __init__(self, graph):
+            self.graph = graph
+
+        def ro_query(self, q, **kw):
+            seen.append(q)
+            return self.graph.ro_query(q, **kw)
+    monkeypatch.setattr(g, "graph", lambda tenant=None: Spy(real(tenant)))
+    out = tools.cypher(g, "MATCH (e:Entity) RETURN e.name LIMIT 100000", limit=3)
+    assert seen[-1].endswith("LIMIT 4") and "100000" not in seen[-1]  # the cap is in the query, not applied after fetching everything
+    assert out.startswith("3 rows (capped at 3)")
+
+
+def test_relate_check_and_create_hold_the_write_lock(g):
+    class Spy:
+        def __init__(self):
+            self.entered = 0
+
+        def __enter__(self):
+            self.entered += 1
+
+        def __exit__(self, *exc):
+            return False
+    spy = g.write_lock = Spy()  # the lock Store exposes for the write path
+    out = tools.relate(g, "Priya Shah", "OWNS", "Checkout", source="d1#0")
+    assert out.startswith("created") and spy.entered == 1  # the check and the create run under one lock acquisition
