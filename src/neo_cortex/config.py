@@ -4,8 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+ROOT = Path(__file__).resolve().parents[2]  # repo root: model dirs live there, not in the cwd
+
+
 def _local_or(name: str, hub_id: str) -> str:
-    p = Path(name).resolve()
+    p = ROOT / name
     return str(p) if p.exists() else hub_id
 
 

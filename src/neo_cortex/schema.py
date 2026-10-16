@@ -2,8 +2,9 @@
 DIM = 768
 
 _VECTOR = [("Memory", "emb"), ("Chunk", "emb"), ("Entity", "emb")]
-_RANGE = [(l, "id") for l in ("Memory", "Chunk", "Entity", "Document", "Session", "Agent", "Person")] + [
-    ("Entity", "key"), ("Memory", "created_at"), ("Memory", "valid_from")]
+_RANGE = [(l, "id") for l in ("Memory", "Chunk", "Entity", "Document", "Session", "Agent", "Handoff", "Judgment")] + [
+    ("Entity", "key"), ("Entity", "type"), ("Memory", "created_ms"), ("Memory", "valid_from_ms"),
+    ("Chunk", "date_ms"), ("Document", "date_ms")]
 
 
 def _run(graph, cypher):

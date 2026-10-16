@@ -37,8 +37,9 @@ def test_schema_idempotent(store):
     ensure_schema(g)
     have = {(r[0], p, t) for r in g.query("CALL db.indexes()").result_set for p, ts in r[2].items() for t in ts}
     for want in [("Memory", "emb", "VECTOR"), ("Chunk", "emb", "VECTOR"), ("Entity", "emb", "VECTOR"),
-                 ("Entity", "name", "FULLTEXT"), ("Memory", "valid_from", "RANGE"), ("Person", "id", "RANGE"),
-                 ("Entity", "key", "RANGE")]:
+                 ("Entity", "name", "FULLTEXT"), ("Memory", "valid_from_ms", "RANGE"), ("Judgment", "id", "RANGE"),
+                 ("Entity", "key", "RANGE"), ("Entity", "type", "RANGE"), ("Chunk", "date_ms", "RANGE"),
+                 ("Document", "date_ms", "RANGE"), ("Memory", "created_ms", "RANGE")]:
         assert want in have, want
 
 
