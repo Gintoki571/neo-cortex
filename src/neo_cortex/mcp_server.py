@@ -2,14 +2,24 @@
 
 Run: python -m neo_cortex.mcp_server --transport http --port 8765   (or --transport stdio)
 Sync tools run on SDK worker threads, so a slow ingest does not block other agents.
+
+Also a loopback HTTP API for the `neo` CLI and Claude Code hooks (the embedded DB has one owner, this daemon):
+GET /health, POST /api/<tool> (JSON args, returns the tool's text), POST /api/ingest-session (queued when "background").
 """
 import argparse
+import json
+import queue
+import sys
 import threading
 from contextlib import asynccontextmanager
 
 from mcp.server.mcpserver import MCPServer
+from starlette.requests import Request
+from starlette.responses import JSONResponse, PlainTextResponse
 
 from . import tools as T
+
+API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher")
 
 INSTRUCTIONS = """Neo-Cortex: shared memory, company knowledge graph and multi-hop evidence. It returns cited evidence; you do the reasoning.
 - Start of a session: call brief (pass project/agent) and act on open handoffs.
@@ -94,7 +104,67 @@ def make_server(store, on_shutdown=None) -> MCPServer:
     def cypher(query: str, limit: int = 50, max_chars: int = 4000) -> str:
         return T.cypher(store, query, limit, max_chars)
 
+    _add_api(s, store)
     return s
+
+
+def _add_api(s, store):
+    jobs, stats = queue.Queue(), {"queued": 0, "done": 0, "errors": 0}
+
+    def worker():  # one at a time: sessions share the GPU and the Store
+        while True:
+            args = jobs.get()
+            try:
+                from . import write
+                write.ingest_session(store, **args)
+                stats["done"] += 1
+            except Exception as e:
+                stats["errors"] += 1
+                print(f"ingest-session {args.get('transcript_path')}: {e!r}", file=sys.stderr, flush=True)
+
+    def guard(req: Request):
+        # CSRF / DNS rebinding: a web page can POST to localhost, but not with a JSON content type nor a foreign Host
+        if req.headers.get("host", "").rsplit(":", 1)[0] not in ("127.0.0.1", "localhost", "[::1]"):
+            return PlainTextResponse("bad host", 403)
+        if not req.headers.get("content-type", "").startswith("application/json"):
+            return PlainTextResponse("content-type must be application/json", 415)
+
+    @s.custom_route("/health", methods=["GET"])
+    async def health(req: Request):
+        return JSONResponse({"ok": True, **stats, "pending": jobs.qsize()})
+
+    @s.custom_route("/api/{tool}", methods=["POST"])
+    async def api(req: Request):
+        import anyio
+        if (bad := guard(req)):
+            return bad
+        tool = req.path_params["tool"]
+        try:
+            args = await req.json()
+            assert isinstance(args, dict)
+        except Exception:
+            return PlainTextResponse("body must be a JSON object", 400)
+        if tool == "ingest-session":
+            if "transcript_path" not in args:
+                return PlainTextResponse("transcript_path required", 400)
+            if args.pop("background", False):
+                if not stats["queued"]:
+                    threading.Thread(target=worker, daemon=True).start()
+                stats["queued"] += 1
+                jobs.put(args)
+                return JSONResponse({"queued": args["transcript_path"]})
+            from . import write
+            fn = lambda **a: json.dumps(write.ingest_session(store, **a), separators=(",", ":"))  # noqa: E731
+        elif tool in API_TOOLS:
+            fn = lambda **a: getattr(T, tool)(store, **a)  # noqa: E731
+        else:
+            return PlainTextResponse(f"unknown tool {tool}", 404)
+        try:
+            return PlainTextResponse(await anyio.to_thread.run_sync(lambda: fn(**args)))
+        except TypeError as e:  # bad argument names
+            return PlainTextResponse(f"bad arguments: {e}", 400)
+        except Exception as e:
+            return PlainTextResponse(f"{tool} failed: {e!r}", 500)
 
 
 def main(argv=None):
