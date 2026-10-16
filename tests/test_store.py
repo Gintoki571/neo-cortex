@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 import numpy as np
@@ -5,15 +6,18 @@ import numpy as np
 from neo_cortex.schema import ensure_schema
 from neo_cortex.store import Store
 
+# parallel test runs (several agents) pick distinct ports via NEO_TEST_PORT
+PORT = os.environ.get("NEO_TEST_PORT", "6391")
+
 
 def _servers(home):
     out = subprocess.run(["pgrep", "-af", "redis-server"], capture_output=True, text=True).stdout
-    return [l for l in out.splitlines() if str(home) in l or ":6391" in l]
+    return [l for l in out.splitlines() if str(home) in l or ":" + PORT in l]
 
 
 def test_open_close_no_orphan(tmp_path, monkeypatch):
     monkeypatch.setenv("NEO_HOME", str(tmp_path))
-    monkeypatch.setenv("NEO_PORT", "6391")
+    monkeypatch.setenv("NEO_PORT", PORT)
     s = Store()
     assert s.query("RETURN 1") == [[1]]
     assert _servers(tmp_path)
@@ -23,7 +27,7 @@ def test_open_close_no_orphan(tmp_path, monkeypatch):
 
 def test_bound_to_loopback(store):
     out = subprocess.run(["ss", "-ltn"], capture_output=True, text=True).stdout
-    line = [l for l in out.splitlines() if ":6391" in l]
+    line = [l for l in out.splitlines() if ":" + PORT in l]
     assert line and all("127.0.0.1:6391" in l for l in line)
 
 
