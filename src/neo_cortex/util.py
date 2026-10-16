@@ -1,4 +1,5 @@
 import hashlib
+import re
 import time
 import uuid
 
@@ -16,6 +17,5 @@ def content_hash(text: str) -> str:
 
 
 def normalize_key(name: str) -> str:
-    """Entity key: lowercase, punctuation and whitespace collapsed to single spaces."""
-    import re
-    return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+    """Entity key: casefolded, punctuation and whitespace collapsed to single spaces; letters of every script kept."""
+    return re.sub(r"[\W_]+", " ", name.casefold()).strip()

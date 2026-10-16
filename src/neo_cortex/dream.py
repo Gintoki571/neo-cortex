@@ -2,7 +2,6 @@
 
 Planning reads the graph once and works on a Python copy, so `dry_run` reports exactly what a real run writes.
 Writes are batched UNWIND statements. A second run right after a first one changes no Memory or edge."""
-import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import combinations
@@ -12,15 +11,13 @@ import numpy as np
 from . import util
 from . import write as W
 
-PROMOTE_SIM = 0.80            # episodic cluster radius (merge uses write.DEDUPE, conflicts use write.CONFLICT..DEDUPE)
+PROMOTE_SIM = 0.80            # episodic cluster radius (merge uses write.DEDUPE, conflicts use write.CONFLICT)
 PROMOTE_SESSIONS = 3
 PROMOTE_CAP = 0.95
 DECAY_PERIOD_MS = 30 * 86_400_000
 DECAY_FACTOR, DECAY_FLOOR = 0.9, 0.1
 EXEMPT_KINDS = {"preference", "decision"}   # never decay
 CONFLICT_KINDS = {"semantic", "decision"}
-_NUM = re.compile(r"\d+(?:\.\d+)?")
-_NEG = re.compile(r"\b(?:not|no|never|none|nothing|cannot|without)\b|n't\b", re.I)
 
 
 @dataclass
@@ -76,7 +73,8 @@ def _neighbours(store, mems, tenant):
 
 
 def _plan_merge(mems, nb):
-    """Oldest active memory of a same-kind group (cosine >= DEDUPE) is canonical; the rest merge into it."""
+    """Oldest active memory of a same-kind group (cosine >= DEDUPE) is canonical; the rest merge into it,
+    unless the two differ in a number or negation (write._differ): that is a new fact, not a duplicate."""
     order = sorted((m for m in mems.values() if m.status == "active"), key=lambda m: (m.created, m.id))
     merged: dict[str, str] = {}   # duplicate id -> canonical id
     for m in order:
@@ -85,7 +83,7 @@ def _plan_merge(mems, nb):
         for nid, sim in nb[m.id]:
             n = mems[nid]
             if (sim >= W.DEDUPE and n.status == "active" and n.kind == m.kind and nid not in merged
-                    and (n.created, n.id) > (m.created, m.id)):
+                    and (n.created, n.id) > (m.created, m.id) and not W._differ(m.text, n.text)):
                 merged[nid] = m.id
     uses_add: dict[str, int] = defaultdict(int)
     ent_new, src_new, ent_touch = [], [], set()
@@ -148,7 +146,8 @@ def _plan_decay(mems, now):
 
 
 def _plan_conflicts(mems, existing):
-    """Pairs of active semantic/decision memories sharing an entity, similar but not duplicate, differing in a number or negation."""
+    """Pairs of active semantic/decision memories sharing an entity that differ in a number or negation and have
+    cosine >= CONFLICT (a near-duplicate that differs is a conflict, not a merge)."""
     pool = [m for m in mems.values() if m.status == "active" and m.kind in CONFLICT_KINDS]
     by_ent = defaultdict(list)
     for m in pool:
@@ -161,9 +160,7 @@ def _plan_conflicts(mems, existing):
             if key in seen or key in existing or (b.id, a.id) in existing:
                 continue
             seen.add(key)
-            if not (W.CONFLICT <= _cos(a.emb, b.emb) < W.DEDUPE):
-                continue
-            if (set(_NUM.findall(a.text)), bool(_NEG.search(a.text))) != (set(_NUM.findall(b.text)), bool(_NEG.search(b.text))):
+            if _cos(a.emb, b.emb) >= W.CONFLICT and W._differ(a.text, b.text):
                 out.append(key)
     return out
 
@@ -202,19 +199,20 @@ def _write(store, tenant, now, plan):
 
 
 def dream(store, tenant=None, now_ms=None, dry_run=False) -> dict:
-    now = util.now_ms() if now_ms is None else now_ms
-    mems, existing = _load(store, tenant)
-    nb = _neighbours(store, mems, tenant) if mems else {}
-    merged, uses_add, ent_new, src_new, ent_touch = _plan_merge(mems, nb)
-    promos = _plan_promote(mems, nb, now)
-    decays = _plan_decay(mems, now)
-    conflicts = _plan_conflicts(mems, existing)
-    counts = {"merged": len(merged), "promoted": len(promos),
-              "decayed": sum(1 for m, c, _ in decays if c < m.conf), "conflicts": len(conflicts)}
-    run_id = None if dry_run else util.new_id("dream")
-    if not dry_run:
-        plan = (merged, uses_add, ent_new, src_new, ent_touch, promos, decays, conflicts)
-        _write(store, tenant, now, plan)
-        store.query("CREATE (:DreamRun {id:$id, at_ms:$t, merged:$merged, promoted:$promoted, decayed:$decayed, "
-                    "conflicts:$conflicts})", {"id": run_id, "t": now, **counts}, tenant)
-    return {"id": run_id, "at_ms": now, "dry_run": dry_run, **counts}
+    with store.write_lock:  # plan from one snapshot and write before any other writer runs
+        now = util.now_ms() if now_ms is None else now_ms
+        mems, existing = _load(store, tenant)
+        nb = _neighbours(store, mems, tenant) if mems else {}
+        merged, uses_add, ent_new, src_new, ent_touch = _plan_merge(mems, nb)
+        promos = _plan_promote(mems, nb, now)
+        decays = _plan_decay(mems, now)
+        conflicts = _plan_conflicts(mems, existing)
+        counts = {"merged": len(merged), "promoted": len(promos),
+                  "decayed": sum(1 for m, c, _ in decays if c < m.conf), "conflicts": len(conflicts)}
+        run_id = None if dry_run else util.new_id("dream")
+        if not dry_run:
+            plan = (merged, uses_add, ent_new, src_new, ent_touch, promos, decays, conflicts)
+            _write(store, tenant, now, plan)
+            store.query("CREATE (:DreamRun {id:$id, at_ms:$t, merged:$merged, promoted:$promoted, decayed:$decayed, "
+                        "conflicts:$conflicts})", {"id": run_id, "t": now, **counts}, tenant)
+        return {"id": run_id, "at_ms": now, "dry_run": dry_run, **counts}

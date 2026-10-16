@@ -67,9 +67,11 @@ def _add_alias(store, eid, key, tenant):
 
 
 def resolve_entity(store, name: str, type: str, emb=None, tenant=None) -> str | None:
-    """Return the id of the Entity for `name`, creating it when nothing matches (None for an ambiguous lone surname).
-    `emb` skips re-embedding."""
+    """Return the id of the Entity for `name`, creating it when nothing matches (None for an ambiguous lone surname
+    or a name with no letters or digits). `emb` skips re-embedding."""
     key = normalize_key(name)
+    if not key:
+        return None
     q = lambda c, p: store.query(c, p, tenant)  # noqa: E731
     r = q("MATCH (e:Entity {key:$k}) RETURN e.id, e.type", {"k": key})
     if not r:

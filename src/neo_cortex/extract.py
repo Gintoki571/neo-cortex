@@ -416,8 +416,8 @@ def _find(ents: dict, text: str) -> str | None:
     k = normalize_key(text)
     if k in ents:
         return k
-    hit = [c for c, e in ents.items() if (e["type"] == "person" and k in (c.split()[0], c.split()[-1]))
-           or (e["type"] in ("service", "component", "tool") and len(k) >= 4 and c.endswith(" " + k))]
+    hit = [c for c, e in ents.items() if c and ((e["type"] == "person" and k in (c.split()[0], c.split()[-1]))
+           or (e["type"] in ("service", "component", "tool") and len(k) >= 4 and c.endswith(" " + k)))]
     return hit[0] if len(hit) == 1 else None
 
 

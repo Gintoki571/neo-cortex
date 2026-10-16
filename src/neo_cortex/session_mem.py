@@ -28,37 +28,40 @@ def _ts(v) -> int | None:
 
 def read_transcript(path: Path) -> tuple[dict, list[dict]]:
     """(meta, events). Event kinds: user, assistant (text blocks), tool (tool_use), error (failed tool_result), ok (tool_result).
-    Meta, sidechain, thinking, hook/command noise and sub-agent hand-backs are dropped."""
+    Meta, sidechain, thinking, hook/command noise and sub-agent hand-backs are dropped. A line with bad JSON or a field of
+    an unexpected type is skipped whole."""
     meta, ev, calls = {}, [], {}
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        new = []  # committed only when the whole line parses
         try:
             d = json.loads(line)
-        except ValueError:
+            for k, f in (("session_id", "sessionId"), ("cwd", "cwd")):
+                if d.get(f) and k not in meta:
+                    meta[k] = d[f]
+            if d.get("timestamp") and "started" not in meta:
+                meta["started"] = d["timestamp"]
+            m, t = d.get("message"), d.get("type")
+            if t not in ("user", "assistant") or d.get("isMeta") or d.get("isSidechain") or not isinstance(m, dict):
+                continue
+            c, ts = m.get("content"), _ts(d.get("timestamp"))
+            for b in [{"type": "text", "text": c}] if isinstance(c, str) else [b for b in c or [] if isinstance(b, dict)]:
+                bt = b.get("type")
+                if bt == "text":
+                    s = _CODE.sub("\n", _NOISE.sub("\n", b.get("text") or "")).strip()
+                    if s and not s.startswith(("[Request interrupted", "Another Claude session", "Caveat:")):
+                        new.append({"k": t, "text": s, "ts": ts})
+                elif bt == "tool_use":
+                    inp = b.get("input") or {}
+                    calls[b.get("id")] = str(inp.get("command") or inp.get("file_path") or inp.get("pattern") or b.get("name"))
+                    new.append({"k": "tool", "ts": ts})
+                elif bt == "tool_result":
+                    body = b.get("content")
+                    body = "\n".join(x.get("text", "") for x in body if isinstance(x, dict)) if isinstance(body, list) else str(body or "")
+                    new.append({"k": "error" if b.get("is_error") else "ok", "text": body, "ts": ts,
+                                "cmd": calls.get(b.get("tool_use_id"), "")})
+        except (ValueError, TypeError, AttributeError):  # bad JSON, or a field of an unexpected type
             continue
-        for k, f in (("session_id", "sessionId"), ("cwd", "cwd")):
-            if d.get(f) and k not in meta:
-                meta[k] = d[f]
-        if d.get("timestamp") and "started" not in meta:
-            meta["started"] = d["timestamp"]
-        m, t = d.get("message"), d.get("type")
-        if t not in ("user", "assistant") or d.get("isMeta") or d.get("isSidechain") or not isinstance(m, dict):
-            continue
-        c, ts = m.get("content"), _ts(d.get("timestamp"))
-        for b in [{"type": "text", "text": c}] if isinstance(c, str) else [b for b in c or [] if isinstance(b, dict)]:
-            bt = b.get("type")
-            if bt == "text":
-                s = _CODE.sub("\n", _NOISE.sub("\n", b.get("text") or "")).strip()
-                if s and not s.startswith(("[Request interrupted", "Another Claude session", "Caveat:")):
-                    ev.append({"k": t, "text": s, "ts": ts})
-            elif bt == "tool_use":
-                inp = b.get("input") or {}
-                calls[b.get("id")] = str(inp.get("command") or inp.get("file_path") or inp.get("pattern") or b.get("name"))
-                ev.append({"k": "tool", "ts": ts})
-            elif bt == "tool_result":
-                body = b.get("content")
-                body = "\n".join(x.get("text", "") for x in body if isinstance(x, dict)) if isinstance(body, list) else str(body or "")
-                ev.append({"k": "error" if b.get("is_error") else "ok", "text": body, "ts": ts,
-                           "cmd": calls.get(b.get("tool_use_id"), "")})
+        ev += new
     return meta, ev
 
 

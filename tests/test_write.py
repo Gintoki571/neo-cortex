@@ -1,4 +1,7 @@
 import json
+import threading
+
+import pytest
 
 from neo_cortex import extract as X
 from neo_cortex import resolve, write
@@ -309,3 +312,76 @@ def test_number_or_negation_difference_is_a_conflict(store, fake_models, monkeyp
     n = write.remember(store, "Sessions may expire after 24 hours")
     m = write.remember(store, "Sessions may not expire after 24 hours")
     assert m["status"] == "created" and n["id"] in [x["id"] for x in m["conflicts"]]
+
+
+def test_unicode_names_keep_their_key():
+    from neo_cortex.util import normalize_key
+    assert normalize_key("田中") == "田中" and normalize_key("Ékó") == "ékó"
+    assert normalize_key("Auth_Service!") == "auth service"
+
+
+def test_empty_key_creates_no_entity(store, fake_models):
+    assert resolve.resolve_entity(store, "!!!", "other") is None
+    assert store.query("MATCH (e:Entity) WHERE e.key = '' RETURN count(e)") == [[0]]
+
+
+def test_find_tolerates_an_empty_key():
+    from neo_cortex.extract import _find
+    ents = {"": {"name": "!!!", "type": "person", "conf": 0.9}, "bob ross": {"name": "Bob Ross", "type": "person", "conf": 0.9}}
+    assert _find(ents, "Ross") == "bob ross"
+    assert _find(ents, "Alice") is None
+
+
+def test_frontmatter_id_collision_skips_the_second_file(store, fake_models, tmp_path, capsys):
+    d = tmp_path / "docs"  # the store home is tmp_path itself, so keep the ingested tree apart from it
+    d.mkdir()
+    a, b = d / "a.md", d / "b.md"
+    a.write_text("---\nid: same\n---\n\nNoor Haddad owns auth-service.\n")
+    b.write_text("---\nid: same\n---\n\nSamir Haddad owns billing-service.\n")
+    r = write.ingest_path(store, d)
+    assert r["documents"] == 1 and r["errors"] == 1
+    assert "id collision with" in capsys.readouterr().err
+    assert store.query("MATCH (d:Document {id:'same'}) RETURN d.path") == [[str(a)]]
+
+
+def test_crash_mid_ingest_leaves_no_partial_document(store, fake_models, tmp_path, monkeypatch):
+    f = tmp_path / "a.md"
+    f.write_text("Noor Haddad owns auth-service.\n")
+    real = write._refresh_entities
+
+    def boom(*a, **k):
+        raise RuntimeError("crash")
+
+    monkeypatch.setattr(write, "_refresh_entities", boom)
+    with pytest.raises(RuntimeError, match="crash"):
+        write._ingest_doc(store, f, None)
+    assert store.query("MATCH (d:Document) RETURN count(d)") == [[0]]
+    assert store.query("MATCH (c:Chunk) RETURN count(c)") == [[0]]
+    monkeypatch.setattr(write, "_refresh_entities", real)
+    assert write._ingest_doc(store, f, None)["documents"] == 1  # retried, not skipped
+
+
+@pytest.mark.parametrize("op", ["remember", "ingest_path"])
+def test_writes_wait_for_the_store_write_lock(store, fake_models, tmp_path, monkeypatch, op):
+    f = tmp_path / "a.md"
+    f.write_text("Noor Haddad owns auth-service.\n")
+    reached = threading.Event()
+    real_embed = write.embed_docs
+
+    def spy(*a, **k):  # both writers embed before they create anything: that must wait for the lock
+        reached.set()
+        return real_embed(*a, **k)
+
+    monkeypatch.setattr(write, "embed_docs", spy)
+    call = {"remember": lambda: write.remember(store, "Deploys happen on Tuesdays"),
+            "ingest_path": lambda: write.ingest_path(store, f)}[op]
+    store.write_lock.acquire()
+    try:
+        out = {}
+        t = threading.Thread(target=lambda: out.update(r=call()))
+        t.start()
+        assert not reached.wait(0.5)
+    finally:
+        store.write_lock.release()
+    t.join(60)
+    assert reached.is_set() and "r" in out

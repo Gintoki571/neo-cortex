@@ -116,3 +116,53 @@ def test_ingest_session(store, fake_models, session):
     session.write_text(session.read_text() + "\n" + json.dumps(_line("user", "Never deploy on Fridays because the freeze starts at three.", 20)))
     r2 = write.ingest_session(store, session)  # grown transcript: old memories reinforce without counting as another use
     assert r2["memories"] == 1 and q("MATCH (m:Memory) RETURN max(m.uses)") == [[0]]
+
+
+def test_read_transcript_skips_malformed_lines(tmp_path):
+    p = tmp_path / "bad.jsonl"
+    bad = [_line("user", 5, 2),                                                    # content is not a list or string
+           _line("user", [{"type": "text", "text": 7}], 3),                        # text is not a string
+           _line("user", [{"type": "tool_result", "content": [{"text": 1}]}], 4),  # tool output is not text
+           {"type": "assistant", "timestamp": T(5), "message": {"role": "assistant", "content": [
+               {"type": "tool_use", "id": "x", "input": "oops"}]}}]                 # input is not an object
+    rows = [_a("We decided to keep Redis for sessions.", 1), *bad, _a("The session TTL is 900 seconds.", 6)]
+    p.write_text("\n".join(json.dumps(x) for x in rows))
+    _, ev = S.read_transcript(p)
+    assert [e["text"] for e in ev if e["k"] == "assistant"] == ["We decided to keep Redis for sessions.",
+                                                               "The session TTL is 900 seconds."]
+
+
+def test_crashed_session_ingest_is_retried(store, fake_models, session, monkeypatch):
+    real = write.remember
+
+    def boom(*a, **k):
+        raise RuntimeError("crash")
+
+    monkeypatch.setattr(write, "remember", boom)
+    with pytest.raises(RuntimeError, match="crash"):
+        write.ingest_session(store, session)
+    monkeypatch.setattr(write, "remember", real)
+    assert write.ingest_session(store, session)["skipped"] == 0  # the session hash is set last
+    assert store.query("MATCH (m:Memory) RETURN count(m)")[0][0] > 0
+
+
+def test_ingest_session_waits_for_the_store_write_lock(store, fake_models, session, monkeypatch):
+    import threading
+    reached = threading.Event()
+    real_select = write.select
+
+    def spy(*a, **k):  # the candidate selection runs only after the session check, inside the lock
+        reached.set()
+        return real_select(*a, **k)
+
+    monkeypatch.setattr(write, "select", spy)
+    store.write_lock.acquire()
+    try:
+        out = {}
+        t = threading.Thread(target=lambda: out.update(r=write.ingest_session(store, session)))
+        t.start()
+        assert not reached.wait(0.5)
+    finally:
+        store.write_lock.release()
+    t.join(60)
+    assert reached.is_set() and out["r"]["memories"] > 0

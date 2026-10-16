@@ -18,6 +18,8 @@ class Store:
         self._embedded = s.falkordb_url is None
         self._ready: set[str] = set()
         self._lock = threading.Lock()
+        # process-wide: every check-then-create writer (ingest, remember, dream, relate) holds it
+        self.write_lock = threading.RLock()
         if self._embedded:
             from redislite.falkordb_client import FalkorDB
             s.home.mkdir(parents=True, exist_ok=True)

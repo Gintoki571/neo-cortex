@@ -174,3 +174,46 @@ def test_dry_run_reports_without_writing(store):
         {k: real[k] for k in ("merged", "promoted", "decayed", "conflicts")}
     assert _q(store, "MATCH (r:DreamRun) RETURN r.merged, r.promoted, r.decayed, r.conflicts") == \
         [[real["merged"], real["promoted"], real["decayed"], real["conflicts"]]]
+
+
+def test_differing_numbers_are_never_merged(store):
+    # "200" arrives after "100": a near-identical sentence with another number is a new fact, not a duplicate
+    mem(store, "r1", "Rate limit is 100 requests per minute", kind="semantic", deg=0, g=5)
+    mem(store, "r2", "Rate limit is 200 requests per minute", kind="semantic", deg=5, g=5, created=NOW - 2 * DAY)
+    r = D.dream(store, now_ms=NOW)
+    assert r["merged"] == 0
+    assert _q(store, "MATCH (m:Memory) RETURN m.id, m.status ORDER BY m.id") == [["r1", "active"], ["r2", "active"]]
+
+
+def test_differing_numbers_conflict_even_when_near_duplicate(store):
+    entity(store, "e5")
+    mem(store, "n1", "Rate limit is 100 requests per minute", kind="semantic", deg=0, g=6)
+    mem(store, "n2", "Rate limit is 200 requests per minute", kind="semantic", deg=5, g=6, created=NOW - 2 * DAY)
+    link(store, "n1", "e5", "MENTIONS", "{conf:1.0}")
+    link(store, "n2", "e5", "MENTIONS", "{conf:1.0}")
+    r = D.dream(store, now_ms=NOW)
+    assert r["merged"] == 0 and r["conflicts"] == 1
+    assert _q(store, "MATCH (:Memory {id:'n1'})-[:CONFLICTS_WITH]->(:Memory {id:'n2'}) RETURN count(*)") == [[1]]
+
+
+def test_dream_waits_for_the_store_write_lock(store, monkeypatch):
+    import threading
+    _merge_world(store)
+    reached = threading.Event()
+    real_load = D._load
+
+    def spy(*a, **k):  # planning reads the graph first; it must not start while another writer holds the lock
+        reached.set()
+        return real_load(*a, **k)
+
+    monkeypatch.setattr(D, "_load", spy)
+    store.write_lock.acquire()
+    try:
+        out = {}
+        t = threading.Thread(target=lambda: out.update(r=D.dream(store, now_ms=NOW)))
+        t.start()
+        assert not reached.wait(0.5)
+    finally:
+        store.write_lock.release()
+    t.join(60)
+    assert reached.is_set() and out["r"]["merged"] == 1
