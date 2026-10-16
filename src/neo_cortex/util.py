@@ -13,3 +13,9 @@ def now_ms() -> int:
 
 def content_hash(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+
+def normalize_key(name: str) -> str:
+    """Entity key: lowercase, punctuation and whitespace collapsed to single spaces."""
+    import re
+    return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
