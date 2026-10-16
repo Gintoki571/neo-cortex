@@ -78,6 +78,8 @@ Default section order:
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
+- Subagents: Haiku (`cheap-worker`) does implementation and grunt work; Sonnet (`mid-worker`) only after a Haiku attempt fails; never Opus subagents. The orchestrator plans, verifies and commits. Worker briefs name the skills to use (unlazy, ponytail, codegraph, web-search, opensrc, obscura-web).
+
 ## Project Context
 
 - Neo-Cortex: entry for the WeMakeDevs "Graph Hacks: Context for AI Agents" hackathon (FalkorDB). Submissions close 2026-10-18 18:29 UTC.

@@ -123,7 +123,7 @@ REL types (one relationship type with a `type` property, so Cypher never builds 
 
 ## MCP tools and CLI
 
-The daemon exposes 12 MCP tools (`neo serve`, streamable HTTP at `/mcp`). Each tool returns token-budgeted text with ids, sources, dates, confidence and the channels or paths that matched.
+The daemon exposes 15 MCP tools (`neo serve`, streamable HTTP at `/mcp`). Each tool returns token-budgeted text with ids, sources, dates, confidence and the channels or paths that matched.
 
 | Tool | What it does |
 | --- | --- |
@@ -134,8 +134,11 @@ The daemon exposes 12 MCP tools (`neo serve`, streamable HTTP at `/mcp`). Each t
 | `explore(entity, hops?, since?)` | Compact neighbourhood of an entity (up to 3 hops) |
 | `connect(a, b, max_hops?)` | Shortest relation paths between two entities |
 | `who(topic)` | Owners and experts for a topic, from ownership paths and authorship |
-| `timeline(topic, since?, until?)` | Dated events about a topic, with supersession |
-| `ingest(path_or_text, kind?)` | Ingest a file, a directory or text |
+| `timeline(topic, since?, until?)` | Dated events about a topic, with the values stated in each source and supersession |
+| `impact(entity, max_hops?)` | Blast radius: what depends on it (current `DEPENDS_ON`, both ways), the owners to tell, linked customers and incidents |
+| `relate(head, type, tail, source?, supersede?)` | Write or correct a typed edge (`OWNS`, `DEPENDS_ON`, ...); `supersede` closes the edge it replaces |
+| `read(id, max_chars?)` | Full text of a chunk, memory or document by id, with metadata and neighbour ids |
+| `ingest(path_or_text, kind?)` | Ingest a file, a directory or text (a directory can be queued with `background`) |
 | `handoff(to?, summary?, tasks?, done?)` | Leave work for another agent (shown in its `brief`), or mark a handoff done |
 | `cypher(query, limit?)` | Read-only Cypher, the escape hatch (the schema is in the tool description) |
 | `dream(dry_run?)` | Consolidate memories: merge duplicates, promote recurring episodes, decay, flag conflicts |
@@ -150,8 +153,13 @@ CLI (`neo`, every command except `serve`, `status`, `hook` and `install-claude` 
 | `neo recall "<q>" [-k K]` | Hybrid search |
 | `neo ask "<question>"` | Multi-hop evidence pack |
 | `neo who "<topic>"` / `neo timeline "<topic>"` | Owners and experts / dated events |
+| `neo explore "<entity>"` / `neo connect "<a>" "<b>"` | Neighbourhood / relation paths |
+| `neo impact "<entity>" [--max-hops]` | Blast radius: dependents, owners to tell, customers and incidents |
+| `neo relate "<head>" <TYPE> "<tail>" [--source] [--supersede]` | Write or correct a typed edge |
+| `neo read <id>` | Full text of a chunk, memory or document by id |
 | `neo remember "<text>" [--kind] [--about] [--supersedes] [--agent] [--project]` | Store a memory |
-| `neo ingest <path>` | Ingest a file or directory |
+| `neo ingest <path> [--wait]` | Ingest a file, or queue a directory as a daemon job (prints the job id; `--wait` follows it) |
+| `neo jobs [id]` | Status and result of the daemon's background jobs |
 | `neo ingest-session <transcript.jsonl> [--agent] [--project]` | Extract memories from a Claude Code transcript |
 | `neo handoff "<summary>" --to <agent> [--task T]...` | Leave a handoff |
 | `neo cypher "<query>"` | Read-only Cypher |

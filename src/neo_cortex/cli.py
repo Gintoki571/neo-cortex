@@ -6,6 +6,7 @@ import os
 import shlex
 import shutil
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -36,6 +37,49 @@ def _post(path, body, timeout=300):
         if isinstance(e.reason, ConnectionRefusedError):
             raise Down from None
         raise
+
+
+def _get(path, timeout=10):
+    with urllib.request.urlopen(daemon_url() + path, timeout=timeout) as r:
+        return json.load(r)
+
+
+def _job_line(j):
+    end = j.get("finished_ms") or int(time.time() * 1000)
+    out = f"{j['id']} {j['kind']} {j['status']} {(end - j.get('started_ms', end)) // 1000}s {j['target']}"
+    return out + (f"\n  {j['result']}" if j.get("result") else f"\n  {j['error']}" if j.get("error") else "")
+
+
+def jobs(job_id=None):
+    try:
+        js = _get("/api/jobs" + (f"?id={job_id}" if job_id else ""))
+    except (OSError, ValueError) as e:
+        print(f"neo jobs: daemon not reachable ({e})", file=sys.stderr)
+        return 1
+    print("\n".join(_job_line(j) for j in js) or "no jobs")
+    return 0
+
+
+def ingest(path, tenant, max_chars, wait):
+    """A directory runs as a daemon job: print its id at once (no client timeout), `--wait` follows it. A file or no daemon runs inline."""
+    args = {"path_or_text": _abs(path), "tenant": tenant, "max_chars": max_chars}
+    if not Path(path).expanduser().is_dir():
+        print(call("ingest", args))
+        return 0
+    try:
+        job = json.loads(_post("/api/ingest", {k: v for k, v in args.items() if v is not None} | {"background": True}))["job"]
+    except Down:
+        print(call("ingest", args))
+        return 0
+    if not wait:
+        print(f"{job} queued {path}; follow with `neo jobs {job}`")
+        return 0
+    while True:
+        j = _get(f"/api/jobs?id={job}")[0]
+        if j["status"] in ("done", "error"):
+            print(j.get("result") or j.get("error"))
+            return int(j["status"] == "error")
+        time.sleep(1)
 
 
 def _local(tool, args):
@@ -131,6 +175,7 @@ def parser():
     sub = ap.add_subparsers(dest="cmd")
     tn = argparse.ArgumentParser(add_help=False)
     tn.add_argument("--tenant")
+    tn.add_argument("--max-chars", type=int, help="cap the output (tool default 4000)")
 
     def add(name, help_, *positional, parent=tn):
         p = sub.add_parser(name, help=help_, parents=[parent] if parent else [])
@@ -149,14 +194,29 @@ def parser():
     p.add_argument("-k", type=int, default=8)
     add("ask", "multi-hop evidence pack", "question")
     add("who", "owners/experts for a topic", "topic")
-    add("timeline", "dated events about a topic", "topic")
+    add("timeline", "dated values and changes of a topic", "topic")
+    p = add("connect", "relation paths between two entities", "a", "b")
+    p.add_argument("--max-hops", type=int, default=4)
+    p = add("explore", "neighbours of an entity", "entity")
+    p.add_argument("--hops", type=int, default=1)
+    p.add_argument("--since", help="ISO date")
+    p = add("impact", "blast radius: dependents, owners to notify, linked customers/incidents", "entity")
+    p.add_argument("--max-hops", type=int, default=3)
+    p = add("relate", "write or correct a typed edge: HEAD TYPE TAIL", "head", "type", "tail")
+    p.add_argument("--source", help="chunk/doc/memory id or free text recorded on the edge")
+    p.add_argument("--supersede", action="store_true", help="close the same-type edge it replaces (OWNS: other owners of tail)")
+    p.add_argument("--agent", default=_agent())
+    add("read", "full text of a chunk, memory or document by id", "id")
     p = add("remember", "store one memory", "text")
     p.add_argument("--kind", choices=["episodic", "semantic", "procedural", "preference", "decision"])
     p.add_argument("--about", action="append", help="entity name this memory is about (repeatable)")
     p.add_argument("--supersedes", help="id of the memory this one replaces")
     p.add_argument("--agent", default=_agent())
     p.add_argument("--project")
-    add("ingest", "ingest a file or directory", "path")
+    p = add("ingest", "ingest a file or directory (a directory runs as a daemon job)", "path")
+    p.add_argument("--wait", action="store_true", help="follow a directory job until it finishes")
+    p = sub.add_parser("jobs", help="status of the daemon's background jobs")
+    p.add_argument("id", nargs="?")
     p = add("ingest-session", "ingest a Claude Code JSONL transcript", "jsonl")
     p.add_argument("--agent", default=_agent())
     p.add_argument("--project")
@@ -190,12 +250,16 @@ def main(argv=None):
         return install_claude(a.scope, a.yes)
     if a.cmd == "status":
         return status()
+    if a.cmd == "jobs":
+        return jobs(a.id)
     if a.cmd == "serve":
         from . import mcp_server
         mcp_server.main(["--transport", "http", "--port", str(a.port)] + ["--warm"] * a.warm)
         return 0
     t = a.tenant
     try:
+        if a.cmd == "ingest":
+            return ingest(a.path, t, a.max_chars, a.wait)
         if a.cmd == "ingest-session":
             out = call("ingest-session", {"transcript_path": _abs(a.jsonl), "agent": a.agent, "project": a.project, "tenant": t})
         else:
@@ -207,11 +271,15 @@ def main(argv=None):
                 "timeline": lambda: {"topic": a.topic},
                 "remember": lambda: {"text": a.text, "kind": a.kind, "about": a.about, "supersedes": a.supersedes,
                                      "agent": a.agent, "project": a.project},
-                "ingest": lambda: {"path_or_text": _abs(a.path)},
+                "connect": lambda: {"a": a.a, "b": a.b, "max_hops": a.max_hops},
+                "explore": lambda: {"entity": a.entity, "hops": a.hops, "since": a.since},
+                "impact": lambda: {"entity": a.entity, "max_hops": a.max_hops},
+                "relate": lambda: {"head": a.head, "type": a.type, "tail": a.tail, "source": a.source, "supersede": a.supersede, "agent": a.agent},
+                "read": lambda: {"id": a.id},
                 "handoff": lambda: {"to": a.to, "summary": a.summary, "tasks": a.task, "from_agent": a.from_agent},
                 "cypher": lambda: {"query": a.query},
                 "dream": lambda: {"dry_run": a.dry_run},
-            }[a.cmd]() | {"tenant": t})
+            }[a.cmd]() | {"tenant": t, "max_chars": a.max_chars})
     except (RuntimeError, OSError) as e:
         print(f"neo {a.cmd}: {e}", file=sys.stderr)
         return 1

@@ -32,6 +32,25 @@ def test_parse_args():
         assert ap.parse_args(c.split()).cmd == c.split()[0]
 
 
+def test_parse_new_commands():
+    ap = cli.parser()
+    a = ap.parse_args(["impact", "Auth Service", "--max-hops", "2"])
+    assert (a.cmd, a.entity, a.max_hops) == ("impact", "Auth Service", 2)
+    a = ap.parse_args(["relate", "Priya Shah", "OWNS", "Checkout", "--source", "d1#0", "--supersede", "--agent", "codex"])
+    assert (a.head, a.type, a.tail, a.source, a.supersede, a.agent) == ("Priya Shah", "OWNS", "Checkout", "d1#0", True, "codex")
+    with pytest.raises(SystemExit):
+        ap.parse_args(["relate", "Priya Shah", "OWNS"])  # tail is required
+    a = ap.parse_args(["read", "d1#0", "--max-chars", "900"])
+    assert (a.cmd, a.id, a.max_chars) == ("read", "d1#0", 900)
+    a = ap.parse_args(["connect", "A", "B", "--max-hops", "5"])
+    assert (a.cmd, a.a, a.b, a.max_hops) == ("connect", "A", "B", 5)
+    a = ap.parse_args(["explore", "Checkout", "--hops", "2", "--since", "2026-01-01"])
+    assert (a.cmd, a.entity, a.hops, a.since) == ("explore", "Checkout", 2, "2026-01-01")
+    assert ap.parse_args(["ingest", "data/doc", "--wait"]).wait is True
+    assert ap.parse_args(["ingest", "data/doc"]).wait is False  # a directory returns its job id at once
+    assert ap.parse_args(["jobs", "job_3"]).id == "job_3" and ap.parse_args(["jobs"]).id is None
+
+
 def test_install_claude_prints_and_merges(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

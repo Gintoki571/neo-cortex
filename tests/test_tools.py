@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from test_retrieve import FakeGliner, ms, vec
 
-from neo_cortex import models, tools, write
+from neo_cortex import models, resolve, tools, write
 from neo_cortex.retrieve import channels as ch
 
 NOW = ms("2026-10-16T12:00:00")
@@ -18,6 +18,7 @@ def fakes(monkeypatch):
     monkeypatch.setattr(models, "embed_query", vec)
     monkeypatch.setattr(models, "embed_docs", lambda texts, titles=None: np.stack([vec(t) for t in texts]))
     monkeypatch.setattr(models, "gliner", lambda: G())
+    monkeypatch.setattr(resolve, "embed_docs", lambda texts, titles=None: np.stack([vec(t) for t in texts]))
 
 
 @pytest.fixture
@@ -32,9 +33,9 @@ def g(store):
     for cid, did, text, d, e in [("d1#0", "d1", "Auth Service ownership moved to the Platform Team runbook", "2026-03-05", "e_auth"),
                                  ("d2#0", "d2", "Payments Team handed Auth Service to Platform Team", "2026-02-01", "e_auth"),
                                  ("d1#1", "d1", "SESSION_TTL is 300 seconds", "2026-03-05", "e_ttl")]:
-        q("MATCH (d:Document {id:$d}) CREATE (d)-[:HAS_CHUNK]->(c:Chunk {id:$i, doc_id:$d, text:$t, kind:d.kind, date_ms:$m, emb:vecf32($v)}) "
+        q("MATCH (d:Document {id:$d}) CREATE (d)-[:HAS_CHUNK]->(c:Chunk {id:$i, doc_id:$d, pos:$p, text:$t, kind:d.kind, date_ms:$m, emb:vecf32($v)}) "
           "WITH c MATCH (e:Entity {id:$e}) CREATE (c)-[:MENTIONS {conf:1.0}]->(e)",
-          {"d": did, "i": cid, "t": text, "m": ms(d + "T00:00:00"), "v": vec(text).tolist(), "e": e})
+          {"d": did, "i": cid, "p": int(cid.split("#")[1]), "t": text, "m": ms(d + "T00:00:00"), "v": vec(text).tolist(), "e": e})
     q("MATCH (p:Entity {id:'e_priya'}), (d:Document {id:'d1'}) CREATE (p)-[:AUTHORED]->(d)")
     for a, t, b, d, src in [("e_priya", "MEMBER_OF", "e_plat", "2026-01-01", "d1#0"), ("e_pay", "OWNS", "e_auth", "2025-06-01", "d2#0"),
                             ("e_plat", "OWNS", "e_auth", "2026-02-01", "d2#0"), ("e_ck", "DEPENDS_ON", "e_auth", "2025-09-01", "d1#0")]:
@@ -153,3 +154,85 @@ def test_merged_memory_never_surfaces(g):
     for q in ("auth service sessions expire", "what changed about how long auth service sessions expire"):
         assert "m_merged" not in [r["id"] for r in recall(g, q, k=10)], q  # superseded may come back for temporal intent, merged never
     assert "m_merged" not in tools.brief(g)
+
+
+def _chain(g):
+    """Web -> Checkout -> Auth Service, a customer and an incident co-mentioned with Checkout, an owner for Web."""
+    q = g.query
+    for i, n, t in [("e_web", "Web Dashboard", "service"), ("e_acme", "Acme Corp", "customer"), ("e_inc", "INC-9", "incident"), ("e_zoe", "Zoe Park", "person")]:
+        q("CREATE (:Entity {id:$i, name:$n, key:$k, type:$t, mentions:1, emb:vecf32($e)})", {"i": i, "n": n, "k": ch.key_of(n), "t": t, "e": vec(n).tolist()})
+    q("MATCH (a:Entity {id:'e_web'}), (b:Entity {id:'e_ck'}), (z:Entity {id:'e_zoe'}) "
+      "CREATE (a)-[:REL {type:'DEPENDS_ON', conf:0.9, source_id:'d1#1', valid_from_ms:$d}]->(b), (z)-[:REL {type:'OWNS', conf:0.9, source_id:'d1#1', valid_from_ms:$d}]->(a)", {"d": ms("2026-04-01T00:00:00")})
+    q("MATCH (c:Chunk {id:'d1#0'}), (k:Entity {id:'e_ck'}), (a:Entity {id:'e_acme'}), (i:Entity {id:'e_inc'}) "
+      "CREATE (c)-[:MENTIONS {conf:1.0}]->(k), (c)-[:MENTIONS {conf:1.0}]->(a), (c)-[:MENTIONS {conf:1.0}]->(i)")
+
+
+def test_impact_blast_radius(g):
+    _chain(g)
+    out = tools.impact(g, "Auth Service")
+    print(out)
+    assert "Checkout -> Auth Service" in out and "Web Dashboard -> Checkout -> Auth Service" in out and "hop 2" in out
+    assert "src:" in out and "Platform runbook" in out  # each edge carries its source
+    assert "Platform Team" in out and "Priya Shah" in out and "Zoe Park" in out  # owners of the target and of an affected component (team members listed)
+    assert "Acme Corp" in out and "INC-9" in out
+    assert "Web Dashboard" not in tools.impact(g, "Auth Service", max_hops=1)
+    assert "needs 1" in tools.impact(g, "Checkout") and "Auth Service" in tools.impact(g, "Checkout").split("It needs")[1]
+    g.query("MATCH (:Entity {id:'e_ck'})-[r:REL {type:'DEPENDS_ON'}]->(:Entity {id:'e_auth'}) SET r.valid_to_ms = 1")  # an ended edge is not a dependency
+    out = tools.impact(g, "Auth Service")
+    assert "nothing depends on it" in out and "Checkout ->" not in out
+    assert "No entity" in tools.impact(g, "zzqx unknown")
+
+
+def test_relate_creates_supersedes_and_validates(g):
+    out = tools.relate(g, "Priya Shah", "owns", "Checkout", source="d1#0", agent="codex")
+    assert out.startswith("created") and "Priya Shah -[OWNS]-> [e_ck] Checkout" in out and "codex" in out and "Platform runbook" in out
+    assert tools.relate(g, "Priya Shah", "OWNS", "Checkout").startswith("already current")
+    e = g.query("MATCH (:Entity {id:'e_priya'})-[r:REL {type:'OWNS'}]->(:Entity {id:'e_ck'}) RETURN r.agent, r.source_id, r.valid_to_ms, r.conf")
+    assert e == [["codex", "d1#0", None, 1.0]]
+    # supersede: both current owners of Auth Service end, the new one starts
+    out = tools.relate(g, "Priya Shah", "OWNS", "Auth Service", supersede=True, agent="codex")
+    print(out)
+    assert out.count("closed") == 2 and "Payments Team -[OWNS]-> Auth Service" in out
+    cur = g.query("MATCH (x:Entity)-[r:REL {type:'OWNS'}]->(:Entity {id:'e_auth'}) WHERE r.valid_to_ms IS NULL RETURN x.name")
+    assert cur == [["Priya Shah"]]
+    assert "Priya Shah -[OWNS]-> Auth Service" in tools.who(g, "Auth Service")
+    # unknown names become entities; an unsupported type is refused; supersede on a non-OWNS type closes the head's same-type edges
+    assert tools.relate(g, "Zed Service", "DEPENDS_ON", "Checkout").startswith("created")
+    assert g.query("MATCH (e:Entity {key:'zed service'}) RETURN e.type") == [["service"]]
+    assert tools.relate(g, "Zed Service", "LOVES", "Checkout").startswith("type must be")
+    out = tools.relate(g, "Zed Service", "DEPENDS_ON", "Auth Service", supersede=True)
+    assert out.count("closed") == 1 and "closed Zed Service -[DEPENDS_ON]-> Checkout" in out
+    assert "same entity" in tools.relate(g, "Checkout", "PART_OF", "e_ck")
+    assert "Zed Service" in tools.impact(g, "Auth Service")  # a written edge is immediately part of the graph
+
+
+def test_read_chunk_memory_document(g):
+    out = tools.read(g, "d1#0")
+    assert "Auth Service ownership moved to the Platform Team runbook" in out and "chunk 1 of 2" in out and "next: [d1#1]" in out and "prev: none" in out
+    assert "[e_auth] Auth Service (service)" in out and "Checkout -[DEPENDS_ON]-> Auth Service" in out  # relation sourced from this chunk
+    assert "prev: [d1#0]" in tools.read(g, "d1#1")
+    out = tools.read(g, "m_new")
+    assert out.startswith("# memory [m_new]") and "300 seconds" in out and "supersedes [m_old]" in out
+    assert "superseded by [m_new]" in tools.read(g, "m_old")
+    out = tools.read(g, "d1")
+    assert "[d1#0]" in out and "[d1#1] SESSION_TTL is 300 seconds" in out
+    long = "word " * 3000
+    g.query("MATCH (c:Chunk {id:'d1#1'}) SET c.text=$t", {"t": long})
+    out = tools.read(g, "d1#1", max_chars=1000)
+    assert len(out) <= 1100 and "more chars" in out and len(tools.read(g, "d1#1", max_chars=20000)) > 10000
+    assert tools.read(g, "nope").startswith("No chunk, memory or document")
+
+
+def test_timeline_shows_values_and_drops_valueless_events_first(g):
+    out = tools.timeline(g, "SESSION_TTL")
+    print(out)
+    assert '2026-03-05 doc [d1#1] "Platform runbook": SESSION_TTL is 300 seconds' in out
+    out = tools.timeline(g, "Auth Service")
+    assert "(effective 2025-06-01)" in out and "Auth Service ownership moved to the Platform Team runbook" in out
+    full = tools.timeline(g, "Auth Service", max_chars=100000)
+    small = tools.timeline(g, "Auth Service", max_chars=len(full) - 40)  # just short: only the cheapest events go
+    assert len(small) <= len(full) - 40 and "more, narrow with" in small
+    assert "REPLACED on 2026-02-01" in small and "[d2#0]" not in small.replace("REL", "") or "ADR-7" not in small
+    # a phrase that only fuzzily matches an entity also gets the dated passages about the phrase itself
+    g.query("MATCH (c:Chunk {id:'d2#0'}) SET c.text='Auth Service sessions were lowered from 60 to 300 seconds on the platform'")
+    assert "lowered from 60 to 300 seconds" in tools.timeline(g, "auth sessions lowered")

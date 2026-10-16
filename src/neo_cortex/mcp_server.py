@@ -1,10 +1,11 @@
-"""MCP server: one shared Store, 12 tools over stdio or streamable HTTP (127.0.0.1 by default).
+"""MCP server: one shared Store, 15 tools over stdio or streamable HTTP (127.0.0.1 by default).
 
 Run: python -m neo_cortex.mcp_server --transport http --port 8765   (or --transport stdio)
 Sync tools run on SDK worker threads, so a slow ingest does not block other agents.
 
 Also a loopback HTTP API for the `neo` CLI and Claude Code hooks (the embedded DB has one owner, this daemon):
-GET /health, POST /api/<tool> (JSON args, returns the tool's text), POST /api/ingest-session (queued when "background").
+GET /health, POST /api/<tool> (JSON args, returns the tool's text), POST /api/ingest-session and /api/ingest (queued as a job when "background"),
+GET /api/jobs[?id=] (job status).
 """
 import argparse
 import json
@@ -18,14 +19,17 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse
 
 from . import tools as T
+from .util import now_ms
 
-API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher", "dream")
+API_TOOLS = ("brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "impact", "relate", "read", "ingest", "handoff", "cypher", "dream")
 
 INSTRUCTIONS = """Neo-Cortex: shared memory, company knowledge graph and multi-hop evidence. It returns cited evidence; you do the reasoning.
 - Start of a session: call brief (pass project/agent) and act on open handoffs.
 - Before re-solving or asking the user something: recall(query).
 - After finishing a task: remember decisions, lessons and user preferences, one fact per call. If a fact changed, pass supersedes=<memory id> (conflicts are listed when you remember).
-- Company or multi-hop questions: ask(question) first, then who (owners/experts), connect (how A relates to B), timeline (what changed), explore (neighbourhood).
+- Company or multi-hop questions: ask(question) first, then who (owners/experts), connect (how A relates to B), timeline (values and dates of changes), explore (neighbourhood).
+- Before changing or restarting something: impact(entity) lists what breaks, who owns it and which customers/incidents are linked. read(id) gives the full text behind a cited id.
+- You also maintain the graph: relate(head, type, tail, source=, supersede=True) records or corrects an owner, dependency or rename; ids and sources are kept.
 - cypher is read-only and a last resort.
 - Ids in results ([mem_..], [doc#chunk], [e_..]) can be passed back as arguments. Every tool accepts max_chars; follow "narrow with" hints."""
 
@@ -90,6 +94,22 @@ def make_server(store, on_shutdown=None) -> MCPServer:
         return T.timeline(store, topic, since, until, max_chars)
 
     @s.tool()
+    def impact(entity: str, max_hops: int = 3, max_chars: int = 4000) -> str:
+        """Blast radius of an entity failing: what depends on it (transitively), its owners and theirs to notify, linked customers and incidents."""
+        return T.impact(store, entity, max_hops, max_chars)
+
+    @s.tool()
+    def relate(head: str, type: str, tail: str, source: str | None = None, supersede: bool = False, agent: str | None = None,
+               max_chars: int = 4000) -> str:
+        """Write or correct a typed edge head -[type]-> tail (OWNS, MEMBER_OF, DEPENDS_ON, RENAMED_TO, ...). supersede closes the same-type edge it replaces; source = id or doc."""
+        return T.relate(store, head, type, tail, source, supersede, agent, max_chars)
+
+    @s.tool()
+    def read(id: str, max_chars: int = 4000) -> str:
+        """Full text of a chunk, memory or document by id (results cut text at 240 chars), with metadata, neighbours and mentioned entities."""
+        return T.read(store, id, max_chars)
+
+    @s.tool()
     def ingest(path_or_text: str, kind: str | None = None, max_chars: int = 4000) -> str:
         """Add a file, directory or raw text to the knowledge graph. kind (raw text only): doc|adr|ticket|chat|meeting|file."""
         return T.ingest(store, path_or_text, kind, max_chars)
@@ -113,30 +133,63 @@ def make_server(store, on_shutdown=None) -> MCPServer:
     return s
 
 
-def _add_api(s, store):
-    jobs, stats = queue.Queue(), {"queued": 0, "done": 0, "errors": 0}
+class Jobs:
+    """Background work on one worker thread (sessions share the GPU and the Store). Each job has an id and a status for `neo jobs`."""
 
-    def worker():  # one at a time: sessions share the GPU and the Store
+    def __init__(self):
+        self.q, self.byid, self.lock, self.started, self.n = queue.Queue(), {}, threading.Lock(), False, 0
+        self.stats = {"queued": 0, "done": 0, "errors": 0}
+
+    def submit(self, kind, target, fn) -> str:
+        self.n += 1
+        job = {"id": f"job_{self.n}", "kind": kind, "target": target, "status": "queued", "queued_ms": now_ms()}
+        with self.lock:
+            self.byid[job["id"]] = job
+            for old in list(self.byid)[:-100]:  # keep the last 100
+                del self.byid[old]
+            if not self.started:
+                self.started = True
+                threading.Thread(target=self._run, daemon=True).start()
+        self.stats["queued"] += 1
+        self.q.put((job, fn))
+        return job["id"]
+
+    def _run(self):
         while True:
-            args = jobs.get()
+            job, fn = self.q.get()
+            job.update(status="running", started_ms=now_ms())
             try:
-                from . import write
-                write.ingest_session(store, **args)
-                stats["done"] += 1
+                res = fn()
+                job.update(status="done", result=res if isinstance(res, str) else json.dumps(res, separators=(",", ":")))
+                self.stats["done"] += 1
             except Exception as e:
-                stats["errors"] += 1
-                print(f"ingest-session {args.get('transcript_path')}: {e!r}", file=sys.stderr, flush=True)
+                job.update(status="error", error=repr(e))
+                self.stats["errors"] += 1
+                print(f"{job['kind']} {job['target']}: {e!r}", file=sys.stderr, flush=True)
+            job["finished_ms"] = now_ms()
+
+
+def _add_api(s, store):
+    jobs = Jobs()
+    stats = jobs.stats
 
     def guard(req: Request):
         # CSRF / DNS rebinding: a web page can POST to localhost, but not with a JSON content type nor a foreign Host
         if req.headers.get("host", "").rsplit(":", 1)[0] not in ("127.0.0.1", "localhost", "[::1]"):
             return PlainTextResponse("bad host", 403)
-        if not req.headers.get("content-type", "").startswith("application/json"):
+        if req.method == "POST" and not req.headers.get("content-type", "").startswith("application/json"):
             return PlainTextResponse("content-type must be application/json", 415)
 
     @s.custom_route("/health", methods=["GET"])
     async def health(req: Request):
-        return JSONResponse({"ok": True, **stats, "pending": jobs.qsize()})
+        return JSONResponse({"ok": True, **stats, "pending": jobs.q.qsize()})
+
+    @s.custom_route("/api/jobs", methods=["GET"])
+    async def job_list(req: Request):
+        if (bad := guard(req)):
+            return bad
+        want = req.query_params.get("id")
+        return JSONResponse([j for j in reversed(list(jobs.byid.values())) if not want or j["id"] == want])
 
     @s.custom_route("/api/{tool}", methods=["POST"])
     async def api(req: Request):
@@ -152,14 +205,14 @@ def _add_api(s, store):
         if tool == "ingest-session":
             if "transcript_path" not in args:
                 return PlainTextResponse("transcript_path required", 400)
-            if args.pop("background", False):
-                if not stats["queued"]:
-                    threading.Thread(target=worker, daemon=True).start()
-                stats["queued"] += 1
-                jobs.put(args)
-                return JSONResponse({"queued": args["transcript_path"]})
             from . import write
+            if args.pop("background", False):
+                return JSONResponse({"queued": args["transcript_path"], "job": jobs.submit("session", args["transcript_path"], lambda: write.ingest_session(store, **args))})
             fn = lambda **a: json.dumps(write.ingest_session(store, **a), separators=(",", ":"))  # noqa: E731
+        elif tool == "ingest" and args.pop("background", False):  # a directory ingest can run for minutes: queue it, poll /api/jobs
+            if "path_or_text" not in args:
+                return PlainTextResponse("path_or_text required", 400)
+            return JSONResponse({"queued": args["path_or_text"], "job": jobs.submit("ingest", args["path_or_text"], lambda: T.ingest(store, **args))})
         elif tool in API_TOOLS:
             fn = lambda **a: getattr(T, tool)(store, **a)  # noqa: E731
         else:

@@ -23,7 +23,7 @@ echo "daemon up (device $NEO_DEVICE, pid $(cat "$PIDFILE"), db port $NEO_PORT, h
 # The six kind folders only: WORLD.md is the answer key and manifest.jsonl is not a document.
 log=$(mktemp)
 {
-  for k in doc adr ticket chat meeting session; do "$NEO" ingest "data/synthetic/$k"; done
+  for k in doc adr ticket chat meeting session; do "$NEO" ingest --wait "data/synthetic/$k"; done
   # one file per call: `neo ingest <dir>` has a 300 s client timeout, the public set takes about 15 min
   [ "${1:-}" = "--public" ] && find data/public/falkordb -name '*.md' | sort | while read -r f; do "$NEO" ingest "$f" >/dev/null; done
   # Last week's sessions of agent-a (the live one, demo/transcripts/agent_a.jsonl, is ingested on camera).

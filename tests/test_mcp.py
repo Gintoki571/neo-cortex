@@ -12,7 +12,7 @@ from test_tools import fakes, g  # noqa: F401  (fixtures)
 
 from neo_cortex.mcp_server import make_server
 
-TOOLS = {"brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "ingest", "handoff", "cypher", "dream"}
+TOOLS = {"brief", "recall", "remember", "ask", "explore", "connect", "who", "timeline", "impact", "relate", "read", "ingest", "handoff", "cypher", "dream"}
 
 
 def test_inprocess_list_and_call(g):  # noqa: F811
@@ -28,6 +28,22 @@ def test_inprocess_list_and_call(g):  # noqa: F811
             r = await c.call_tool("cypher", {"query": "CREATE (:X)"})
             assert "rejected" in r.content[0].text
     asyncio.run(run())
+
+
+def test_ingest_dir_background_job(g, tmp_path):  # noqa: F811
+    from starlette.testclient import TestClient
+    (tmp_path / "note.md").write_text("---\nkind: doc\ntitle: Session note\n---\nAuth Service sessions expire after 300 seconds.\n")
+    http = TestClient(make_server(g).streamable_http_app(), base_url="http://127.0.0.1")  # loopback Host passes the API guard
+    r = http.post("/api/ingest", json={"path_or_text": str(tmp_path), "background": True})
+    job = r.json()["job"]  # returned at once, before the ingest has run
+    assert r.status_code == 200 and job.startswith("job_")
+    for _ in range(300):
+        j = http.get(f"/api/jobs?id={job}").json()[0]
+        if j["status"] in ("done", "error"):
+            break
+        time.sleep(0.1)
+    assert j["status"] == "done" and j["result"].startswith("ingested "), j
+    assert "documents 1" in j["result"]
 
 
 def _redis_pids(db_port):
