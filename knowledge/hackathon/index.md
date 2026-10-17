@@ -8,4 +8,4 @@
 
 # Evidence
 
-* [Hackathon evidence](/references/evidence/hackathon/) - Raw fetches (obscura, curl) with sha256 recorded in each concept's frontmatter.
+* Hackathon sources - third-party pages and API responses are not redistributed; URL, sha256 and retrieved_at are recorded in each concept's frontmatter.

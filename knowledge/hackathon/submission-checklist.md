@@ -9,9 +9,9 @@ stale_after: 2026-10-19T00:00:00Z
 generated: { by: claude-haiku-5-5/hackathon-agent, at: 2026-10-15T19:30:00Z }
 verified: { by: process:cross-check, at: 2026-10-15T19:30:00Z }
 evidence:
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-rules.txt, sha256: 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082, retrieved_at: 2026-10-15T19:23:00Z, method: obscura }
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt, sha256: d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1, retrieved_at: 2026-10-15T19:23:00Z, method: obscura }
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-schedule.txt, sha256: fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
+  - { name: wemakedevs-falkordb-rules.txt, url: "https://www.wemakedevs.org/hackathons/falkordb/rules", sha256: 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082, retrieved_at: 2026-10-15T19:23:00Z, method: obscura, redistributed: false }
+  - { name: wemakedevs-falkordb-hackathon.txt, url: "https://www.wemakedevs.org/hackathons/falkordb", sha256: d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1, retrieved_at: 2026-10-15T19:23:00Z, method: obscura, redistributed: false }
+  - { name: wemakedevs-falkordb-schedule.txt, url: "https://www.wemakedevs.org/hackathons/falkordb/schedule", sha256: fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
 sources:
   - id: rules-page
     resource: https://www.wemakedevs.org/hackathons/falkordb/rules
@@ -27,7 +27,7 @@ sources:
 # Deadline
 
 > "Submissions close at 11:59 PM IST on October 18."
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 - 2026-10-18 23:59 IST = **2026-10-18 18:29 UTC**.
 - Days remaining from the stated date 2026-10-16 UTC: about 2.8 days (2 days 18.5 hours).

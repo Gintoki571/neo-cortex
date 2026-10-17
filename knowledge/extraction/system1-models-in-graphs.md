@@ -39,16 +39,16 @@ sources:
     resource: https://docs.knowledgator.com/docs/cookbooks/graphrag-system/index.html
     title: 'Knowledgator GraphRAG system cookbook'
 evidence:
-  - { file: references/evidence/extraction/system1-lyonwj-gliner-decide.md.txt, sha256: e043ff41984b83f22e51aec142e241474fcbcd0e7386ac17fda8ce02d19923b2, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-lyonwj-typesafe-jev.md.txt, sha256: d1e4a001c8eab138bfda059804b9b2dd2b80e01d20d8fe5a00d3387e5d674791, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-gliner-relex-arxiv-2605.10108.md.txt, sha256: a2af626a973b8c4a6084af31f6c8a033e5b1cff5897d0495698e589f8b1a76fc, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-neo4j-labs-extraction-pipeline.md.txt, sha256: d1bc0420efbfbb864c6562d024d8ce8f4aefec41fab8e8bac34ec0cb569fd808, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-fastino-gliner25-blog.md.txt, sha256: 1e0f2492e04db1ac76ac6bb23a19aaf66adbaf8856404b947839effb18ddaa55, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-fastino-gliner25-base-card.md.txt, sha256: ace8ffbc78ad4178c817ea80acd273749f17dd9baafa43e3babefbfcb785c536, retrieved_at: 2026-10-17T04:37:44Z, method: obscura }
-  - { file: references/evidence/extraction/system1-fastino-gliner25-decide-card.md.txt, sha256: b7273e7e2e3f75956a2c669f22f2c5d30a1ae514f0fac3325d7b81efa70525da, retrieved_at: 2026-10-17T04:37:44Z, method: obscura }
-  - { file: references/evidence/extraction/system1-falkordb-graphrag-strategies.md.txt, sha256: 9954469d575fae73871f4358afef95b98571fceb6cb58770fa9e1680a85ce9d4, retrieved_at: 2026-10-17T04:34:30Z, method: obscura }
-  - { file: references/evidence/extraction/system1-decodingai-keep-kg-clean.md.txt, sha256: 4c8d0a39adf6d586abb169ab21478bd00f56d298510afb65bb6b3786c0ead032, retrieved_at: 2026-10-17T04:36:43Z, method: obscura }
-  - { file: references/evidence/extraction/system1-knowledgator-graphrag-cookbook.md.txt, sha256: 14bfa6aed163d0a73a615648b5b75490be356da9e1c079ff07a2cf5c3b01cc27, retrieved_at: 2026-10-17T04:37:05Z, method: obscura }
+  - { name: system1-lyonwj-gliner-decide.md.txt, url: "https://lyonwj.com/blog/gliner-decide-knowledge-graph-extraction", sha256: e043ff41984b83f22e51aec142e241474fcbcd0e7386ac17fda8ce02d19923b2, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-lyonwj-typesafe-jev.md.txt, url: "https://lyonwj.com/blog/typesafe-jev-knowledge-graph-extraction", sha256: d1e4a001c8eab138bfda059804b9b2dd2b80e01d20d8fe5a00d3387e5d674791, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-gliner-relex-arxiv-2605.10108.md.txt, url: "https://arxiv.org/html/2605.10108v1", sha256: a2af626a973b8c4a6084af31f6c8a033e5b1cff5897d0495698e589f8b1a76fc, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-neo4j-labs-extraction-pipeline.md.txt, url: "https://neo4j.com/labs/agent-memory/explanation/extraction-pipeline/", sha256: d1bc0420efbfbb864c6562d024d8ce8f4aefec41fab8e8bac34ec0cb569fd808, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-fastino-gliner25-blog.md.txt, url: "https://fastino.ai/blog/gliner2-5-span-free-information-extraction", sha256: 1e0f2492e04db1ac76ac6bb23a19aaf66adbaf8856404b947839effb18ddaa55, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-fastino-gliner25-base-card.md.txt, url: "https://huggingface.co/fastino/gliner2.5-base-v1", sha256: ace8ffbc78ad4178c817ea80acd273749f17dd9baafa43e3babefbfcb785c536, retrieved_at: 2026-10-17T04:37:44Z, method: obscura, redistributed: false }
+  - { name: system1-fastino-gliner25-decide-card.md.txt, url: "https://huggingface.co/fastino/GLiNER2.5-Decide", sha256: b7273e7e2e3f75956a2c669f22f2c5d30a1ae514f0fac3325d7b81efa70525da, retrieved_at: 2026-10-17T04:37:44Z, method: obscura, redistributed: false }
+  - { name: system1-falkordb-graphrag-strategies.md.txt, url: "https://docs.falkordb.com/graphrag/strategies", sha256: 9954469d575fae73871f4358afef95b98571fceb6cb58770fa9e1680a85ce9d4, retrieved_at: 2026-10-17T04:34:30Z, method: obscura, redistributed: false }
+  - { name: system1-decodingai-keep-kg-clean.md.txt, url: "https://www.decodingai.com/p/keep-knowledge-graph-clean", sha256: 4c8d0a39adf6d586abb169ab21478bd00f56d298510afb65bb6b3786c0ead032, retrieved_at: 2026-10-17T04:36:43Z, method: obscura, redistributed: false }
+  - { name: system1-knowledgator-graphrag-cookbook.md.txt, url: "https://docs.knowledgator.com/docs/cookbooks/graphrag-system/index.html", sha256: 14bfa6aed163d0a73a615648b5b75490be356da9e1c079ff07a2cf5c3b01cc27, retrieved_at: 2026-10-17T04:37:05Z, method: obscura, redistributed: false }
 ---
 
 # System 1 models in knowledge-graph pipelines
@@ -68,7 +68,7 @@ Labels: **Measured** means a number from a stated test. **Opinion** means a desi
 
 - Raw GLiNER2.5 output on a 10-document synthetic corpus (47 gold triples, 214 mentions, 170 candidate edges): [^decide-blog]
   > "Scored against the gold triples, the raw extraction gets precision 0.279, recall 0.404, F1 0.330."
-  (`references/evidence/extraction/system1-lyonwj-gliner-decide.md.txt`)
+  (`https://lyonwj.com/blog/gliner-decide-knowledge-graph-extraction`)
 - Typing the bare surface string instead of the whole sentence agreed with GLiNER's type on 145 of 214 mentions, up from 72: [^decide-blog]
   > "Given only the surface string, it types the mention: across all 214 mentions, agreement with GLiNER's type goes from 72 to 145."
 

@@ -54,36 +54,36 @@ sources:
     resource: /falkordb/cypher-support.md
     title: 'FalkorDB Cypher support (internal)'
 evidence:
-  - { file: references/evidence/self-improvement/pg-jev/gh_commits.json, sha256: ae1c1988a3a90eb7779a996337ce5c60510fa70ef715f0ebe2e1f81b00439227, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_contents_root.json, sha256: ce526197f10acd708fa7b83db27f26be91314c7baed65a4ec6ecd9a056d49de1, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_languages.json, sha256: 16dac921ebc1a681116b6830c8838bb0890ac07bbd294d11fddcd0781a96c681, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_license.json, sha256: 89773f3a2a8071a941df0081d06e24a6326bdd24faec7ddc874a74409cb70ad3, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_releases_latest.json, sha256: b83ce06316d88085129b54f25b9d5db7276bc72c2eabb14dfa9d0c8b2421580b, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_repo.json, sha256: cd19a58704057e860e64d5e4e8e12e44007ee470a5ef153c1024fe83b1d094d9, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_stuntd_repo.json, sha256: 4da647b1f4e32b0e5c8df3e2688317ee8897aa7f37572dcbc44338527a6931a0, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tags.json, sha256: e3e5ea4f1cf92ca17318106a2aabff65a9b1b0bf15ff081c83e1c0852b8486b6, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tree_docs.json, sha256: 7da8cf97febbe328e031a4892820fa8ccd59a99d8a21289a97fc37027b678118, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tree_.github.json, sha256: af87ec5bf1b232a02ddaf610c7492e3e772e4a3514a0fc1bb11b922995d1d025, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tree_master_recursive.json, sha256: e592d5e5087d2cd0951a0212c42c7a4c3fef11bbc3d89b36d50314a3a3e343b6, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tree_sql.json, sha256: 119063d82916fb33982ac4ed7926a0936f04ad6d61db3a6b690652479d409383, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/gh_tree_test.json, sha256: 8d25a163e9fdd86f3f8ab56b38bc7eb29c3b88a8664e5fe9c33e4fbb3f4c10a0, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_AGENTS.md.txt, sha256: 487ec32c86cb3486eb5cb26cdec1f1fbd89b43bd3350b21d9c95862e5c903005, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_CHANGELOG.md.txt, sha256: c34f3bbac1ecba1e1fb263a7ee02e4ac0a6115586828b4233a1f30b742ad96ee, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_CONTRIBUTING.md.txt, sha256: 2fc954863363b47b8ed2ec6d778b0df7815e123d7654d958d56483c5eaf9ca86, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_Dockerfile, sha256: dfec0b5aa3c4ddc3f8a3d9f6ec233576de7be525488560bbc9385004d7acfe05, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_LICENSE.txt, sha256: cde1e15caffcf2859f51bf56566b1f26c58d4151334ceb7d6247ebc70c7b1414, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_Makefile, sha256: e592b8562610fbad81c7aa555a02805b609b1b08e09080af890d72193f6fc1fb, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/raw_META.json, sha256: 5e8357ec4df23520c1fdf668686eda4bdd10170a5a69109a7b9222f521d2e5c6, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/readme_README.txt, sha256: e98b6dfe50b695b02ddf4331171e2563a58271d4e383bf39f1365e0fb8c2318d, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/agents_skills_pgjev_references_functions.md.txt, sha256: 5c93caad36a8862a93ff68e07058cdff9ab5740b3886e9362c1814d7d68c7494, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/agents_skills_pgjev_references_how-it-works.md.txt, sha256: 4be2c5ab1008a6303b824d8430d279c1dd7ee50fe578e2f2504212e2a480b10c, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/agents_skills_pgjev_references_settings.md.txt, sha256: d92cf2e568f06c01b13d58b187a2d41d7240c2c77b23489c3e20f4af69cc107d, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/docs_PUBLISHING.md.txt, sha256: 12a46673e406b264e8dc66e2fb98ff2d08d80730f54681ee6386d29daaed9d8a, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/github_workflows_ci.yml.txt, sha256: 76a4e8a9a3e5524d8a4ac4a5deac80a36c7fe91c75b2a1705a4fc5419e336f8c, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/jev.control.txt, sha256: d849003c28fca73946b6cdef5e922739f34a3f784d9f4ad392c4360c49c28245, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/sql_jev--0.2.1.sql.txt, sha256: f82cd059a9588fcc5a7f3c9f22eb0f0d449498c74d0742728aa1e349ce709948, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/repo_files/test_mock_api.py.txt, sha256: 32004b83e6f44b336aba3f09efeb803162d4fa114c3876c7dd89d001ed77fe22, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
-  - { file: references/evidence/self-improvement/pg-jev/stuntd_README.txt, sha256: d9a91c829f52618315161f1b8289aeabeda43431789e41eb5086494680a9f293, retrieved_at: 2026-10-16T08:19:50Z, method: curl }
+  - { name: gh_commits.json, url: "https://api.github.com/repos/realZachi/pg-jev/commits", url_basis: inferred, sha256: ae1c1988a3a90eb7779a996337ce5c60510fa70ef715f0ebe2e1f81b00439227, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_contents_root.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/.agents?ref=master", sha256: ce526197f10acd708fa7b83db27f26be91314c7baed65a4ec6ecd9a056d49de1, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_languages.json, url: "https://api.github.com/repos/realZachi/pg-jev/languages", url_basis: inferred, sha256: 16dac921ebc1a681116b6830c8838bb0890ac07bbd294d11fddcd0781a96c681, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_license.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/LICENSE?ref=master", sha256: 89773f3a2a8071a941df0081d06e24a6326bdd24faec7ddc874a74409cb70ad3, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_releases_latest.json, url: "https://api.github.com/repos/realZachi/pg-jev/releases/latest", url_basis: inferred, sha256: b83ce06316d88085129b54f25b9d5db7276bc72c2eabb14dfa9d0c8b2421580b, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_repo.json, url: "https://api.github.com/repos/realZachi/pg-jev", url_basis: inferred, sha256: cd19a58704057e860e64d5e4e8e12e44007ee470a5ef153c1024fe83b1d094d9, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_stuntd_repo.json, url: "https://api.github.com/repos/bladedevoff/stuntd", url_basis: inferred, sha256: 4da647b1f4e32b0e5c8df3e2688317ee8897aa7f37572dcbc44338527a6931a0, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tags.json, url: "https://api.github.com/repos/realZachi/pg-jev/tags", url_basis: inferred, sha256: e3e5ea4f1cf92ca17318106a2aabff65a9b1b0bf15ff081c83e1c0852b8486b6, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tree_docs.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/docs/PUBLISHING.md?ref=master", sha256: 7da8cf97febbe328e031a4892820fa8ccd59a99d8a21289a97fc37027b678118, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tree_.github.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/.github/workflows?ref=master", sha256: af87ec5bf1b232a02ddaf610c7492e3e772e4a3514a0fc1bb11b922995d1d025, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tree_master_recursive.json, url: "https://api.github.com/repos/realZachi/pg-jev/git/trees/e3450d44f7f6745aa2d728c9289b9ca4a6feda9a", sha256: e592d5e5087d2cd0951a0212c42c7a4c3fef11bbc3d89b36d50314a3a3e343b6, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tree_sql.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/sql/jev--0.1.0--0.2.0.sql?ref=master", sha256: 119063d82916fb33982ac4ed7926a0936f04ad6d61db3a6b690652479d409383, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: gh_tree_test.json, url: "https://api.github.com/repos/realZachi/pg-jev/contents/test/Dockerfile?ref=master", sha256: 8d25a163e9fdd86f3f8ab56b38bc7eb29c3b88a8664e5fe9c33e4fbb3f4c10a0, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_AGENTS.md.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/AGENTS.md", url_basis: inferred, sha256: 487ec32c86cb3486eb5cb26cdec1f1fbd89b43bd3350b21d9c95862e5c903005, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_CHANGELOG.md.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/CHANGELOG.md", url_basis: inferred, sha256: c34f3bbac1ecba1e1fb263a7ee02e4ac0a6115586828b4233a1f30b742ad96ee, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_CONTRIBUTING.md.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/CONTRIBUTING.md", url_basis: inferred, sha256: 2fc954863363b47b8ed2ec6d778b0df7815e123d7654d958d56483c5eaf9ca86, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_Dockerfile, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/Dockerfile", url_basis: inferred, sha256: dfec0b5aa3c4ddc3f8a3d9f6ec233576de7be525488560bbc9385004d7acfe05, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_LICENSE.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/LICENSE", url_basis: inferred, sha256: cde1e15caffcf2859f51bf56566b1f26c58d4151334ceb7d6247ebc70c7b1414, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_Makefile, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/Makefile", url_basis: inferred, sha256: e592b8562610fbad81c7aa555a02805b609b1b08e09080af890d72193f6fc1fb, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: raw_META.json, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/META.json", url_basis: inferred, sha256: 5e8357ec4df23520c1fdf668686eda4bdd10170a5a69109a7b9222f521d2e5c6, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: readme_README.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md", url_basis: inferred, sha256: e98b6dfe50b695b02ddf4331171e2563a58271d4e383bf39f1365e0fb8c2318d, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: agents_skills_pgjev_references_functions.md.txt, url: "https://pgjev.com/docs/functions.md", sha256: 5c93caad36a8862a93ff68e07058cdff9ab5740b3886e9362c1814d7d68c7494, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: agents_skills_pgjev_references_how-it-works.md.txt, url: "https://pgjev.com/docs/how-it-works.md", sha256: 4be2c5ab1008a6303b824d8430d279c1dd7ee50fe578e2f2504212e2a480b10c, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: agents_skills_pgjev_references_settings.md.txt, url: "https://pgjev.com/docs/settings.md", sha256: d92cf2e568f06c01b13d58b187a2d41d7240c2c77b23489c3e20f4af69cc107d, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: docs_PUBLISHING.md.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/docs/PUBLISHING.md", url_basis: inferred, sha256: 12a46673e406b264e8dc66e2fb98ff2d08d80730f54681ee6386d29daaed9d8a, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: github_workflows_ci.yml.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/.github/workflows/ci.yml", url_basis: inferred, sha256: 76a4e8a9a3e5524d8a4ac4a5deac80a36c7fe91c75b2a1705a4fc5419e336f8c, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: jev.control.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/jev.control", url_basis: inferred, sha256: d849003c28fca73946b6cdef5e922739f34a3f784d9f4ad392c4360c49c28245, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: sql_jev--0.2.1.sql.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/sql/jev--0.2.1.sql", url_basis: inferred, sha256: f82cd059a9588fcc5a7f3c9f22eb0f0d449498c74d0742728aa1e349ce709948, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: test_mock_api.py.txt, url: "https://raw.githubusercontent.com/realZachi/pg-jev/master/test/mock_api.py", url_basis: inferred, sha256: 32004b83e6f44b336aba3f09efeb803162d4fa114c3876c7dd89d001ed77fe22, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
+  - { name: stuntd_README.txt, url: "https://github.com/bladedevoff/stuntd", url_basis: inferred, sha256: d9a91c829f52618315161f1b8289aeabeda43431789e41eb5086494680a9f293, retrieved_at: 2026-10-16T08:19:50Z, method: curl, redistributed: false }
 ---
 
 # What it is
@@ -92,9 +92,9 @@ pg-jev is a PostgreSQL extension, installed as `jev`, that filters, ranks and cl
 
 > Ask your Postgres tables questions in plain language. A PostgreSQL extension powered by TypeSafe's Jev.
 
-Evidence: `gh_repo.json` [^pgjev-repo-api]
+Evidence: `https://api.github.com/repos/realZachi/pg-jev` [^pgjev-repo-api]
 
-The README adds that the model is "a System One model that returns calibrated probabilities instead of generated text. No index, no embeddings, no vector column." [^pgjev-readme] Evidence: `readme_README.txt`.
+The README adds that the model is "a System One model that returns calibrated probabilities instead of generated text. No index, no embeddings, no vector column." [^pgjev-readme] Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md`.
 
 Repository facts, as observed 2026-10-16 (GitHub API, raw JSON lines):
 
@@ -107,18 +107,18 @@ Repository facts, as observed 2026-10-16 (GitHub API, raw JSON lines):
 "default_branch": "master",
 ```
 
-Evidence: `gh_repo.json` [^pgjev-repo-api]
+Evidence: `https://api.github.com/repos/realZachi/pg-jev` [^pgjev-repo-api]
 
-- Latest release in the changelog: "## [0.2.1] - 2026-10-03". Evidence: `raw_CHANGELOG.md.txt` [^pgjev-changelog]. Earlier entries are 0.2.0 and 0.1.0 (2026-09-17). The tags list has one entry, `"name": "v0.2.1"`. Evidence: `gh_tags.json`.
-- Licence: the LICENSE file is the PostgreSQL License, starting with "PostgreSQL License". Evidence: `raw_LICENSE.txt` [^pgjev-license]. The GitHub API licence field reads `"spdx_id": "NOASSERTION"` (GitHub's detector did not classify the file). Evidence: `gh_repo.json`.
-- Languages (GitHub, bytes): `"Shell": 9902`, `"Python": 3411`, Makefile and Dockerfile also present. Evidence: `gh_languages.json`.
-- Maturity: about one month old, one listed owner, 0.x versioning, a CI workflow (`github_workflows_ci.yml.txt`) and a regression suite (`test/`, `test_mock_api.py.txt`). The suite uses a mock API, so it never calls the live model.
+- Latest release in the changelog: "## [0.2.1] - 2026-10-03". Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/CHANGELOG.md` [^pgjev-changelog]. Earlier entries are 0.2.0 and 0.1.0 (2026-09-17). The tags list has one entry, `"name": "v0.2.1"`. Evidence: `https://api.github.com/repos/realZachi/pg-jev/tags`.
+- Licence: the LICENSE file is the PostgreSQL License, starting with "PostgreSQL License". Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/LICENSE` [^pgjev-license]. The GitHub API licence field reads `"spdx_id": "NOASSERTION"` (GitHub's detector did not classify the file). Evidence: `https://api.github.com/repos/realZachi/pg-jev`.
+- Languages (GitHub, bytes): `"Shell": 9902`, `"Python": 3411`, Makefile and Dockerfile also present. Evidence: `https://api.github.com/repos/realZachi/pg-jev/languages`.
+- Maturity: about one month old, one listed owner, 0.x versioning, a CI workflow (`https://raw.githubusercontent.com/realZachi/pg-jev/master/.github/workflows/ci.yml`) and a regression suite (`test/`, `https://raw.githubusercontent.com/realZachi/pg-jev/master/test/mock_api.py`). The suite uses a mock API, so it never calls the live model.
 
 # How it works
 
 Three layers.
 
-1. **SQL surface.** Functions such as `jev(row, condition)`, `jev_prob`, `jev_choice`, `jev_score`, `jev_eval`, `jev_stats`. The README says "`jev()` is an ordinary boolean function, so it composes with everything else in SQL". Evidence: `readme_README.txt` [^pgjev-readme]. The functions are declared in `sql_jev--0.2.1.sql.txt` [^pgjev-sql].
+1. **SQL surface.** Functions such as `jev(row, condition)`, `jev_prob`, `jev_choice`, `jev_score`, `jev_eval`, `jev_stats`. The README says "`jev()` is an ordinary boolean function, so it composes with everything else in SQL". Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]. The functions are declared in `https://raw.githubusercontent.com/realZachi/pg-jev/master/sql/jev--0.2.1.sql` [^pgjev-sql].
 2. **PL/Python core.** `_jev_eval` is `LANGUAGE plpython3u`. It serialises the row, reads ahead the table in physical order, batches rows, and sends HTTPS requests from the database server.
 3. **Remote model.** One POST per batch. The request body is built as follows (verbatim from the SQL):
 
@@ -127,7 +127,7 @@ return json.dumps({"model": cfg["model"], "state": state,
                    "questions": {("r%d" % i): build_question(i) for i in range(len(rows))}}).encode()
 ```
 
-Evidence: `sql_jev--0.2.1.sql.txt` [^pgjev-sql]
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/sql/jev--0.2.1.sql` [^pgjev-sql]
 
 Batching is the central design choice. The README says:
 
@@ -135,7 +135,7 @@ Batching is the central design choice. The README says:
 
 > Jev evaluates all questions over one state in parallel, which amortises the ~270-token request overhead
 
-Evidence: `readme_README.txt` [^pgjev-readme]
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]
 
 The author also reports that position-indexed answers degrade with batch size:
 
@@ -143,17 +143,17 @@ The author also reports that position-indexed answers degrade with batch size:
 
 > batches of 1–20 rows were 100 % correct, batches of 40 were 92–98 % and batches of 80 were 77–94 %
 
-Evidence: `readme_README.txt` [^pgjev-readme]. These are the author's own tests against ground truth from structured columns (400 rows each). They were not independently reproduced.
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]. These are the author's own tests against ground truth from structured columns (400 rows each). They were not independently reproduced.
 
 Caching and cost:
 
 > Answers are cached per row content and question for the backend session
 
-Evidence: `readme_README.txt` [^pgjev-readme]. Threshold changes and sorting by probability re-use the cache.
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]. Threshold changes and sorting by probability re-use the cache.
 
 > Measured on a 2,000-row table from Europe (~190 ms to the API): first run ≈ 3.5 s in 100 requests, ≈ 296k input tokens, ≈ $0.012
 
-Evidence: `readme_README.txt` [^pgjev-readme]. This is the author's measurement at TypeSafe list price. It was not re-run here.
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]. This is the author's measurement at TypeSafe list price. It was not re-run here.
 
 Full scan and privacy limits:
 
@@ -161,15 +161,15 @@ Full scan and privacy limits:
 
 > Row contents are sent to a third-party API. Do not use it on data you may not share.
 
-Evidence: `readme_README.txt` [^pgjev-readme]
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]
 
-Local endpoint option. The README says `jev.api_url` "can point at any server that speaks the same `POST /v1/systemone` contract, so rows never leave". Evidence: `readme_README.txt` [^pgjev-readme]. The changelog adds: "Local Jev-compatible servers work without an API key." Evidence: `raw_CHANGELOG.md.txt` [^pgjev-changelog]. The named local server is stuntd, which the README describes as a proxy that "records the typed decisions your app already makes and learns to answer them itself". Evidence: `stuntd_README.txt` [^stuntd-readme]. Its README also says "TypeSafe's Jev is an early-access API at the time of writing, and there are no published weights." Evidence: `stuntd_README.txt` [^stuntd-readme]. stuntd is Apache-2.0, 70 stars, created 2026-09-23, pushed 2026-10-11, and distils heads on a frozen Laya encoder. Evidence: `gh_stuntd_repo.json` [^stuntd-api].
+Local endpoint option. The README says `jev.api_url` "can point at any server that speaks the same `POST /v1/systemone` contract, so rows never leave". Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]. The changelog adds: "Local Jev-compatible servers work without an API key." Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/CHANGELOG.md` [^pgjev-changelog]. The named local server is stuntd, which the README describes as a proxy that "records the typed decisions your app already makes and learns to answer them itself". Evidence: `https://github.com/bladedevoff/stuntd` [^stuntd-readme]. Its README also says "TypeSafe's Jev is an early-access API at the time of writing, and there are no published weights." Evidence: `https://github.com/bladedevoff/stuntd` [^stuntd-readme]. stuntd is Apache-2.0, 70 stars, created 2026-09-23, pushed 2026-10-11, and distils heads on a frozen Laya encoder. Evidence: `https://api.github.com/repos/bladedevoff/stuntd` [^stuntd-api].
 
-Requirements: "Requirements: PostgreSQL 14–17 with `plpython3u`", a superuser, and a TypeSafe API key, unless the endpoint is local. Evidence: `readme_README.txt` [^pgjev-readme]
+Requirements: "Requirements: PostgreSQL 14–17 with `plpython3u`", a superuser, and a TypeSafe API key, unless the endpoint is local. Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]
 
 > `plpython3u` is an untrusted language: only superusers can create the extension, and functions run with the server's OS privileges.
 
-Evidence: `readme_README.txt` [^pgjev-readme]
+Evidence: `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md` [^pgjev-readme]
 
 # Fit assessment
 
@@ -222,11 +222,11 @@ Timing. The hackathon closes 2026-10-18 18:29 UTC, about two days after this not
 - [FalkorDB Cypher support](/falkordb/cypher-support.md)
 - [Architecture index](/architecture/index.md)
 
-[^pgjev-repo-api]: GitHub API, https://api.github.com/repos/realZachi/pg-jev. Evidence `gh_repo.json`, `gh_languages.json`, `gh_tags.json`.
-[^pgjev-readme]: https://github.com/realZachi/pg-jev (README on master). Evidence `readme_README.txt`.
-[^pgjev-changelog]: https://github.com/realZachi/pg-jev/blob/master/CHANGELOG.md. Evidence `raw_CHANGELOG.md.txt`.
-[^pgjev-license]: https://github.com/realZachi/pg-jev/blob/master/LICENSE. Evidence `raw_LICENSE.txt`.
-[^pgjev-sql]: https://github.com/realZachi/pg-jev/blob/master/sql/jev--0.2.1.sql. Evidence `repo_files/sql_jev--0.2.1.sql.txt`.
-[^stuntd-readme]: https://github.com/bladedevoff/stuntd. Evidence `stuntd_README.txt`.
-[^stuntd-api]: https://api.github.com/repos/bladedevoff/stuntd. Evidence `gh_stuntd_repo.json`.
+[^pgjev-repo-api]: GitHub API, https://api.github.com/repos/realZachi/pg-jev. Evidence `https://api.github.com/repos/realZachi/pg-jev`, `https://api.github.com/repos/realZachi/pg-jev/languages`, `https://api.github.com/repos/realZachi/pg-jev/tags`.
+[^pgjev-readme]: https://github.com/realZachi/pg-jev (README on master). Evidence `https://raw.githubusercontent.com/realZachi/pg-jev/master/README.md`.
+[^pgjev-changelog]: https://github.com/realZachi/pg-jev/blob/master/CHANGELOG.md. Evidence `https://raw.githubusercontent.com/realZachi/pg-jev/master/CHANGELOG.md`.
+[^pgjev-license]: https://github.com/realZachi/pg-jev/blob/master/LICENSE. Evidence `https://raw.githubusercontent.com/realZachi/pg-jev/master/LICENSE`.
+[^pgjev-sql]: https://github.com/realZachi/pg-jev/blob/master/sql/jev--0.2.1.sql. Evidence `https://raw.githubusercontent.com/realZachi/pg-jev/master/sql/jev--0.2.1.sql`.
+[^stuntd-readme]: https://github.com/bladedevoff/stuntd. Evidence `https://github.com/bladedevoff/stuntd`.
+[^stuntd-api]: https://api.github.com/repos/bladedevoff/stuntd. Evidence `https://api.github.com/repos/bladedevoff/stuntd`.
 [^judging-note]: [Graph Hacks judging and prizes](/hackathon/judging-and-prizes.md), which cites the WeMakeDevs rules page.

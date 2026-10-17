@@ -41,12 +41,12 @@ sources:
     title: redislite/configuration.py (master)
 
 evidence:
-  - { file: references/evidence/falkordblite/readme-raw.txt, sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:23:42Z, method: curl }
-  - { file: references/evidence/falkordblite/src__redislite_falkordb_client.py, sha256: 51dfb1ddc75772ea14e6b127b53fdafae1ac6d8143bed1295d3cf2dc9f457a9a, retrieved_at: 2026-10-15T19:23:50Z, method: curl }
-  - { file: references/evidence/falkordblite/src__redislite_async_falkordb_client.py, sha256: dc4dbd89d47ecc5c10b833b687a84ae613ace84a69dd4e2ed6d3ba373207ec31, retrieved_at: 2026-10-15T19:23:51Z, method: curl }
-  - { file: references/evidence/falkordblite/src__redislite___init__.py, sha256: fc1aedab64b7afc28cf2f0074c672e90bc28536de070ab2809a2f356b8a778e2, retrieved_at: 2026-10-15T19:23:50Z, method: curl }
-  - { file: references/evidence/falkordblite/wheel-redislite-client.py.txt, sha256: b1dba5d9f35c0de1df504b23c148058c247c2f95cf521cdab13becdc4670db9b, retrieved_at: 2026-10-15T19:29:15Z, method: command }
-  - { file: references/evidence/falkordblite/src__docs_ASYNC_API-raw.txt, sha256: f509c2d5b484cdb27d3d8ce54c880e83aede8b2b46bdb59c8cd9c1f7ee20b9e1, retrieved_at: 2026-10-15T19:23:52Z, method: curl }
+  - { name: readme-raw.txt, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/README.md", sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:23:42Z, method: curl, redistributed: false }
+  - { name: src__redislite_falkordb_client.py, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/falkordb_client.py", url_basis: inferred, sha256: 51dfb1ddc75772ea14e6b127b53fdafae1ac6d8143bed1295d3cf2dc9f457a9a, retrieved_at: 2026-10-15T19:23:50Z, method: curl, redistributed: false }
+  - { name: src__redislite_async_falkordb_client.py, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/async_falkordb_client.py", url_basis: inferred, sha256: dc4dbd89d47ecc5c10b833b687a84ae613ace84a69dd4e2ed6d3ba373207ec31, retrieved_at: 2026-10-15T19:23:51Z, method: curl, redistributed: false }
+  - { name: src__redislite___init__.py, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/__init__.py", url_basis: inferred, sha256: fc1aedab64b7afc28cf2f0074c672e90bc28536de070ab2809a2f356b8a778e2, retrieved_at: 2026-10-15T19:23:50Z, method: curl, redistributed: false }
+  - { name: wheel-redislite-client.py.txt, url: "https://pypi.org/project/falkordblite/0.10.0/", url_basis: inferred, sha256: b1dba5d9f35c0de1df504b23c148058c247c2f95cf521cdab13becdc4670db9b, retrieved_at: 2026-10-15T19:29:15Z, method: command, redistributed: false }
+  - { name: src__docs_ASYNC_API-raw.txt, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/docs/ASYNC_API.md", url_basis: inferred, sha256: f509c2d5b484cdb27d3d8ce54c880e83aede8b2b46bdb59c8cd9c1f7ee20b9e1, retrieved_at: 2026-10-15T19:23:52Z, method: curl, redistributed: false }
   - { file: references/evidence/falkordblite/capabilities-run-all-output.txt, sha256: 37a128b6a40f386e0e4ef0739df1b32179e45be029cb102036b0ccc987471cc5, retrieved_at: 2026-10-15T19:27:36Z, method: command }
   - { file: references/evidence/falkordblite/api-connection-probe-output.txt, sha256: 4d4750d52c4d377e06f183e8a85cc34477c156b843d9221dbecf429ff650d385, retrieved_at: 2026-10-15T19:27:50Z, method: command }
   - { file: references/evidence/falkordblite/external-client-probe-output.txt, sha256: 23cf323c60abbe891e7108360bdcc90210e51b496d10c5f6c231217eef834130, retrieved_at: 2026-10-15T19:28:30Z, method: command }
@@ -213,12 +213,12 @@ Full details: [capabilities-test](/falkordblite/capabilities-test.md) and [limit
 - Whether `graphrag-sdk` can point at the unix socket URL without code changes. Not tested here.
 - `g.delete()`, `Redis` key-value calls, and `AsyncRedis` were not run.
 
-[^readme]: FalkorDBLite README, evidence `references/evidence/falkordblite/readme-raw.txt`.
-[^src-init]: `redislite/__init__.py`, evidence `references/evidence/falkordblite/src__redislite___init__.py`.
-[^src-falkordb-client]: `redislite/falkordb_client.py`, evidence `references/evidence/falkordblite/src__redislite_falkordb_client.py`.
-[^src-async-client]: `redislite/async_falkordb_client.py`, evidence `references/evidence/falkordblite/src__redislite_async_falkordb_client.py`.
-[^redislite-client]: `redislite/client.py` from the 0.10.0 wheel, evidence `references/evidence/falkordblite/wheel-redislite-client.py.txt`.
-[^redislite-config]: `redislite/configuration.py`, evidence `references/evidence/falkordblite/src__redislite_configuration.py`.
+[^readme]: FalkorDBLite README, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/README.md`.
+[^src-init]: `redislite/__init__.py`, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/__init__.py`.
+[^src-falkordb-client]: `redislite/falkordb_client.py`, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/falkordb_client.py`.
+[^src-async-client]: `redislite/async_falkordb_client.py`, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/async_falkordb_client.py`.
+[^redislite-client]: `redislite/client.py` from the 0.10.0 wheel, evidence `https://pypi.org/project/falkordblite/0.10.0/`.
+[^redislite-config]: `redislite/configuration.py`, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/configuration.py`.
 [^local-run]: Probe outputs: `references/evidence/falkordblite/capabilities-run-all-output.txt`, `api-connection-probe-output.txt`, `close-shutdown-probe-output.txt`, `constraints-command-probe-output.txt`, `runtime-versions.txt`.
 [^external]: `references/evidence/falkordblite/external-client-probe-output.txt` and `tcp-probe-output.txt`, produced by `external-client-driver.py` and `tcp-probe.py`.
-[^gh-issues]: GitHub issues list, evidence `references/evidence/falkordblite/gh-issues-open.json`.
+[^gh-issues]: GitHub issues list, evidence `https://api.github.com/repos/FalkorDB/falkordblite/issues?state=open`.

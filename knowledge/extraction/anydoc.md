@@ -47,17 +47,17 @@ sources:
     resource: references/evidence/extraction/anydoc-test-commands.txt
     title: Local anydoc 0.2.4 test run (see anydoc-test-results.md)
 evidence:
-  - { file: references/evidence/extraction/anydoc-readme.txt, sha256: 0cc4383125c1640584f73b4630499529c9a7188b97c17d82065f9a9dad5b7cb6, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-api-repo.json, sha256: b51e913ae5b4523a523ac66494467d6300851eae8e1c953c1822166117a639c9, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-releases-latest.json, sha256: 88095be9d58b1eabca85d1b1fe41774dbd52ed7a82386903fcf094c0c627b479, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-releases-list.json, sha256: bfa4e0ac16c9771e65a8e3f292436e93c85f6d0d67f6991a09d7a291897b9661, retrieved_at: 2026-10-15T19:26:00Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-pypi.json, sha256: 872a20ddac73b7296d90b3dd74b7cd1fa9d1fbd689e913bff90141330d7d5475, retrieved_at: 2026-10-15T19:26:00Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-npm.json, sha256: 0443a456d232683be6803d977e1d94fb49c9fee9682536ee0c65a048f16628b0, retrieved_at: 2026-10-15T19:26:00Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-crates.json, sha256: c51db2549a1ac5ccc1a52e377854653be29e9cbce66f42ba7d8b88ab2956ac7e, retrieved_at: 2026-10-15T19:26:00Z, method: curl }
-  - { file: references/evidence/extraction/anydoc-src-Cargo.toml.txt, sha256: 9c1c134e3f5b1c1559f88afd8d86ab4f4db2950fc633b3f5fb2b7dc14c37b55c, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/anydoc-src-python-pyproject.toml.txt, sha256: 77df7b8ce6b9f4a8236b3de8eb053aa7a96e0e3c31d49c027068f3671cf192be, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/anydoc-src-node-package.json.txt, sha256: 5db0f5ee97f584b472cbc3026d2da67efcfe2786a0bfec65d00ba14ddb680ab3, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/anydoc-license.txt, sha256: 03a9e7657aac6536fb6458bd220347c4e7f85bd0a51d8d9e8528530b7a682ade, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
+  - { name: anydoc-readme.txt, url: "https://raw.githubusercontent.com/firecrawl/anydoc/main/README.md", sha256: 0cc4383125c1640584f73b4630499529c9a7188b97c17d82065f9a9dad5b7cb6, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: anydoc-api-repo.json, url: "https://api.github.com/repos/firecrawl/anydoc", sha256: b51e913ae5b4523a523ac66494467d6300851eae8e1c953c1822166117a639c9, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: anydoc-releases-latest.json, url: "https://api.github.com/repos/firecrawl/anydoc/releases/latest", sha256: 88095be9d58b1eabca85d1b1fe41774dbd52ed7a82386903fcf094c0c627b479, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: anydoc-releases-list.json, url: "https://api.github.com/repos/firecrawl/anydoc/releases", sha256: bfa4e0ac16c9771e65a8e3f292436e93c85f6d0d67f6991a09d7a291897b9661, retrieved_at: 2026-10-15T19:26:00Z, method: curl, redistributed: false }
+  - { name: anydoc-pypi.json, url: "https://pypi.org/pypi/firecrawl-anydoc/json", sha256: 872a20ddac73b7296d90b3dd74b7cd1fa9d1fbd689e913bff90141330d7d5475, retrieved_at: 2026-10-15T19:26:00Z, method: curl, redistributed: false }
+  - { name: anydoc-npm.json, url: "https://registry.npmjs.org/@firecrawl/anydoc", sha256: 0443a456d232683be6803d977e1d94fb49c9fee9682536ee0c65a048f16628b0, retrieved_at: 2026-10-15T19:26:00Z, method: curl, redistributed: false }
+  - { name: anydoc-crates.json, url: "https://crates.io/api/v1/crates/anydoc", sha256: c51db2549a1ac5ccc1a52e377854653be29e9cbce66f42ba7d8b88ab2956ac7e, retrieved_at: 2026-10-15T19:26:00Z, method: curl, redistributed: false }
+  - { name: anydoc-src-Cargo.toml.txt, url: "https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/Cargo.toml", sha256: 9c1c134e3f5b1c1559f88afd8d86ab4f4db2950fc633b3f5fb2b7dc14c37b55c, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: anydoc-src-python-pyproject.toml.txt, url: "https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/python/pyproject.toml", sha256: 77df7b8ce6b9f4a8236b3de8eb053aa7a96e0e3c31d49c027068f3671cf192be, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: anydoc-src-node-package.json.txt, url: "https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/node/package.json", sha256: 5db0f5ee97f584b472cbc3026d2da67efcfe2786a0bfec65d00ba14ddb680ab3, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: anydoc-license.txt, url: "https://raw.githubusercontent.com/firecrawl/anydoc/main/LICENSE", sha256: 03a9e7657aac6536fb6458bd220347c4e7f85bd0a51d8d9e8528530b7a682ade, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
   - { file: references/evidence/extraction/anydoc-test-commands.txt, sha256: 15a8c788790e2ca6628ca400ed694ef7cab33780b92e7c75e350e5c2f83271b9, retrieved_at: 2026-10-15T19:26:30Z, method: command }
 ---
 
@@ -206,15 +206,15 @@ Vendor benchmark, as stated in the README: 100 documents across fourteen formats
 - [LangExtract](/extraction/langextract.md), which consumes plain text and could take anydoc Markdown as input
 - [Index](/extraction/index.md)
 
-[^readme]: anydoc README (main). Evidence: references/evidence/extraction/anydoc-readme.txt.
-[^repo-api]: GitHub API, firecrawl/anydoc. Evidence: references/evidence/extraction/anydoc-api-repo.json.
-[^release-api]: GitHub latest release v0.2.4. Evidence: references/evidence/extraction/anydoc-releases-latest.json.
-[^releases-list]: GitHub release list. Evidence: references/evidence/extraction/anydoc-releases-list.json.
-[^pypi]: PyPI firecrawl-anydoc. Evidence: references/evidence/extraction/anydoc-pypi.json.
-[^npm]: npm @firecrawl/anydoc. Evidence: references/evidence/extraction/anydoc-npm.json.
-[^crates]: crates.io anydoc. Evidence: references/evidence/extraction/anydoc-crates.json.
-[^src-cargo]: Cargo.toml at 261fc25. Evidence: references/evidence/extraction/anydoc-src-Cargo.toml.txt.
-[^src-python-pyproject]: python/pyproject.toml at 261fc25. Evidence: references/evidence/extraction/anydoc-src-python-pyproject.toml.txt.
-[^src-node-package]: node/package.json at 261fc25. Evidence: references/evidence/extraction/anydoc-src-node-package.json.txt.
-[^license]: LICENSE. Evidence: references/evidence/extraction/anydoc-license.txt.
+[^readme]: anydoc README (main). Evidence: https://raw.githubusercontent.com/firecrawl/anydoc/main/README.md.
+[^repo-api]: GitHub API, firecrawl/anydoc. Evidence: https://api.github.com/repos/firecrawl/anydoc.
+[^release-api]: GitHub latest release v0.2.4. Evidence: https://api.github.com/repos/firecrawl/anydoc/releases/latest.
+[^releases-list]: GitHub release list. Evidence: https://api.github.com/repos/firecrawl/anydoc/releases.
+[^pypi]: PyPI firecrawl-anydoc. Evidence: https://pypi.org/pypi/firecrawl-anydoc/json.
+[^npm]: npm @firecrawl/anydoc. Evidence: https://registry.npmjs.org/@firecrawl/anydoc.
+[^crates]: crates.io anydoc. Evidence: https://crates.io/api/v1/crates/anydoc.
+[^src-cargo]: Cargo.toml at 261fc25. Evidence: https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/Cargo.toml.
+[^src-python-pyproject]: python/pyproject.toml at 261fc25. Evidence: https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/python/pyproject.toml.
+[^src-node-package]: node/package.json at 261fc25. Evidence: https://github.com/firecrawl/anydoc/blob/261fc257d17c3eab0f673be31c408fd9fdc2171a/node/package.json.
+[^license]: LICENSE. Evidence: https://raw.githubusercontent.com/firecrawl/anydoc/main/LICENSE.
 [^test-results]: Local test run of anydoc 0.2.4. See [anydoc test results](/extraction/anydoc-test-results.md) and references/evidence/extraction/anydoc-test-*.

@@ -66,14 +66,14 @@ sources:
     resource: https://pypi.org/project/graphrag-sdk/1.4.0/
     title: "graphrag-sdk 1.4.0 source snapshot (evidence copy)"
 evidence:
-  - { file: references/evidence/graphrag-sdk/docs/strategies.txt, sha256: 406b86359245d89b44a5d991f87fc9bfca12711056decb7109cd7bec100bf9e6, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/providers.txt, sha256: 8b251d63efb7c92f809279639493b19af0ce844d45f48edef3e04a1af3167d21, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/configuration.txt, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/extraction.txt, sha256: f7427360df531a63bb0dc09e097a42549ed05df942d821704d84b26268ef55f2, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/architecture.txt, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/entity_extractors.py, sha256: b71221bc4957898fc400c3a71dff5dd5cafea9ada5f8a4ff6af79d377b90d0bc, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/core_providers_base.py, sha256: 4e8e2068eff184f7caad5e4fc3d46875a3004d255894b5a1c3954177ce2c575b, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/graph_extraction.py, sha256: b6c15b2c371310fe0647f954b1a979a2088f47d9a1ee1de8ae90536dd60cec67, retrieved_at: 2026-10-15T19:50:00Z, method: command }
+  - { name: strategies.txt, url: "https://docs.falkordb.com/graphrag/strategies", url_basis: inferred, sha256: 406b86359245d89b44a5d991f87fc9bfca12711056decb7109cd7bec100bf9e6, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: providers.txt, url: "https://docs.falkordb.com/graphrag/providers", url_basis: inferred, sha256: 8b251d63efb7c92f809279639493b19af0ce844d45f48edef3e04a1af3167d21, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: configuration.txt, url: "https://docs.falkordb.com/graphrag/configuration", url_basis: inferred, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: extraction.txt, url: "https://docs.falkordb.com/graphrag/extraction", url_basis: inferred, sha256: f7427360df531a63bb0dc09e097a42549ed05df942d821704d84b26268ef55f2, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: architecture.txt, url: "https://docs.falkordb.com/graphrag/architecture", url_basis: inferred, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: entity_extractors.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: b71221bc4957898fc400c3a71dff5dd5cafea9ada5f8a4ff6af79d377b90d0bc, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: core_providers_base.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: 4e8e2068eff184f7caad5e4fc3d46875a3004d255894b5a1c3954177ce2c575b, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: graph_extraction.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: b6c15b2c371310fe0647f954b1a979a2088f47d9a1ee1de8ae90536dd60cec67, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt, sha256: 020b6a709e6bb4c6c18a3ae7c5e5c592e926dab1f9ca783dfb1889ac5224f283, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-inject-pypi140.txt, sha256: 955ef9ec6257e43575a3699f1ac3e5b48655725e63bd10500e3a15b398da101b, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/gliner-default-offline.txt, sha256: afc636e791cdff86700860743c85f218eca617dae2e9d6d0b7224bb98d07527e, retrieved_at: 2026-10-15T20:05:00Z, method: command }
@@ -145,7 +145,7 @@ class EntityExtractor(ABC):
     async def extract_entities(self, text: str, entity_types: list[str], source_chunk_id: str) -> list[ExtractedEntity]: ...
 ```
 
-Constructor used by the default: `GraphExtraction(llm, *, entity_extractor=None, ...)` with `self.entity_extractor = entity_extractor or GLiNERExtractor()` (source, `graph_extraction.py`).[^src-extraction]
+Constructor used by the default: `GraphExtraction(llm, *, entity_extractor=None, ...)` with `self.entity_extractor = entity_extractor or GLiNERExtractor()` (source, `https://pypi.org/project/graphrag-sdk/1.4.0/`).[^src-extraction]
 
 Verified non-LLM extractor: `RegexExtractor(EntityExtractor)` (capitalised word runs, no model, no API) was passed as `GraphExtraction(llm=..., entity_extractor=RegexExtractor())` and ingested the sample text. Output nodes were `Alice Johnson`, `Acme Corp`, `London` with `WORKS_AT` and `LOCATED_IN` edges from the relation step (`runs/sdk-e2e-tcp-pypi140.txt`).[^run-e2e]
 
@@ -154,7 +154,7 @@ Important: step 2 (relationships) still calls the LLM. `GraphExtraction.__init__
 ### GLiNER
 
 - Default: `GLiNERExtractor` (docs: `GLiNERExtractor (default): Local GLiNER transformer model, no API calls. Returns typed entities with confidence scores and character spans.`).[^docs-strategies]
-- Default model: `urchade/gliner_medium-v2.1`. The 1.4.0 class in `entity_extractors.py` uses `model_name: str = "urchade/gliner_medium-v2.1"`. The model is loaded with `GLiNER.from_pretrained(model_name)` from the Hugging Face Hub. (Main adds a `DEFAULT_MODEL` constant; 1.4.0 does not have it.)[^src-entity]
+- Default model: `urchade/gliner_medium-v2.1`. The 1.4.0 class in `https://pypi.org/project/graphrag-sdk/1.4.0/` uses `model_name: str = "urchade/gliner_medium-v2.1"`. The model is loaded with `GLiNER.from_pretrained(model_name)` from the Hugging Face Hub. (Main adds a `DEFAULT_MODEL` constant; 1.4.0 does not have it.)[^src-entity]
 - `GLiNER` is a hard PyPI dependency (`gliner<1,>=0.2`), so it is always installed (and pulls torch).[^pypi]
 - Swap the model or threshold with `GLiNERExtractor(threshold=..., model_name=...)`. The 1.4.0 signature is `GLiNERExtractor(threshold: float = 0.75, model_name: str = "urchade/gliner_medium-v2.1")` (source). The docs' `candidate_threshold` and window parameters are main-only. A non-default model was not tested.[^docs-strategies][^run-claims]
 - **Run result.** The default extractor was executed. In the first attempt the HF cache held `models--urchade--gliner_medium-v2.1` with `gliner_config.json` and `README.md` only. Offline load failed with `IncompleteSnapshotError: ... 2 file(s) are missing (model.safetensors, pytorch_model.bin)`. An online attempt sat at `Fetching 5 files: 0/5` for about 17 minutes and was stopped. **GLiNER inference was not verified in this sandbox.**[^run-gliner-offline][^run-gliner-online]
@@ -195,20 +195,20 @@ Docs: `To add a custom strategy, subclass the relevant ABC`, then `await rag.ing
 - Chunker, loader, resolver, reranker, and whole-extraction custom classes: documented ABCs, not run.
 - Ollama through LiteLLM: docs claim only, not run.
 
-[^docs-strategies]: `references/evidence/graphrag-sdk/docs/strategies.txt`
-[^docs-providers]: `references/evidence/graphrag-sdk/docs/providers.txt`
-[^docs-configuration]: `references/evidence/graphrag-sdk/docs/configuration.txt`
-[^docs-extraction]: `references/evidence/graphrag-sdk/docs/extraction.txt`
-[^docs-architecture]: `references/evidence/graphrag-sdk/docs/architecture.txt`
-[^docs-getting-started]: `references/evidence/graphrag-sdk/docs/getting-started.txt`
-[^src-base]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/core_providers_base.py`
-[^src-entity]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/entity_extractors.py`
-[^src-main-api]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/api_main.py` (grep: no `LLMVerifiedResolution(` call; `resolver or ExactMatchResolution()` at lines 1591 and 2191)
-[^src-main-finalize]: `references/evidence/graphrag-sdk/src-main-35e67a0/CHANGELOG.txt` (#317 and #327 entries) and main `api/main.py` `_default_finalize_resolver` (not saved as evidence; `src-main-35e67a0` holds only CHANGELOG, pyproject, connection.py)
-[^src-extraction]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/graph_extraction.py`
-[^src-storage]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_vector_store.py`
-[^pypi]: `references/evidence/graphrag-sdk/pypi-graphrag_sdk.json`
-[^llms-txt]: `references/evidence/graphrag-sdk/docs/llms.txt`
+[^docs-strategies]: `https://docs.falkordb.com/graphrag/strategies`
+[^docs-providers]: `https://docs.falkordb.com/graphrag/providers`
+[^docs-configuration]: `https://docs.falkordb.com/graphrag/configuration`
+[^docs-extraction]: `https://docs.falkordb.com/graphrag/extraction`
+[^docs-architecture]: `https://docs.falkordb.com/graphrag/architecture`
+[^docs-getting-started]: `https://docs.falkordb.com/graphrag/getting-started`
+[^src-base]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-entity]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-main-api]: `https://pypi.org/project/graphrag-sdk/1.4.0/` (grep: no `LLMVerifiedResolution(` call; `resolver or ExactMatchResolution()` at lines 1591 and 2191)
+[^src-main-finalize]: `https://github.com/FalkorDB/GraphRAG-SDK/blob/35e67a0/CHANGELOG.md` (#317 and #327 entries) and main `api/main.py` `_default_finalize_resolver` (not saved as evidence; `src-main-35e67a0` holds only CHANGELOG, pyproject, connection.py)
+[^src-extraction]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-storage]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^pypi]: `https://pypi.org/pypi/graphrag-sdk/json`
+[^llms-txt]: `https://docs.falkordb.com/llms.txt`
 [^run-claims]: `references/evidence/graphrag-sdk/runs/claims-probe-pypi140.txt`
 [^run-e2e]: `references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt`
 [^run-gliner-offline]: `references/evidence/graphrag-sdk/runs/gliner-default-offline.txt`

@@ -65,7 +65,7 @@ evidence:
 
 # Answer: vector support
 
-**Yes, the bundled build supports vector indexes and nearest-neighbour search.** The steps that matter for GraphRAG all passed in a real run (`vecf32` storage, `CREATE VECTOR INDEX`, `db.idx.vector.queryNodes`, and persistence across a process restart). The bundled module is FalkorDB `4.18.3`, which matches the repo's `versions.cfg` and the closed PR `feat(ci): update FalkorDB server to v4.18.3` (#94):
+**Yes, the bundled build supports vector indexes and nearest-neighbour search.** The steps that matter for GraphRAG all passed in a real run (`vecf32` storage, `CREATE VECTOR INDEX`, `db.idx.vector.queryNodes`, and persistence across a process restart). The bundled module is FalkorDB `4.18.3`, which matches the repo's `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/versions.cfg` and the closed PR `feat(ci): update FalkorDB server to v4.18.3` (#94):
 
 > `FALKORDB_VERSION=v4.18.3`
 
@@ -219,11 +219,11 @@ The full list is in `dbms-procedures-full.json`. [^procedures]
 - Whether the bundled module matches upstream FalkorDB 4.18.3 byte for byte was not checked.
 - `g.delete()` and the vector index with `efRuntime` tuning were not tested.
 
-[^versions-cfg]: `versions.cfg` at master, evidence `references/evidence/falkordblite/versions.cfg`.
+[^versions-cfg]: `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/versions.cfg` at master, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/versions.cfg`.
 [^local-run]: `references/evidence/falkordblite/capabilities-run-all-output.txt`, `capabilities-write-phase.json`, `capabilities-reopen-phase.json`, `api-connection-probe-output.txt`, `external-client-probe-output.txt`, `constraints-command-probe-output.txt`.
 [^runtime-versions]: `references/evidence/falkordblite/runtime-versions.txt`.
 [^sp-probe]: `references/evidence/falkordblite/sp-probe-output.txt` (script `capabilities-shortest-path-probe.py`).
 [^procedures]: `references/evidence/falkordblite/dbms-procedures-full.json`.
 [^close-probe]: `references/evidence/falkordblite/close-shutdown-probe-output.txt` (script `close-shutdown-probe.py`).
 [^timing]: `references/evidence/falkordblite/timing-probe-output.txt` (script `timing-probe.py`).
-[^gh-pr-94]: Closed PR `#94` titled `feat(ci): update FalkorDB server to v4.18.3`, in the GitHub issues and PR list (state=all), evidence `references/evidence/falkordblite/gh-issues-open.json`.
+[^gh-pr-94]: Closed PR `#94` titled `feat(ci): update FalkorDB server to v4.18.3`, in the GitHub issues and PR list (state=all), evidence `https://api.github.com/repos/FalkorDB/falkordblite/issues?state=open`.

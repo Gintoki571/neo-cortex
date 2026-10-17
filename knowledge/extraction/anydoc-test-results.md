@@ -245,7 +245,7 @@ Run the commands in `anydoc-test-commands.txt` from the evidence directory. Use 
 [^pdf-output]: PDF run output. Evidence: references/evidence/extraction/anydoc-test-output-pdf.txt.
 [^offline-check]: Network-less run output. Evidence: references/evidence/extraction/anydoc-test-output-offline-check.txt.
 [^readme-node-check]: node --check output for the README snippet. Evidence: references/evidence/extraction/anydoc-test-output-readme-node-check.txt.
-[^readme]: anydoc README. Evidence: references/evidence/extraction/anydoc-readme.txt.
-[^pypi]: PyPI firecrawl-anydoc. Evidence: references/evidence/extraction/anydoc-pypi.json.
-[^npm]: npm @firecrawl/anydoc. Evidence: references/evidence/extraction/anydoc-npm.json.
+[^readme]: anydoc README. Evidence: https://raw.githubusercontent.com/firecrawl/anydoc/main/README.md.
+[^pypi]: PyPI firecrawl-anydoc. Evidence: https://pypi.org/pypi/firecrawl-anydoc/json.
+[^npm]: npm @firecrawl/anydoc. Evidence: https://registry.npmjs.org/@firecrawl/anydoc.
 [^test-sums]: SHA-256 list for all test artifacts. Evidence: references/evidence/extraction/anydoc-test-SHA256SUMS.txt.

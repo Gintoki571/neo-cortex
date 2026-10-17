@@ -36,12 +36,12 @@ sources:
     resource: https://docs.falkordb.com/getting-started/clients
     title: FalkorDB Client Libraries
 evidence:
-  - { file: references/evidence/falkordb/docs-cypher__cypher-support.txt, sha256: e5b65742168d132286b078676d619b914522b42db426a91e5566803f97710c03, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__known-limitations.txt, sha256: 5fe1f53e7a1ffa2312e1108e69d142dcfd51cff4ea7ee114e2705b25ee276ce3, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__functions.txt, sha256: a59272920050969fc515ef1e46d3083cfd3054c1363e138d996bab0b239252e3, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__procedures.txt, sha256: b87859e804610dc243820cd4b02d17d260bf2f7c899cb0c76bd96d9dee3ea8f8, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__merge.txt, sha256: 51eef3ac6f011de70c1a6da8d2929e4b5782ef1c07ed7d5bd7e4d6c8d09732db, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__unwind.txt, sha256: 0985a8e0e92cd7c84a94c638a4f07ec695c389cd86e89f198ddb77251150ed5d, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
+  - { name: docs-cypher__cypher-support.txt, url: "https://docs.falkordb.com/cypher/cypher-support", sha256: e5b65742168d132286b078676d619b914522b42db426a91e5566803f97710c03, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__known-limitations.txt, url: "https://docs.falkordb.com/cypher/known-limitations", sha256: 5fe1f53e7a1ffa2312e1108e69d142dcfd51cff4ea7ee114e2705b25ee276ce3, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__functions.txt, url: "https://docs.falkordb.com/cypher/functions", sha256: a59272920050969fc515ef1e46d3083cfd3054c1363e138d996bab0b239252e3, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__procedures.txt, url: "https://docs.falkordb.com/cypher/procedures", sha256: b87859e804610dc243820cd4b02d17d260bf2f7c899cb0c76bd96d9dee3ea8f8, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__merge.txt, url: "https://docs.falkordb.com/cypher/merge", sha256: 51eef3ac6f011de70c1a6da8d2929e4b5782ef1c07ed7d5bd7e4d6c8d09732db, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__unwind.txt, url: "https://docs.falkordb.com/cypher/unwind", sha256: 0985a8e0e92cd7c84a94c638a4f07ec695c389cd86e89f198ddb77251150ed5d, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
   - { file: references/evidence/falkordb/run-4.22.1-verify-core.txt, sha256: 256daa11aed5e75e142c84795b89ed8ea83ddb7a0248785c94fb4d8355b2a182, retrieved_at: 2026-10-15T19:50:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-verify-client.txt, sha256: bf904c98fb20054b1e0eebadf42b1e2eb1916c04e0c9d5ed524ff0e445b0ffbb, retrieved_at: 2026-10-15T19:50:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-verify-more.txt, sha256: 31c4152d51a15164f974cfa17a21023e3bca1ec85f675cce4def1c6f68bb6775, retrieved_at: 2026-10-15T19:50:00Z, method: command }
@@ -56,9 +56,9 @@ evidence:
 
 FalkorDB implements an openCypher subset. The docs say so in their own words:
 
-> "FalkorDB implements a subset of the Cypher language, which is growing as development continues." — evidence: `docs-cypher__cypher-support.txt` [^docs-cypher-support]
+> "FalkorDB implements a subset of the Cypher language, which is growing as development continues." — evidence: `https://docs.falkordb.com/cypher/cypher-support` [^docs-cypher-support]
 
-> "FalkorDB is based on the **OpenCypher Query Language Reference version 9**, available at opencypher.org. It implements a growing subset of the specification with proprietary extensions." — evidence: `docs-cypher__cypher-support.txt` [^docs-cypher-support]
+> "FalkorDB is based on the **OpenCypher Query Language Reference version 9**, available at opencypher.org. It implements a growing subset of the specification with proprietary extensions." — evidence: `https://docs.falkordb.com/cypher/cypher-support` [^docs-cypher-support]
 
 Related concepts: [indexing and vectors](/falkordb/indexing-and-vectors.md) (DDL, vector functions), [algorithms](/falkordb/algorithms-and-weighted-paths.md) (CALL algo.*), [data model](/falkordb/data-model-and-constraints.md) (types), [Python client](/falkordb/python-client.md) (parameters).
 
@@ -66,11 +66,11 @@ Status legend: **run** = reproduced on the falkordb/falkordb:latest image (modul
 
 ## Supported clauses (docs)
 
-Label expressions are listed as unsupported under the OPTIONAL MATCH heading: "Label expressions" — evidence: `docs-cypher__cypher-support.txt` (reading clauses).
+Label expressions are listed as unsupported under the OPTIONAL MATCH heading: "Label expressions" — evidence: `https://docs.falkordb.com/cypher/cypher-support` (reading clauses).
 
-Clauses the support page lists as supported: MATCH, OPTIONAL MATCH, RETURN, AS, WITH, UNWIND, WHERE, ORDER BY, SKIP, LIMIT, CREATE, DELETE, SET, REMOVE, MERGE, CALL, UNION, UNION ALL (`docs-cypher__cypher-support.txt`). FOREACH and LOAD CSV have their own docs pages (`docs-cypher__foreach.txt`, `docs-cypher__load-csv.txt`) but are not on the support page; LOAD CSV needs a file under the import folder (run: `Error opening CSV URI: file://x.csv` without one).
+Clauses the support page lists as supported: MATCH, OPTIONAL MATCH, RETURN, AS, WITH, UNWIND, WHERE, ORDER BY, SKIP, LIMIT, CREATE, DELETE, SET, REMOVE, MERGE, CALL, UNION, UNION ALL (`https://docs.falkordb.com/cypher/cypher-support`). FOREACH and LOAD CSV have their own docs pages (`https://docs.falkordb.com/cypher/foreach`, `https://docs.falkordb.com/cypher/load-csv`) but are not on the support page; LOAD CSV needs a file under the import folder (run: `Error opening CSV URI: file://x.csv` without one).
 
-> "  * We actually implement DETACH DELETE, the distinction being that relationships invalidated by node deletions are automatically deleted." — evidence: `docs-cypher__cypher-support.txt`
+> "  * We actually implement DETACH DELETE, the distinction being that relationships invalidated by node deletions are automatically deleted." — evidence: `https://docs.falkordb.com/cypher/cypher-support`
 
 The docs imply that plain `DELETE` of a node also removes its relationships (doc; not tested here).
 
@@ -78,7 +78,7 @@ The docs imply that plain `DELETE` of a node also removes its relationships (doc
 
 Docs syntax (redis-cli form, shown in the docs):
 
-Verbatim from the docs (`docs-cypher__cypher-support.txt`, Parameters section):
+Verbatim from the docs (`https://docs.falkordb.com/cypher/cypher-support`, Parameters section):
 
 ```cypher
 CYPHER name_param = "Niccolò Machiavelli" birth_year_param = 1469 MATCH (p:Person {name: $name_param, birth_year: $birth_year_param}) RETURN p
@@ -102,11 +102,11 @@ Returned `[[5]]` for five rows (run, `run-4.22.1-verify-client.txt`).
 
 ## MERGE and UNWIND bulk-loading pattern
 
-> "The `UNWIND` clause transforms a list into individual rows, creating one row for each element in the list." — evidence: `docs-cypher__unwind.txt` [^docs-unwind]
+> "The `UNWIND` clause transforms a list into individual rows, creating one row for each element in the list." — evidence: `https://docs.falkordb.com/cypher/unwind` [^docs-unwind]
 
-> "MERGE either matches existing nodes and binds them, or it creates new data and binds that." — evidence: `docs-cypher__merge.txt` [^docs-merge]
+> "MERGE either matches existing nodes and binds them, or it creates new data and binds that." — evidence: `https://docs.falkordb.com/cypher/merge` [^docs-merge]
 
-> "We should use multiple MERGE clauses to merge a relation and only create non-existent endpoints:" — evidence: `docs-cypher__merge.txt` [^docs-merge]
+> "We should use multiple MERGE clauses to merge a relation and only create non-existent endpoints:" — evidence: `https://docs.falkordb.com/cypher/merge` [^docs-merge]
 
 Recommended bulk shape (run, one round trip per batch):
 
@@ -127,7 +127,7 @@ MERGE (wallStreet:Movie { name: 'Wall Street' })
 MERGE (charlie)-[r:ACTED_IN]->(wallStreet)
 ```
 
-Source: `docs-cypher__merge.txt`.
+Source: `https://docs.falkordb.com/cypher/merge`.
 
 ## Single-statement rule (run)
 
@@ -149,7 +149,7 @@ Error (run): `A WITH clause is required to introduce MATCH after an updating cla
 
 ## Atomicity (run)
 
-The docs claim each query is atomic: "Every query that modifies the graph — using any combination of `CREATE`, `SET`, `DELETE`, or `MERGE` — is **atomic**." — evidence: `docs-design__concurrency.txt`. Test on 4.22.1 (`run-4.22.1-atomicity.txt`):
+The docs claim each query is atomic: "Every query that modifies the graph — using any combination of `CREATE`, `SET`, `DELETE`, or `MERGE` — is **atomic**." — evidence: `https://docs.falkordb.com/design/concurrency`. Test on 4.22.1 (`run-4.22.1-atomicity.txt`):
 
 ```cypher
 UNWIND [1,2,0] AS x CREATE (:Atom {v: x}) WITH x RETURN 1/x
@@ -159,7 +159,7 @@ Result: `Division by zero`, and afterwards `MATCH (a:Atom) RETURN count(a)` retu
 
 ## Known limitations (docs, several confirmed by run)
 
-- Relationship uniqueness (run). Quote: "When a relation in a match pattern is not referenced elsewhere in the query, FalkorDB will only verify that at least one matching relation exists" — evidence: `docs-cypher__known-limitations.txt` [^docs-known-limitations]. (The MATCH lines below are from `script-verify_client.py.txt`, with comments added.)
+- Relationship uniqueness (run). Quote: "When a relation in a match pattern is not referenced elsewhere in the query, FalkorDB will only verify that at least one matching relation exists" — evidence: `https://docs.falkordb.com/cypher/known-limitations` [^docs-known-limitations]. (The MATCH lines below are from `script-verify_client.py.txt`, with comments added.)
 
   ```cypher
   CREATE (a)-[:e {val:'1'}]->(b), (a)-[:e {val:'2'}]->(b)
@@ -169,7 +169,7 @@ Result: `Division by zero`, and afterwards `MATCH (a:Atom) RETURN count(a)` retu
 
   Workaround from the docs: `MATCH (a)-[e]->(b) WHERE ID(e) >= 0 RETURN COUNT(b)` (doc only).
 
-- LIMIT does not stop eager operators (run). Quote: "This limitation affects all eager operations: CREATE, SET, DELETE, MERGE, and projections with aggregate functions." — evidence: `docs-cypher__known-limitations.txt`
+- LIMIT does not stop eager operators (run). Quote: "This limitation affects all eager operations: CREATE, SET, DELETE, MERGE, and projections with aggregate functions." — evidence: `https://docs.falkordb.com/cypher/known-limitations`
 
   ```cypher
   UNWIND [1,2,3] AS value CREATE (a {property: value}) RETURN a LIMIT 1
@@ -177,31 +177,31 @@ Result: `Division by zero`, and afterwards `MATCH (a:Atom) RETURN count(a)` retu
 
   Run: 3 nodes were created, although one row was returned.
 
-- Index not used for `<>` filters. Quote: "The current index implementation, however, does not handle not-equal (`<>`) filters." — evidence: `docs-cypher__known-limitations.txt`
+- Index not used for `<>` filters. Quote: "The current index implementation, however, does not handle not-equal (`<>`) filters." — evidence: `https://docs.falkordb.com/cypher/known-limitations`
 
 - Aggregates inside pattern comprehensions are rejected (doc only). The docs give the error `Invalid use of aggregating function 'count'` for `RETURN [(n)-[r:REL]->(m) WHERE n IS NOT NULL | count(n)] AS v`. Workaround: `WITH [(n)-[:REL]->(m:Paper) | m] AS connected RETURN size(connected) AS count`.
 
 ## Operators and functions
 
-- Regex operator is unsupported (run). `RETURN 'abc' =~ 'a.*'` fails with `FalkorDB does not currently support =~`. Docs: "String operators (STARTS WITH, ENDS WITH, CONTAINS) are supported." and, under the same section, "Regex operator" listed as unsupported (`docs-cypher__cypher-support.txt`).
+- Regex operator is unsupported (run). `RETURN 'abc' =~ 'a.*'` fails with `FalkorDB does not currently support =~`. Docs: "String operators (STARTS WITH, ENDS WITH, CONTAINS) are supported." and, under the same section, "Regex operator" listed as unsupported (`https://docs.falkordb.com/cypher/cypher-support`).
 - The function `string.matchRegEx` exists and ran: `RETURN string.matchRegEx('abc', 'a.*')` returned a result (run). Use it when you need regex.
-- Booleans, NULL and three-valued logic (run): `RETURN 1 = true` gives `false`; `RETURN null = null` gives `null`. Docs quote: "Unlike all other scalars, `null` cannot be stored as a property value." — evidence: `docs-datatypes.txt` (see [data model](/falkordb/data-model-and-constraints.md)).
-- Hex literals: docs list "Hexadecimal and octal numerics" under unsupported (`docs-cypher__cypher-support.txt`). **Contradicted by run:** `RETURN 0x1F` returned `31` on 4.22.1 (`run-4.22.1-verify-client.txt`).
+- Booleans, NULL and three-valued logic (run): `RETURN 1 = true` gives `false`; `RETURN null = null` gives `null`. Docs quote: "Unlike all other scalars, `null` cannot be stored as a property value." — evidence: `https://docs.falkordb.com/datatypes` (see [data model](/falkordb/data-model-and-constraints.md)).
+- Hex literals: docs list "Hexadecimal and octal numerics" under unsupported (`https://docs.falkordb.com/cypher/cypher-support`). **Contradicted by run:** `RETURN 0x1F` returned `31` on 4.22.1 (`run-4.22.1-verify-client.txt`).
 - Temporal functions run: `RETURN date('2025-09-15').year, localtime('15:45:20').hour` gave `[[2025, 15, 4.0]]` (run; the third value is `duration(...).hours`).
-- `intern('...')` runs (docs, `docs-cypher__functions.txt`: "This function deduplicates the input string by storing a single internal copy across the database.").
+- `intern('...')` runs (docs, `https://docs.falkordb.com/cypher/functions`: "This function deduplicates the input string by storing a single internal copy across the database.").
 - `point({latitude: ..., longitude: ...})` runs; the returned values were float32-rounded (`41.4000015258789`). See [data model](/falkordb/data-model-and-constraints.md).
 - Vector functions: `vecf32([...])`, `vec.euclideanDistance(a, b)`, `vec.cosineDistance(a, b)` run (see [indexing and vectors](/falkordb/indexing-and-vectors.md)).
-- `vecf64` is **not** a function on 4.22.1: `Unknown function 'vecf64'` (run). The FAQ on the functions page says "`vecf64()` for 64-bit float vectors" (doc, `docs-cypher__functions.txt`). Contradicted.
-- User-defined functions: contradicted within the docs. The Cypher support page lists "User-defined functions" under unsupported, and its FAQ says "Yes. FalkorDB supports user-defined functions through the **Flex UDF library**" (`docs-cypher__cypher-support.txt`). Not tested here. Open question.
+- `vecf64` is **not** a function on 4.22.1: `Unknown function 'vecf64'` (run). The FAQ on the functions page says "`vecf64()` for 64-bit float vectors" (doc, `https://docs.falkordb.com/cypher/functions`). Contradicted.
+- User-defined functions: contradicted within the docs. The Cypher support page lists "User-defined functions" under unsupported, and its FAQ says "Yes. FalkorDB supports user-defined functions through the **Flex UDF library**" (`https://docs.falkordb.com/cypher/cypher-support`). Not tested here. Open question.
 - Unsupported: temporal arithmetic functions (doc).
 
-Functions table quote for vectors: "Returns the Cosine distance between the two input vectors" — evidence: `docs-cypher__functions.txt`.
+Functions table quote for vectors: "Returns the Cosine distance between the two input vectors" — evidence: `https://docs.falkordb.com/cypher/functions`.
 
 ## Procedures (CALL)
 
 Procedure list and signatures are in [algorithms-and-weighted-paths](/falkordb/algorithms-and-weighted-paths.md) and [indexing-and-vectors](/falkordb/indexing-and-vectors.md). Syntax from the docs:
 
-Verbatim from the docs (`docs-cypher__procedures.txt`): `GRAPH.QUERY social "CALL db.labels() YIELD label"` [^docs-procedures]
+Verbatim from the docs (`https://docs.falkordb.com/cypher/procedures`): `GRAPH.QUERY social "CALL db.labels() YIELD label"` [^docs-procedures]
 
 Run: `CALL db.labels() YIELD label RETURN label` and `CALL db.meta.stats()` both returned data (run).
 

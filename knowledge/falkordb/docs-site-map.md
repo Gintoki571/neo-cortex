@@ -22,10 +22,10 @@ sources:
     resource: https://docs.falkordb.com/
     title: FalkorDB Documentation | Graph Database for GraphRAG & GenAI
 evidence:
-  - { file: references/evidence/falkordb/sitemap.xml, sha256: 09275a9f67e8dc1f7c106e72ec8b697a254c9a20654a3eb3b2117f223e758283, retrieved_at: 2026-10-15T19:30:00Z, method: curl }
-  - { file: references/evidence/falkordb/llms.txt, sha256: b6f5810330759d9ecdb3617831ff5ae92044230caeb7e20a7bd143a40babc5f5, retrieved_at: 2026-10-15T19:30:00Z, method: curl }
-  - { file: references/evidence/falkordb/llms-full.txt, sha256: 88cf73920ae23e38cf1b9b5534a8663608ff89f8572300bad2dd328980d2276d, retrieved_at: 2026-10-15T19:31:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-index.txt, sha256: 6cd57bdc84c779ec0e227d6da37e5bc09c87d219d28375e320703ca78affb132, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
+  - { name: sitemap.xml, url: "https://docs.falkordb.com/sitemap.xml", sha256: 09275a9f67e8dc1f7c106e72ec8b697a254c9a20654a3eb3b2117f223e758283, retrieved_at: 2026-10-15T19:30:00Z, method: curl, redistributed: false }
+  - { name: llms.txt, url: "https://docs.falkordb.com/llms.txt", sha256: b6f5810330759d9ecdb3617831ff5ae92044230caeb7e20a7bd143a40babc5f5, retrieved_at: 2026-10-15T19:30:00Z, method: curl, redistributed: false }
+  - { name: llms-full.txt, url: "https://docs.falkordb.com/llms-full.txt", url_basis: inferred, sha256: 88cf73920ae23e38cf1b9b5534a8663608ff89f8572300bad2dd328980d2276d, retrieved_at: 2026-10-15T19:31:00Z, method: curl, redistributed: false }
+  - { name: docs-index.txt, url: "https://docs.falkordb.com/index", sha256: 6cd57bdc84c779ec0e227d6da37e5bc09c87d219d28375e320703ca78affb132, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
 ---
 
 # FalkorDB docs site map and crawl method
@@ -34,13 +34,13 @@ evidence:
 
 Three machine-readable sources exist. All three were fetched and cross-checked:
 
-1. `https://docs.falkordb.com/sitemap.xml`: 624 `<url>` entries, each with a `<lastmod>`. The newest `lastmod` is `2026-10-15T14:37:32.488Z` (`references/evidence/falkordb/sitemap.xml`, sha256 `09275a9f…`).
-2. `https://docs.falkordb.com/llms.txt`: the LLM-oriented page index (`llms.txt`).
+1. `https://docs.falkordb.com/sitemap.xml`: 624 `<url>` entries, each with a `<lastmod>`. The newest `lastmod` is `2026-10-15T14:37:32.488Z` (`https://docs.falkordb.com/sitemap.xml`, sha256 `09275a9f…`).
+2. `https://docs.falkordb.com/llms.txt`: the LLM-oriented page index (`https://docs.falkordb.com/llms.txt`).
 3. `https://docs.falkordb.com/llms-full.txt`: all pages concatenated, 2,668,377 bytes. Each page starts with `# <title>` then `Source: <url>`. Splitting on that pattern yields 624 pages, matching the sitemap count.
 
-The per-page Markdown (`https://docs.falkordb.com/<path>.md`) is also served as raw Markdown. The MDX-rendered HTML from the obscura CLI includes navigation chrome and is noisier. For this bundle the per-page slices come from `llms-full.txt`, and the slices used as evidence are saved as `references/evidence/falkordb/docs-<section>__<page>.txt`.
+The per-page Markdown (`https://docs.falkordb.com/<path>.md`) is also served as raw Markdown. The MDX-rendered HTML from the obscura CLI includes navigation chrome and is noisier. For this bundle the per-page slices come from `https://docs.falkordb.com/llms-full.txt`, and the slices used as evidence are not redistributed; each page's URL and sha256 are in the frontmatter.
 
-Both have 624 entries, but the URL strings differ for 31 of them: `llms-full.txt` uses `…/index` forms (for example `https://docs.falkordb.com/index`) and the sitemap lists the directory form (for example `https://docs.falkordb.com/`). Graph-RAG, UDF and other sub-pages match as paths. Normalise `/index` before diffing the two lists.
+Both have 624 entries, but the URL strings differ for 31 of them: `https://docs.falkordb.com/llms-full.txt` uses `…/index` forms (for example `https://docs.falkordb.com/index`) and the sitemap lists the directory form (for example `https://docs.falkordb.com/`). Graph-RAG, UDF and other sub-pages match as paths. Normalise `/index` before diffing the two lists.
 
 ## Scope read for this concept set
 
@@ -84,7 +84,7 @@ Sitemap `lastmod` values are the only dates the site publishes per page. The con
 
 ## Doc-site defects seen during the crawl
 
-- Broken anchors: the Cypher support page links to `/commands/graph.query#procedures` and `/commands/graph.query#functions` (`docs-cypher__cypher-support.txt`). The GRAPH.QUERY page has no such sections (`docs-commands__graph.query.txt`). The Procedures and Functions pages are the right targets.
+- Broken anchors: the Cypher support page links to `/commands/graph.query#procedures` and `/commands/graph.query#functions` (`https://docs.falkordb.com/cypher/cypher-support`). The GRAPH.QUERY page has no such sections (`https://docs.falkordb.com/commands/graph.query`). The Procedures and Functions pages are the right targets.
 - The docs' procedure table omits `algo.HarmonicCentrality`, `algo.maxFlow`, and `db.idx.cch.query`, which exist and run.
 - Several doc snippets are pseudo-code with `<angle>` placeholders or named-argument signatures. They are not runnable (for example `CREATE VECTOR INDEX FOR <entity_pattern> ...`). Use the working examples in these concepts.
 - Some doc examples fail as written on 4.22.1: the BFS friend-recommendation block, the betweenness block with quoted map keys, the PageRank expected values, and the CDLP expected grouping. Details are in [algorithms](/falkordb/algorithms-and-weighted-paths.md).
@@ -96,4 +96,4 @@ Sitemap `lastmod` values are the only dates the site publishes per page. The con
 
 - The `udfs` section (50 pages, the "Flex UDF library") was not read. The Cypher support page both lists UDFs as unsupported and says they are supported. Read `/udfs` before deciding.
 - `enterprise` and `cloud` pages were not read. They may contain licence and limit details that differ from the open-source docs.
-- `llms-full.txt` is 2.67 MB. Re-fetch it to refresh; the sitemap `lastmod` will tell you which pages changed.
+- `https://docs.falkordb.com/llms-full.txt` is 2.67 MB. Re-fetch it to refresh; the sitemap `lastmod` will tell you which pages changed.

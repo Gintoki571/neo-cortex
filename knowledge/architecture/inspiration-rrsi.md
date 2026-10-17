@@ -45,27 +45,27 @@ sources:
     resource: /hackathon/rules.md
     title: Graph Hacks rules (bundle)
 evidence:
-  - { file: references/evidence/self-improvement/rrsi/api-repo.json, sha256: b3d9ff36867c601aa73087fa28071a6f0394cfcc5225b2de20c31cdbeb26c7e3, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/api-releases-latest.json, sha256: d9e37600354c1839f6b22cebde497e9d14750d2401a06c9a51b1619baf991613, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/api-contents.json, sha256: 62def5fe90aaa218b669717873313d5fc9d2e61648e5fccc3b5351b75d2893e0, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/api-license.json, sha256: a7e97fd14c887611b6d04401a215641d6247bf6a3f898368875765a1deab5950, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/raw-main-README.md.txt, sha256: 4aa475cf0dea8b281fae48ae12f8c201e05fbdb1f55b8b3d87ff3dee0dcf8a93, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/raw-main-LICENSE.txt, sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30, retrieved_at: 2026-10-16T08:19:57Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/arxiv-abs-2609.24972.html, sha256: 8f109d006d8610683c42045fd463a0fd0f8edfdd5dfd4b89706d58077fe81e16, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/arxiv-html-2609.24972.html, sha256: 462119b1de52574679d8785d7902f865f0406f78b07758ee7fc13b2995b67750, retrieved_at: 2026-10-16T08:20:45Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/arxiv-html-text.txt, sha256: cc3b2f0a0ec0009d97719960533fa1aba8a17360a53b3ee781ab1d8c9236b32c, retrieved_at: 2026-10-16T08:20:45Z, method: command }
-  - { file: references/evidence/self-improvement/rrsi/project-page.html, sha256: 66ec164d089c0c45f74a37e9de1b695edffb9b37ddcc8f5b0fe9903fe9de4d32, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/project-page-text.txt, sha256: bc02dd72add7812751f7ecb1e26da2dd24c50c0d7e45e1af48553977b7cbbb66, retrieved_at: 2026-10-16T08:20:11Z, method: command }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-selection.py.txt, sha256: 5142043947117e3a28167fdbdddf824293e7a79bdb5f7e90a4ebc908bed7d663, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-schedule.py.txt, sha256: fc2b5e5367b34a776c5088ed822ffcfd80f20bfe08e4864d027bea1599a4762f, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-history.py.txt, sha256: afa808909ff873fc3e07e4d8239da57fd0bddd4be7014b8e0c63c35f04246b11, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-critic.py.txt, sha256: 96524e4d4af1723f479b3a5ca699a685612cf9bb95e7cbd4291d17c952488afe, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-propose.py.txt, sha256: f90aab99ef698121001477461b4d8f8fee17b5104fcbc33b0e6ec137468a7946, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-analyst.py.txt, sha256: 2178f77361ab6e33be6ea9b594828ff99cb9642cf94638f9329b39a77dbaedb5, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-evaluate.py.txt, sha256: e361eb0de5c56a70493757bf1036290b230ab7cacfe88f3ac86b5a36cbfead2f, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi-components.py.txt, sha256: 4b76dcfadb8bbf50e4244c25cb9354c6891db2a2e08ae782f1ef63babb7e066a, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-rrsi.py.txt, sha256: c7a7c53801686ca16e4b12df873c52753cd58f3683b155424dc99b9e13e48f5f, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
-  - { file: references/evidence/self-improvement/rrsi/src-pyproject.toml.txt, sha256: bd637e87f27fa2a3b89ace2e34dd7b2fdad9562e8ba3b716ca1a95932666677a, retrieved_at: 2026-10-16T08:20:11Z, method: curl }
+  - { name: api-repo.json, url: "https://api.github.com/repos/google-research/rrsi", sha256: b3d9ff36867c601aa73087fa28071a6f0394cfcc5225b2de20c31cdbeb26c7e3, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: api-releases-latest.json, url: "https://api.github.com/repos/google-research/rrsi/releases/latest", sha256: d9e37600354c1839f6b22cebde497e9d14750d2401a06c9a51b1619baf991613, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: api-contents.json, url: "https://api.github.com/repos/google-research/rrsi/contents", sha256: 62def5fe90aaa218b669717873313d5fc9d2e61648e5fccc3b5351b75d2893e0, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: api-license.json, url: "https://api.github.com/repos/google-research/rrsi/license", sha256: a7e97fd14c887611b6d04401a215641d6247bf6a3f898368875765a1deab5950, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: raw-main-README.md.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/README.md", sha256: 4aa475cf0dea8b281fae48ae12f8c201e05fbdb1f55b8b3d87ff3dee0dcf8a93, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: raw-main-LICENSE.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/LICENSE", sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30, retrieved_at: 2026-10-16T08:19:57Z, method: curl, redistributed: false }
+  - { name: arxiv-abs-2609.24972.html, url: "https://arxiv.org/abs/2609.24972", sha256: 8f109d006d8610683c42045fd463a0fd0f8edfdd5dfd4b89706d58077fe81e16, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: arxiv-html-2609.24972.html, url: "https://arxiv.org/html/2609.24972v1", sha256: 462119b1de52574679d8785d7902f865f0406f78b07758ee7fc13b2995b67750, retrieved_at: 2026-10-16T08:20:45Z, method: curl, redistributed: false }
+  - { name: arxiv-html-text.txt, url: "https://arxiv.org/html/2609.24972v1", sha256: cc3b2f0a0ec0009d97719960533fa1aba8a17360a53b3ee781ab1d8c9236b32c, retrieved_at: 2026-10-16T08:20:45Z, method: command, redistributed: false }
+  - { name: project-page.html, url: "https://regularized-rsi.com/", sha256: 66ec164d089c0c45f74a37e9de1b695edffb9b37ddcc8f5b0fe9903fe9de4d32, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: project-page-text.txt, url: "https://regularized-rsi.com/", sha256: bc02dd72add7812751f7ecb1e26da2dd24c50c0d7e45e1af48553977b7cbbb66, retrieved_at: 2026-10-16T08:20:11Z, method: command, redistributed: false }
+  - { name: src-rrsi-selection.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/selection.py", sha256: 5142043947117e3a28167fdbdddf824293e7a79bdb5f7e90a4ebc908bed7d663, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-schedule.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/schedule.py", sha256: fc2b5e5367b34a776c5088ed822ffcfd80f20bfe08e4864d027bea1599a4762f, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-history.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/history.py", sha256: afa808909ff873fc3e07e4d8239da57fd0bddd4be7014b8e0c63c35f04246b11, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-critic.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/critic.py", sha256: 96524e4d4af1723f479b3a5ca699a685612cf9bb95e7cbd4291d17c952488afe, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-propose.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/propose.py", sha256: f90aab99ef698121001477461b4d8f8fee17b5104fcbc33b0e6ec137468a7946, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-analyst.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/analyst.py", sha256: 2178f77361ab6e33be6ea9b594828ff99cb9642cf94638f9329b39a77dbaedb5, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-evaluate.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/evaluate.py", sha256: e361eb0de5c56a70493757bf1036290b230ab7cacfe88f3ac86b5a36cbfead2f, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi-components.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/components.py", sha256: 4b76dcfadb8bbf50e4244c25cb9354c6891db2a2e08ae782f1ef63babb7e066a, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-rrsi.py.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/rrsi.py", sha256: c7a7c53801686ca16e4b12df873c52753cd58f3683b155424dc99b9e13e48f5f, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
+  - { name: src-pyproject.toml.txt, url: "https://raw.githubusercontent.com/google-research/rrsi/main/pyproject.toml", sha256: bd637e87f27fa2a3b89ace2e34dd7b2fdad9562e8ba3b716ca1a95932666677a, retrieved_at: 2026-10-16T08:20:11Z, method: curl, redistributed: false }
   - { file: references/evidence/self-improvement/rrsi/web-search-rrsi.txt, sha256: 154ebe7943154c8dc8a0a8177b3325660edde0dc71433871d9f2fb42cccf4172, retrieved_at: 2026-10-16T08:20:45Z, method: web-search }
   - { file: references/evidence/self-improvement/rrsi/fetch-log.txt, sha256: 4dee7fe230eb6da387c51a182d9411f65a70a37cfa6e3f74a0ee24dee357a55f, retrieved_at: 2026-10-16T08:20:45Z, method: command }
 ---
@@ -74,41 +74,41 @@ evidence:
 
 RRSI is a Python search loop released by Google Research under Apache 2.0 that evolves the harness of an LLM agent (its prompts, control flow, tools, memory and context management) against a benchmark, while a regularizer limits overfitting. The repo README says: `Apache 2.0; see [LICENSE](LICENSE).`[^license] The paper's abstract describes the harness as: "An LLM agent's capability is largely magnified by its harness, namely the prompts, control flow, tooling, memory, and context management surrounding the frozen backbone model."[^arxiv]
 
-Facts from the repo API, observed 2026-10-16 (evidence: [api-repo.json](/references/evidence/self-improvement/rrsi/api-repo.json)):
+Facts from the repo API, observed 2026-10-16 (evidence: [api-repo.json](https://api.github.com/repos/google-research/rrsi)):
 
 - Repo `google-research/rrsi`, public, not a fork or archive, language Python, default branch `main`.
 - 1523 stars, 146 forks, 13 open issues, `pushed_at` 2026-09-23T22:16:25Z.
-- No GitHub release exists: `/releases/latest` returned 404 (evidence: [api-releases-latest.json](/references/evidence/self-improvement/rrsi/api-releases-latest.json)). Use the git commit, not a tag.
-- Core dependency is `anthropic[vertex]>=0.40`. Agentic benchmark runners add `litellm`, `fastmcp`, `mcp` and `pymupdf`; the coding instance uses `harbor` and Docker (evidence: [src-pyproject.toml.txt](/references/evidence/self-improvement/rrsi/src-pyproject.toml.txt), [raw-main-README.md.txt](/references/evidence/self-improvement/rrsi/raw-main-README.md.txt)).
+- No GitHub release exists: `/releases/latest` returned 404 (evidence: [api-releases-latest.json](https://api.github.com/repos/google-research/rrsi/releases/latest)). Use the git commit, not a tag.
+- Core dependency is `anthropic[vertex]>=0.40`. Agentic benchmark runners add `litellm`, `fastmcp`, `mcp` and `pymupdf`; the coding instance uses `harbor` and Docker (evidence: [src-pyproject.toml.txt](https://raw.githubusercontent.com/google-research/rrsi/main/pyproject.toml), [raw-main-README.md.txt](https://raw.githubusercontent.com/google-research/rrsi/main/README.md)).
 
 Paper: arXiv 2609.24972, "RRSI: Regularized Recursive Self-Improvement of Agent Harnesses", submitted 21 Sep 2026, "last revised 4 Oct 2026 (this version, v3)"[^arxiv]. Authors are from Google Cloud AI Research, UNC-Chapel Hill, Stanford and WashU per the project page[^project].
 
 ## Results as published
 
-The README table reports, for Claude Opus 4.8 as frozen policy, H_0 vs RRSI on eight benchmarks. The coding evolve split goes from 74.2 to 80.2 (+6.0), and the OOD deltas are +1.8, +4.7, +3.5, +3.7 and +4.3 (evidence: [raw-main-README.md.txt](/references/evidence/self-improvement/rrsi/raw-main-README.md.txt)[^readme]).
+The README table reports, for Claude Opus 4.8 as frozen policy, H_0 vs RRSI on eight benchmarks. The coding evolve split goes from 74.2 to 80.2 (+6.0), and the OOD deltas are +1.8, +4.7, +3.5, +3.7 and +4.3 (evidence: [raw-main-README.md.txt](https://raw.githubusercontent.com/google-research/rrsi/main/README.md)[^readme]).
 
 The headline numbers differ between sources:
 
 > "Across eight benchmarks spanning coding, agentic workspace and engineering design tasks, RRSI gains up to 6.0 points on the split it evolves against and up to 4.3 points on the five out-of-distribution benchmarks, while producing a harness that runs on 30% fewer policy tokens than the unregularized evolution."
-> Evidence: [arxiv-abs-2609.24972.html](/references/evidence/self-improvement/rrsi/arxiv-abs-2609.24972.html) (v3 abstract)
+> Evidence: [arxiv-abs-2609.24972.html](https://arxiv.org/abs/2609.24972) (v3 abstract)
 
 > "...it gains up to 14.1 points on the evolving split and improves all six held-out splits, by up to 4.7 points out of distribution..."
-> Evidence: [arxiv-html-text.txt](/references/evidence/self-improvement/rrsi/arxiv-html-text.txt) (v1, superseded)
+> Evidence: [arxiv-html-text.txt](https://arxiv.org/html/2609.24972v1) (v1, superseded)
 
 > "+4.0 pts average gain on the three benchmarks the harness evolves against"
-> Evidence: [project-page-text.txt](/references/evidence/self-improvement/rrsi/project-page-text.txt)[^project]
+> Evidence: [project-page-text.txt](https://regularized-rsi.com/)[^project]
 
-The token saving is also stated two ways: "30% fewer policy tokens" in the abstract, and "−36% tokens" on the project page. The v1 paper gives a comparison point: "AHE is the extreme case, at 3.82 million tokens per trial, 58% more than ours, for 4.4 points less out of distribution." (evidence: [arxiv-html-text.txt](/references/evidence/self-improvement/rrsi/arxiv-html-text.txt)).
+The token saving is also stated two ways: "30% fewer policy tokens" in the abstract, and "−36% tokens" on the project page. The v1 paper gives a comparison point: "AHE is the extreme case, at 3.82 million tokens per trial, 58% more than ours, for 4.4 points less out of distribution." (evidence: [arxiv-html-text.txt](https://arxiv.org/html/2609.24972v1)).
 
 ## How the loop works (code)
 
-Method table in the README maps paper to code (evidence: [raw-main-README.md.txt](/references/evidence/self-improvement/rrsi/raw-main-README.md.txt)[^readme]). The key pieces, read from source:
+Method table in the README maps paper to code (evidence: [raw-main-README.md.txt](https://raw.githubusercontent.com/google-research/rrsi/main/README.md)[^readme]). The key pieces, read from source:
 
-1. **Propose.** A Claude coding agent edits the harness in place in a git worktree, tagging each edit with a component and a hypothesis. The paper's budget schedule caps edits per candidate. From `schedule.py`: "Early rounds may bundle several coordinated edits in one candidate; late rounds become sparse and attributable." (evidence: [src-rrsi-schedule.py.txt](/references/evidence/self-improvement/rrsi/src-rrsi-schedule.py.txt)[^schedule])
-2. **Screen.** The critic reads the diff before any evaluation. From `critic.py`: "1. Deterministic pre-checks: a generic denylist (credentials, infra names) plus the domain's own patterns (grader paths, task ids, judge references)." and "2. LLM review (Claude Opus 4.8) of intent and content, not style." (evidence: [src-rrsi-critic.py.txt](/references/evidence/self-improvement/rrsi/src-rrsi-critic.py.txt)[^critic])
+1. **Propose.** A Claude coding agent edits the harness in place in a git worktree, tagging each edit with a component and a hypothesis. The paper's budget schedule caps edits per candidate. From `schedule.py`: "Early rounds may bundle several coordinated edits in one candidate; late rounds become sparse and attributable." (evidence: [src-rrsi-schedule.py.txt](https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/schedule.py)[^schedule])
+2. **Screen.** The critic reads the diff before any evaluation. From `critic.py`: "1. Deterministic pre-checks: a generic denylist (credentials, infra names) plus the domain's own patterns (grader paths, task ids, judge references)." and "2. LLM review (Claude Opus 4.8) of intent and content, not style." (evidence: [src-rrsi-critic.py.txt](https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/critic.py)[^critic])
 3. **Evaluate.** Full evolve-set runs of each surviving candidate.
-4. **Select.** A candidate is admissible only if it clears a noise-adjusted floor (S' >= S* - delta), passes a cost rule, and passes domain guards. The winner is the argmax of admissible scores, or the incumbent stays. Noise band delta is fixed per instance: the README lists "0.017 / 0.004 / 0.020" (evidence: [raw-main-README.md.txt](/references/evidence/self-improvement/rrsi/raw-main-README.md.txt)). The cost rule, from the `selection.py` docstring: "c = [Delta C <= beta0 + beta1 Delta S] if Delta S > delta", and otherwise "[w_s Delta S - w_c Delta C + w_n nu(l') > 0]" (evidence: [src-rrsi-selection.py.txt](/references/evidence/self-improvement/rrsi/src-rrsi-selection.py.txt)[^selection]).
-5. **Ledger and prune.** Every edit is a history record (component, hypothesis, measured delta). Components whose recent measured gain is <= 0 go into a prune set. Stalled runs are steered to untried components (evidence: [src-rrsi-history.py.txt](/references/evidence/self-improvement/rrsi/src-rrsi-history.py.txt)).
+4. **Select.** A candidate is admissible only if it clears a noise-adjusted floor (S' >= S* - delta), passes a cost rule, and passes domain guards. The winner is the argmax of admissible scores, or the incumbent stays. Noise band delta is fixed per instance: the README lists "0.017 / 0.004 / 0.020" (evidence: [raw-main-README.md.txt](https://raw.githubusercontent.com/google-research/rrsi/main/README.md)). The cost rule, from the `selection.py` docstring: "c = [Delta C <= beta0 + beta1 Delta S] if Delta S > delta", and otherwise "[w_s Delta S - w_c Delta C + w_n nu(l') > 0]" (evidence: [src-rrsi-selection.py.txt](https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/selection.py)[^selection]).
+5. **Ledger and prune.** Every edit is a history record (component, hypothesis, measured delta). Components whose recent measured gain is <= 0 go into a prune set. Stalled runs are steered to untried components (evidence: [src-rrsi-history.py.txt](https://raw.githubusercontent.com/google-research/rrsi/main/rrsi/history.py)).
 
 ## Does it need training or GPUs?
 

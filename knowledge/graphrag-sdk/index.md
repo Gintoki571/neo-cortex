@@ -7,4 +7,4 @@
 - [retrieval-strategies](/graphrag-sdk/retrieval-strategies.md): MultiPathRetrieval (default) steps and parameters, LocalRetrieval, text-to-Cypher opt-in, reranking, vendor benchmark numbers with caveats.
 - [docs-site-map](/graphrag-sdk/docs-site-map.md): the 20 pages under docs.falkordb.com/graphrag, what each covers, lastmod, and which pages conflict with the 1.4.0 release.
 
-Evidence lives in `references/evidence/graphrag-sdk/` (raw fetches, source snapshots of 1.4.0 and main, falkordblite source, run outputs under `runs/`, and `runs/commands.txt` with the exact commands).
+Third-party fetches and source snapshots (docs, 1.4.0 and main source, falkordblite source) are not redistributed; URL, sha256 and retrieved_at are in each concept's frontmatter. Own run outputs and the exact commands are in `references/evidence/graphrag-sdk/runs/` (`runs/commands.txt`).

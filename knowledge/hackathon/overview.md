@@ -9,10 +9,10 @@ stale_after: 2026-10-19T00:00:00Z
 generated: { by: claude-haiku-5-5/hackathon-agent, at: 2026-10-15T19:30:00Z }
 verified: { by: process:cross-check, at: 2026-10-15T19:30:00Z }
 evidence:
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt, sha256: d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1, retrieved_at: 2026-10-15T19:23:00Z, method: obscura }
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-rules.txt, sha256: 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082, retrieved_at: 2026-10-15T19:23:00Z, method: obscura }
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-schedule.txt, sha256: fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
-  - { file: references/evidence/hackathon/wemakedevs-falkordb-resources.txt, sha256: 180f1956dcb9d38d7eb6f1274757e5dad092724aca4581c4eb395d8b88d22c29, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
+  - { name: wemakedevs-falkordb-hackathon.txt, url: "https://www.wemakedevs.org/hackathons/falkordb", sha256: d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1, retrieved_at: 2026-10-15T19:23:00Z, method: obscura, redistributed: false }
+  - { name: wemakedevs-falkordb-rules.txt, url: "https://www.wemakedevs.org/hackathons/falkordb/rules", sha256: 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082, retrieved_at: 2026-10-15T19:23:00Z, method: obscura, redistributed: false }
+  - { name: wemakedevs-falkordb-schedule.txt, url: "https://www.wemakedevs.org/hackathons/falkordb/schedule", sha256: fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
+  - { name: wemakedevs-falkordb-resources.txt, url: "https://www.wemakedevs.org/hackathons/falkordb/resources", sha256: 180f1956dcb9d38d7eb6f1274757e5dad092724aca4581c4eb395d8b88d22c29, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
 sources:
   - id: hackathon-page
     resource: https://www.wemakedevs.org/hackathons/falkordb
@@ -37,17 +37,17 @@ sources:
 Graph Hacks is an independent developer hackathon organised by WeMakeDevs in collaboration with FalkorDB.[^hackathon-page][^rules-page]
 
 > "Graph Hacks is an independent developer hackathon organised by WeMakeDevs in collaboration with FalkorDB."
-> Evidence: [wemakedevs-falkordb-rules.txt](/references/evidence/hackathon/wemakedevs-falkordb-rules.txt)
+> Evidence: [wemakedevs-falkordb-rules.txt](https://www.wemakedevs.org/hackathons/falkordb/rules)
 
 Hackathon title on the page: "Graph Hacks: Context for AI Agents". Organisers: WeMakeDevs (host), FalkorDB (sponsor, "Powered by FalkorDB").[^hackathon-page]
 
 > "Graph Hacks: Context for AI Agents" / "Powered by FalkorDB"
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 The brief: build a working agent, or a group of agents, with FalkorDB as its context layer.[^hackathon-page]
 
 > "Build a working agent, or a group of agents, with FalkorDB as its context layer. The graph has to shape what the agent does, not sit on the side."
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 Related: [rules](/hackathon/rules.md), [judging and prizes](/hackathon/judging-and-prizes.md), [submission checklist](/hackathon/submission-checklist.md), [blog write-up](/hackathon/blog-agent-reasons-over-graph.md).
 
@@ -69,10 +69,10 @@ The page shows the window in GMT+2. The FAQ and rules state it in IST. Both refe
 
 > "When does the hackathon run?
 > From October 15, 12:01 AM IST to October 18, 11:59 PM IST. Submissions close at 11:59 PM IST on October 18."
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 > "WhenOct 14, 8:31 PM to Oct 18, 8:29 PM GMT+2"
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 | Milestone | IST (published) | UTC (converted) | Status at 2026-10-16 UTC |
 |---|---|---|---|
@@ -85,10 +85,10 @@ Days remaining until submissions close (2026-10-18 18:29 UTC):
 - From the machine clock at retrieval (2026-10-15 19:25 UTC): 2 days 23 hours 4 minutes. This matches the page countdown "Ends in 2 days, 23 hours".
 
 > "Registration opens" / "Register yourself and add your teammates any time before submissions close."
-> Evidence: [wemakedevs-falkordb-schedule.txt](/references/evidence/hackathon/wemakedevs-falkordb-schedule.txt)
+> Evidence: [wemakedevs-falkordb-schedule.txt](https://www.wemakedevs.org/hackathons/falkordb/schedule)
 
 > "Submissions close" / "Submit your repository, README, demo video, deployment, and project information before the deadline."
-> Evidence: [wemakedevs-falkordb-schedule.txt](/references/evidence/hackathon/wemakedevs-falkordb-schedule.txt)
+> Evidence: [wemakedevs-falkordb-schedule.txt](https://www.wemakedevs.org/hackathons/falkordb/schedule)
 
 Only one deadline is published (submission close). No separate judging or results date was found. See open questions.
 
@@ -97,7 +97,7 @@ Only one deadline is published (submission close). No separate judging or result
 Three tracks. You may enter one, two or all three, and you must name every track you enter at submission.[^hackathon-page][^rules-page]
 
 > "Agents That Act on Connected Data", "Agent Memory and Coordination", "Company Brain"
-> Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
+> Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
 
 Per-track detail and the prize for each track are in [judging-and-prizes](/hackathon/judging-and-prizes.md).
 
@@ -113,7 +113,7 @@ Per-track detail and the prize for each track are in [judging-and-prizes](/hacka
 Published resources (no credits or sponsor cash perks were found on the pages read):[^resources-page]
 
 > "Stuck on a query or a data model? The FalkorDB Discord is the fastest way to an answer, and it is where you find a team too."
-> Evidence: [wemakedevs-falkordb-resources.txt](/references/evidence/hackathon/wemakedevs-falkordb-resources.txt)
+> Evidence: [wemakedevs-falkordb-resources.txt](https://www.wemakedevs.org/hackathons/falkordb/resources)
 
 - Getting started: https://docs.falkordb.com/getting-started/
 - Docker: https://docs.falkordb.com/operations/docker
@@ -147,16 +147,16 @@ FalkorDB is the sponsor and the mandatory graph database. Details in [rules](/ha
 - [Submission checklist](/hackathon/submission-checklist.md)
 - [Blog: agent that reasons over a graph](/hackathon/blog-agent-reasons-over-graph.md)
 
-[^hackathon-page]: Graph Hacks overview page. Evidence: [wemakedevs-falkordb-hackathon.txt](/references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt)
-[^rules-page]: Graph Hacks rules page. Evidence: [wemakedevs-falkordb-rules.txt](/references/evidence/hackathon/wemakedevs-falkordb-rules.txt)
-[^schedule-page]: Graph Hacks schedule page. Evidence: [wemakedevs-falkordb-schedule.txt](/references/evidence/hackathon/wemakedevs-falkordb-schedule.txt)
-[^resources-page]: Graph Hacks resources page. Evidence: [wemakedevs-falkordb-resources.txt](/references/evidence/hackathon/wemakedevs-falkordb-resources.txt)
+[^hackathon-page]: Graph Hacks overview page. Evidence: [wemakedevs-falkordb-hackathon.txt](https://www.wemakedevs.org/hackathons/falkordb)
+[^rules-page]: Graph Hacks rules page. Evidence: [wemakedevs-falkordb-rules.txt](https://www.wemakedevs.org/hackathons/falkordb/rules)
+[^schedule-page]: Graph Hacks schedule page. Evidence: [wemakedevs-falkordb-schedule.txt](https://www.wemakedevs.org/hackathons/falkordb/schedule)
+[^resources-page]: Graph Hacks resources page. Evidence: [wemakedevs-falkordb-resources.txt](https://www.wemakedevs.org/hackathons/falkordb/resources)
 
 # Evidence
 
 | File | sha256 | retrieved_at (UTC, approx.) | method |
 |---|---|---|---|
-| references/evidence/hackathon/wemakedevs-falkordb-hackathon.txt | d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1 | 2026-10-15T19:23:00Z | obscura |
-| references/evidence/hackathon/wemakedevs-falkordb-rules.txt | 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082 | 2026-10-15T19:23:00Z | obscura |
-| references/evidence/hackathon/wemakedevs-falkordb-schedule.txt | fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f | 2026-10-15T19:24:00Z | obscura |
-| references/evidence/hackathon/wemakedevs-falkordb-resources.txt | 180f1956dcb9d38d7eb6f1274757e5dad092724aca4581c4eb395d8b88d22c29 | 2026-10-15T19:24:00Z | obscura |
+| https://www.wemakedevs.org/hackathons/falkordb | d75c67f09726594c4803d5c143f167e72eba077fb9b9499dcf6c57eb730894f1 | 2026-10-15T19:23:00Z | obscura |
+| https://www.wemakedevs.org/hackathons/falkordb/rules | 82b7afb355569402b0a01251a916f2805516d31b15817bf8de37e9ebe27a7082 | 2026-10-15T19:23:00Z | obscura |
+| https://www.wemakedevs.org/hackathons/falkordb/schedule | fd22da01b58024fa1a1b51c46882bc43d9ae14ec86cb86a21e41294399ff6e2f | 2026-10-15T19:24:00Z | obscura |
+| https://www.wemakedevs.org/hackathons/falkordb/resources | 180f1956dcb9d38d7eb6f1274757e5dad092724aca4581c4eb395d8b88d22c29 | 2026-10-15T19:24:00Z | obscura |

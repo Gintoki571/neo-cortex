@@ -44,21 +44,21 @@ sources:
     title: 'Introducing System One Models & Jev (TypeSafe AI blog)'
     last_modified: 2026-09-15T00:00:00Z
 evidence:
-  - { file: references/evidence/models/card_fastino_GLiNER2.5-Decide.txt, sha256: 09a9705ee8c30392bb5a82ac503c01b889ff7e957a4c96bf7249f05acde709a3, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_GLiNER2.5-Decide.json, sha256: 44c2ef4c7487f312c1dfd15f5ee847be65e3de8ce1349a607193a8b28e7d51d9, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_GLiNER2.5-multi-Decide.json, sha256: 270d129ca25200cfdff231130c7e99578286a5ac8b919e1b7cc1cf8d7d0852af, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/arxiv_2507.18546.xml, sha256: 3ca195851e93df137fde4a9409d8966d5b96e77f591c74705b6d7b9daf52e1b6, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_arxiv_html.txt, sha256: f320e9717473fea9ad0645cb1533c2e8bf6d2de9a3e3bedd59dafaae57711d1f, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_readme.txt, sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/card_cross-encoder_nli-deberta-v3-base.txt, sha256: b6a6dd82d5fee7036e3b815ce1d28458df294d8525fc234fb7e7277b6b79d878, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_cross-encoder_nli-deberta-v3-small.json, sha256: 7bb25b5dbd1f49391e196a9158d798f043a776a54f3b566283d620d24370b0e4, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_cross-encoder_nli-deberta-v3-base.json, sha256: 3f8d25411fcc82913ba1669a3daaabc0ec575fba919947f2e72e541df61ce345, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/card_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.txt, sha256: bd974d885c91d90f96183e86803e80b080ad365cb65307f2ebd9169d2646f08f, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.json, sha256: ea573ad7a2fb9c2a716c49289be28b1d75f1d54e195de2e9d90bed85f5c01b76, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/card_Qwen_Qwen2.5-0.5B-Instruct.txt, sha256: b19c806a904db6dc878a0462e70b551f6b7ac78dfbb88c2eb966ca2b9109ae15, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_Qwen_Qwen2.5-0.5B-Instruct.json, sha256: f0c42a745c1b55f2d01098f455b4d40badf2f40dab38378e9a86f17ef1857f2a, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_typesafe_blog.txt, sha256: 6fbda0a3d2d947811a45415fabe153e7bef65b2a28d243eb9d41de502b059f65, retrieved_at: 2026-10-15T19:28:00Z, method: command }
-  - { file: references/evidence/models/jev_awesome_readme.txt, sha256: 8a6b6b564d7787e3e5a991d9b0fa695c0249ddc65839b9cbdb14d5921e4e4ae0, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: card_fastino_GLiNER2.5-Decide.txt, url: "https://huggingface.co/fastino/GLiNER2.5-Decide", sha256: 09a9705ee8c30392bb5a82ac503c01b889ff7e957a4c96bf7249f05acde709a3, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_GLiNER2.5-Decide.json, url: "https://huggingface.co/api/models/fastino/GLiNER2.5-Decide", sha256: 44c2ef4c7487f312c1dfd15f5ee847be65e3de8ce1349a607193a8b28e7d51d9, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_GLiNER2.5-multi-Decide.json, url: "https://huggingface.co/api/models/fastino/GLiNER2.5-multi-Decide", sha256: 270d129ca25200cfdff231130c7e99578286a5ac8b919e1b7cc1cf8d7d0852af, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: arxiv_2507.18546.xml, url: "https://arxiv.org/abs/2507.18546", sha256: 3ca195851e93df137fde4a9409d8966d5b96e77f591c74705b6d7b9daf52e1b6, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_arxiv_html.txt, url: "https://arxiv.org/html/2507.18546", url_basis: inferred, sha256: f320e9717473fea9ad0645cb1533c2e8bf6d2de9a3e3bedd59dafaae57711d1f, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_readme.txt, url: "https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md", sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: card_cross-encoder_nli-deberta-v3-base.txt, url: "https://huggingface.co/cross-encoder/nli-deberta-v3-base", sha256: b6a6dd82d5fee7036e3b815ce1d28458df294d8525fc234fb7e7277b6b79d878, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_cross-encoder_nli-deberta-v3-small.json, url: "https://huggingface.co/api/models/cross-encoder/nli-deberta-v3-small?blobs=true", sha256: 7bb25b5dbd1f49391e196a9158d798f043a776a54f3b566283d620d24370b0e4, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_cross-encoder_nli-deberta-v3-base.json, url: "https://huggingface.co/api/models/cross-encoder/nli-deberta-v3-base", sha256: 3f8d25411fcc82913ba1669a3daaabc0ec575fba919947f2e72e541df61ce345, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: card_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.txt, url: "https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0", sha256: bd974d885c91d90f96183e86803e80b080ad365cb65307f2ebd9169d2646f08f, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.json, url: "https://huggingface.co/api/models/MoritzLaurer/deberta-v3-base-zeroshot-v2.0", sha256: ea573ad7a2fb9c2a716c49289be28b1d75f1d54e195de2e9d90bed85f5c01b76, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: card_Qwen_Qwen2.5-0.5B-Instruct.txt, url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct", sha256: b19c806a904db6dc878a0462e70b551f6b7ac78dfbb88c2eb966ca2b9109ae15, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_Qwen_Qwen2.5-0.5B-Instruct.json, url: "https://huggingface.co/api/models/Qwen/Qwen2.5-0.5B-Instruct", sha256: f0c42a745c1b55f2d01098f455b4d40badf2f40dab38378e9a86f17ef1857f2a, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_typesafe_blog.txt, url: "https://typesafe.ai/blog/introducing-system-one-models-and-jev", sha256: 6fbda0a3d2d947811a45415fabe153e7bef65b2a28d243eb9d41de502b059f65, retrieved_at: 2026-10-15T19:28:00Z, method: command, redistributed: false }
+  - { name: jev_awesome_readme.txt, url: "https://github.com/AbdelStark/awesome-typesafe-jev", sha256: 8a6b6b564d7787e3e5a991d9b0fa695c0249ddc65839b9cbdb14d5921e4e4ae0, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
 ---
 
 # Question
@@ -132,11 +132,11 @@ Only facts retrieved in this run are in the table. "not retrieved" means I looke
 - [embeddinggemma](/models/embeddinggemma.md)
 - [index](/models/index.md)
 
-[^gliner25-decide-card]: fastino/GLiNER2.5-Decide card, https://huggingface.co/fastino/GLiNER2.5-Decide. Evidence [card_fastino_GLiNER2.5-Decide.txt](/references/evidence/models/card_fastino_GLiNER2.5-Decide.txt)
-[^gliner2-paper]: arXiv 2507.18546 HTML, https://arxiv.org/html/2507.18546. Evidence [gliner2_arxiv_html.txt](/references/evidence/models/gliner2_arxiv_html.txt)
-[^nli-deberta-v3-base-card]: cross-encoder/nli-deberta-v3-base card, https://huggingface.co/cross-encoder/nli-deberta-v3-base. Evidence [card_cross-encoder_nli-deberta-v3-base.txt](/references/evidence/models/card_cross-encoder_nli-deberta-v3-base.txt)
-[^nli-deberta-v3-small-api]: HF API, https://huggingface.co/api/models/cross-encoder/nli-deberta-v3-small?blobs=true. Evidence [api_cross-encoder_nli-deberta-v3-small.json](/references/evidence/models/api_cross-encoder_nli-deberta-v3-small.json)
-[^zeroshot-v2-card]: MoritzLaurer/deberta-v3-base-zeroshot-v2.0 card, https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0. Evidence [card_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.txt](/references/evidence/models/card_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.txt)
-[^qwen25-05b-card]: Qwen/Qwen2.5-0.5B-Instruct card, https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct. Evidence [card_Qwen_Qwen2.5-0.5B-Instruct.txt](/references/evidence/models/card_Qwen_Qwen2.5-0.5B-Instruct.txt)
-[^typesafe-blog]: TypeSafe AI blog, https://typesafe.ai/blog/introducing-system-one-models-and-jev. Evidence [jev_typesafe_blog.txt](/references/evidence/models/jev_typesafe_blog.txt)
-[^awesome-jev]: https://github.com/AbdelStark/awesome-typesafe-jev, README (third-party list). Evidence [jev_awesome_readme.txt](/references/evidence/models/jev_awesome_readme.txt)
+[^gliner25-decide-card]: fastino/GLiNER2.5-Decide card, https://huggingface.co/fastino/GLiNER2.5-Decide. Evidence [card_fastino_GLiNER2.5-Decide.txt](https://huggingface.co/fastino/GLiNER2.5-Decide)
+[^gliner2-paper]: arXiv 2507.18546 HTML, https://arxiv.org/html/2507.18546. Evidence [gliner2_arxiv_html.txt](https://arxiv.org/html/2507.18546)
+[^nli-deberta-v3-base-card]: cross-encoder/nli-deberta-v3-base card, https://huggingface.co/cross-encoder/nli-deberta-v3-base. Evidence [card_cross-encoder_nli-deberta-v3-base.txt](https://huggingface.co/cross-encoder/nli-deberta-v3-base)
+[^nli-deberta-v3-small-api]: HF API, https://huggingface.co/api/models/cross-encoder/nli-deberta-v3-small?blobs=true. Evidence [api_cross-encoder_nli-deberta-v3-small.json](https://huggingface.co/api/models/cross-encoder/nli-deberta-v3-small?blobs=true)
+[^zeroshot-v2-card]: MoritzLaurer/deberta-v3-base-zeroshot-v2.0 card, https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0. Evidence [card_MoritzLaurer_deberta-v3-base-zeroshot-v2.0.txt](https://huggingface.co/MoritzLaurer/deberta-v3-base-zeroshot-v2.0)
+[^qwen25-05b-card]: Qwen/Qwen2.5-0.5B-Instruct card, https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct. Evidence [card_Qwen_Qwen2.5-0.5B-Instruct.txt](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)
+[^typesafe-blog]: TypeSafe AI blog, https://typesafe.ai/blog/introducing-system-one-models-and-jev. Evidence [jev_typesafe_blog.txt](https://typesafe.ai/blog/introducing-system-one-models-and-jev)
+[^awesome-jev]: https://github.com/AbdelStark/awesome-typesafe-jev, README (third-party list). Evidence [jev_awesome_readme.txt](https://github.com/AbdelStark/awesome-typesafe-jev)

@@ -29,22 +29,22 @@ sources:
     title: 'fastino/GLiNER2.5-Decide model card'
     last_modified: 2026-10-08T20:47:53Z
 evidence:
-  - { file: references/evidence/models/arxiv_2507.18546.xml, sha256: 3ca195851e93df137fde4a9409d8966d5b96e77f591c74705b6d7b9daf52e1b6, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_arxiv_html.txt, sha256: f320e9717473fea9ad0645cb1533c2e8bf6d2de9a3e3bedd59dafaae57711d1f, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_arxiv_html.html, sha256: 0c18ba66425665242d6d2128e4a1d19416333ccc8b41c3abc1f219e2fbba836b, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_readme.txt, sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gh_gliner2_repo.json, sha256: 705d251b6c293f2ad6319106eac69cdff1d0f311578855b506ee80a415ea5e26, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gh_gliner2_release.json, sha256: 8b16c218112b7df6d3409c8d7d5583e12eefb4f49d496f979bc81cb79729af00, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2-base-v1.json, sha256: 2cf59e40981277e80756cff7e07ce0c6d105bf123ac71073561b00545b707c1b, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2-base.json, sha256: 2cf59e40981277e80756cff7e07ce0c6d105bf123ac71073561b00545b707c1b, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2-large-v1.json, sha256: ee813b598c568d40b01ae59cb776cfacc24b621571413deba1324bd57953f165, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2-large.json, sha256: 65842e3d84e6b7f62a470c85204e80b953bb8f944e9b69813130a9d7f3eaa1d8, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2-multi-v1.json, sha256: 88f40c7340343d9c3050e64c8abf2e65fac0a79ae12c9f5df02515cfdd74e5b7, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2.5-small-v1.json, sha256: 67d737929fb5c6bd192d60e0bd779d0d7982997f5137c3d31d63c365b200cd2d, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_gliner2.5-multi-v1.json, sha256: fbceb1e16ebe6dcf03a58fd971a411237968bc184a734676757a98888a96ff00, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_GLiNER2.5-Decide.json, sha256: 44c2ef4c7487f312c1dfd15f5ee847be65e3de8ce1349a607193a8b28e7d51d9, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_fastino_GLiNER2.5-multi-Decide.json, sha256: 270d129ca25200cfdff231130c7e99578286a5ac8b919e1b7cc1cf8d7d0852af, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/card_fastino_GLiNER2.5-Decide.txt, sha256: 09a9705ee8c30392bb5a82ac503c01b889ff7e957a4c96bf7249f05acde709a3, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: arxiv_2507.18546.xml, url: "https://arxiv.org/abs/2507.18546", sha256: 3ca195851e93df137fde4a9409d8966d5b96e77f591c74705b6d7b9daf52e1b6, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_arxiv_html.txt, url: "https://arxiv.org/html/2507.18546", url_basis: inferred, sha256: f320e9717473fea9ad0645cb1533c2e8bf6d2de9a3e3bedd59dafaae57711d1f, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_arxiv_html.html, url: "https://arxiv.org/html/2507.18546", url_basis: inferred, sha256: 0c18ba66425665242d6d2128e4a1d19416333ccc8b41c3abc1f219e2fbba836b, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_readme.txt, url: "https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md", sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gh_gliner2_repo.json, url: "https://api.github.com/repos/fastino-ai/GLiNER2", sha256: 705d251b6c293f2ad6319106eac69cdff1d0f311578855b506ee80a415ea5e26, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gh_gliner2_release.json, url: "https://api.github.com/repos/fastino-ai/GLiNER2/releases/408188242", sha256: 8b16c218112b7df6d3409c8d7d5583e12eefb4f49d496f979bc81cb79729af00, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2-base-v1.json, url: "https://huggingface.co/api/models/fastino/gliner2-base-v1", sha256: 2cf59e40981277e80756cff7e07ce0c6d105bf123ac71073561b00545b707c1b, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2-base.json, url: "https://huggingface.co/api/models/fastino/gliner2-base", sha256: 2cf59e40981277e80756cff7e07ce0c6d105bf123ac71073561b00545b707c1b, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2-large-v1.json, url: "https://huggingface.co/api/models/fastino/gliner2-large-v1", sha256: ee813b598c568d40b01ae59cb776cfacc24b621571413deba1324bd57953f165, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2-large.json, url: "https://huggingface.co/api/models/fastino/gliner2-large", sha256: 65842e3d84e6b7f62a470c85204e80b953bb8f944e9b69813130a9d7f3eaa1d8, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2-multi-v1.json, url: "https://huggingface.co/api/models/fastino/gliner2-multi-v1", sha256: 88f40c7340343d9c3050e64c8abf2e65fac0a79ae12c9f5df02515cfdd74e5b7, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2.5-small-v1.json, url: "https://huggingface.co/api/models/fastino/gliner2.5-small-v1", sha256: 67d737929fb5c6bd192d60e0bd779d0d7982997f5137c3d31d63c365b200cd2d, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_gliner2.5-multi-v1.json, url: "https://huggingface.co/api/models/fastino/gliner2.5-multi-v1", sha256: fbceb1e16ebe6dcf03a58fd971a411237968bc184a734676757a98888a96ff00, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_GLiNER2.5-Decide.json, url: "https://huggingface.co/api/models/fastino/GLiNER2.5-Decide", sha256: 44c2ef4c7487f312c1dfd15f5ee847be65e3de8ce1349a607193a8b28e7d51d9, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_fastino_GLiNER2.5-multi-Decide.json, url: "https://huggingface.co/api/models/fastino/GLiNER2.5-multi-Decide", sha256: 270d129ca25200cfdff231130c7e99578286a5ac8b919e1b7cc1cf8d7d0852af, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: card_fastino_GLiNER2.5-Decide.txt, url: "https://huggingface.co/fastino/GLiNER2.5-Decide", sha256: 09a9705ee8c30392bb5a82ac503c01b889ff7e957a4c96bf7249f05acde709a3, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
   - { file: references/evidence/models/gliner2-pip-api-check.txt, sha256: c79df201c53c0311f4e32dd16d8dc2a3733608df41700405ae3d959c794a654a, retrieved_at: 2026-10-15T19:28:00Z, method: command }
 ---
 
@@ -94,7 +94,7 @@ These are the paper's numbers. They are not evidence about GLiNER2.5.
 | `fastino/GLiNER2.5-Decide` | span | 340M (card) | 486,444,053 | Classification specialist; span per README |
 | `fastino/GLiNER2.5-multi-Decide` | boundary | 287M | 287,355,159 | Multilingual classification specialist |
 
-Sources: HF API JSON in the [evidence folder](/references/evidence/models/) (one file per repo), and the family table in [gliner2_readme.txt](/references/evidence/models/gliner2_readme.txt).[^gliner2-hf-api-family]
+Sources: HF API JSON in the [evidence folder](/references/evidence/models/) (one file per repo), and the family table in [gliner2_readme.txt](https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md).[^gliner2-hf-api-family]
 
 Quote on the loader cheat sheet:
 
@@ -143,11 +143,11 @@ Whether these are new in 2.5 or already in span models was not established. The 
 - Identity of "JevK5" on the Decide benchmark table.
 - Whether `gliner2-large` (no suffix) was ever published; the API response suggests it is not public.
 
-[^gliner2-arxiv]: arXiv 2507.18546 abs and HTML, https://arxiv.org/abs/2507.18546 and https://arxiv.org/html/2507.18546. Evidence [gliner2_arxiv_html.txt](/references/evidence/models/gliner2_arxiv_html.txt)
-[^gliner2-github-readme]: fastino-ai/GLiNER2 README, https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md. Evidence [gliner2_readme.txt](/references/evidence/models/gliner2_readme.txt)
-[^gliner2-github-api]: GitHub REST API, https://api.github.com/repos/fastino-ai/GLiNER2 and /releases/latest. Evidence [gh_gliner2_repo.json](/references/evidence/models/gh_gliner2_repo.json), [gh_gliner2_release.json](/references/evidence/models/gh_gliner2_release.json)
+[^gliner2-arxiv]: arXiv 2507.18546 abs and HTML, https://arxiv.org/abs/2507.18546 and https://arxiv.org/html/2507.18546. Evidence [gliner2_arxiv_html.txt](https://arxiv.org/html/2507.18546)
+[^gliner2-github-readme]: fastino-ai/GLiNER2 README, https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md. Evidence [gliner2_readme.txt](https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md)
+[^gliner2-github-api]: GitHub REST API, https://api.github.com/repos/fastino-ai/GLiNER2 and /releases/latest. Evidence [gh_gliner2_repo.json](https://api.github.com/repos/fastino-ai/GLiNER2), [gh_gliner2_release.json](https://api.github.com/repos/fastino-ai/GLiNER2/releases/408188242)
 [^gliner2-hf-api-family]: HF API JSON per repo, e.g. https://huggingface.co/api/models/fastino/gliner2-large-v1
-[^gliner2-decide-card]: fastino/GLiNER2.5-Decide model card, https://huggingface.co/fastino/GLiNER2.5-Decide. Evidence [card_fastino_GLiNER2.5-Decide.txt](/references/evidence/models/card_fastino_GLiNER2.5-Decide.txt)
+[^gliner2-decide-card]: fastino/GLiNER2.5-Decide model card, https://huggingface.co/fastino/GLiNER2.5-Decide. Evidence [card_fastino_GLiNER2.5-Decide.txt](https://huggingface.co/fastino/GLiNER2.5-Decide)
 
 # Related
 

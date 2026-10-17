@@ -53,18 +53,18 @@ sources:
     title: 'laya-jev-GraphRAG | Calibrated Decisions (third-party directory)'
     last_modified: 2026-09-25T00:00:00Z
 evidence:
-  - { file: references/evidence/models/jev_typesafe_blog.html, sha256: 71b8ae6a6a0d80511d6c6b6796a5d541dca1f629d54697b900c5ffe7a8c3bf10, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_typesafe_blog.txt, sha256: 6fbda0a3d2d947811a45415fabe153e7bef65b2a28d243eb9d41de502b059f65, retrieved_at: 2026-10-15T19:28:00Z, method: command }
-  - { file: references/evidence/models/jev_typesafe_primitives.html, sha256: 9964da676aa55455fcd81f0730b3a615331f52e25bfc6913cdfd0f0b4e95507c, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_typesafe_intro.html, sha256: e60679ab518b3c20afd686d4d830d2ab4b2013e103460c1b5aeef62c8b58c307, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_pydantic_decision.txt, sha256: cf84b1abae2dcadc2a6830c1204e47ab9ba0d362faffd7ddd708d1fcb1a93324, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_pydantic_docs.txt, sha256: 1db515c8b08a9296fd0515e02bbe06ab3cbd2f2a15c4fab9d048bd3aabf9fb89, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_langchain.txt, sha256: 336bc74eaf1e4569a35d6d69ff8794705249ea963abd97cac6e773a7be3b73dc, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_lyonwj.txt, sha256: 5947f729e27a66e203659af70cc5a8c84834a9c5b6c5af227ae5603345eb3808, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_awesome_readme.txt, sha256: 8a6b6b564d7787e3e5a991d9b0fa695c0249ddc65839b9cbdb14d5921e4e4ae0, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/jev_calibrated_laya_graphrag.txt, sha256: d5c6ef43fd5f32359c806ee121fcfb2ad1c7ed0691adca380bf4815db97c4a77, retrieved_at: 2026-10-15T19:28:00Z, method: obscura }
-  - { file: references/evidence/models/jev_tds_graphrag.txt, sha256: 821cef6112a3e8ce3db612cc4c59613a3b26109bbd09343289073325f61feefa, retrieved_at: 2026-10-15T19:28:00Z, method: obscura }
-  - { file: references/evidence/models/hf_search_jev.json, sha256: 24d9f4a41246118df1e91a5336741f19d845990c0d69e2e6ddbeed513a1f0dc4, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: jev_typesafe_blog.html, url: "https://typesafe.ai/blog/introducing-system-one-models-and-jev", sha256: 71b8ae6a6a0d80511d6c6b6796a5d541dca1f629d54697b900c5ffe7a8c3bf10, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_typesafe_blog.txt, url: "https://typesafe.ai/blog/introducing-system-one-models-and-jev", sha256: 6fbda0a3d2d947811a45415fabe153e7bef65b2a28d243eb9d41de502b059f65, retrieved_at: 2026-10-15T19:28:00Z, method: command, redistributed: false }
+  - { name: jev_typesafe_primitives.html, url: "https://docs.typesafe.ai/primitives", sha256: 9964da676aa55455fcd81f0730b3a615331f52e25bfc6913cdfd0f0b4e95507c, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_typesafe_intro.html, url: "https://docs.typesafe.ai/introduction", sha256: e60679ab518b3c20afd686d4d830d2ab4b2013e103460c1b5aeef62c8b58c307, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_pydantic_decision.txt, url: "https://pydantic.dev/docs/ai/models/decision/", sha256: cf84b1abae2dcadc2a6830c1204e47ab9ba0d362faffd7ddd708d1fcb1a93324, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_pydantic_docs.txt, url: "https://pydantic.dev/docs/ai/models/typesafe/", sha256: 1db515c8b08a9296fd0515e02bbe06ab3cbd2f2a15c4fab9d048bd3aabf9fb89, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_langchain.txt, url: "https://www.langchain.com/blog/building-a-harness-with-jev", sha256: 336bc74eaf1e4569a35d6d69ff8794705249ea963abd97cac6e773a7be3b73dc, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_lyonwj.txt, url: "https://lyonwj.com/blog/typesafe-jev-knowledge-graph-extraction", sha256: 5947f729e27a66e203659af70cc5a8c84834a9c5b6c5af227ae5603345eb3808, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_awesome_readme.txt, url: "https://github.com/AbdelStark/awesome-typesafe-jev", sha256: 8a6b6b564d7787e3e5a991d9b0fa695c0249ddc65839b9cbdb14d5921e4e4ae0, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: jev_calibrated_laya_graphrag.txt, url: "https://calibrateddecisions.com/projects/laya-jev-graphrag", sha256: d5c6ef43fd5f32359c806ee121fcfb2ad1c7ed0691adca380bf4815db97c4a77, retrieved_at: 2026-10-15T19:28:00Z, method: obscura, redistributed: false }
+  - { name: jev_tds_graphrag.txt, url: "https://towardsdatascience.com/graphrag-with-typesafe-jev-a-system-one-approach-to-scalable-knowledge-graphs/", sha256: 821cef6112a3e8ce3db612cc4c59613a3b26109bbd09343289073325f61feefa, retrieved_at: 2026-10-15T19:28:00Z, method: obscura, redistributed: false }
+  - { name: hf_search_jev.json, url: "https://huggingface.co/api/models?search=jev", url_basis: inferred, sha256: 24d9f4a41246118df1e91a5336741f19d845990c0d69e2e6ddbeed513a1f0dc4, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
 ---
 
 # Verdict
@@ -151,13 +151,13 @@ No independent timing was done.
 - [gliner2-family-and-paper](/models/gliner2-family-and-paper.md)
 - [index](/models/index.md)
 
-[^typesafe-blog]: TypeSafe AI blog, https://typesafe.ai/blog/introducing-system-one-models-and-jev (page dated Sep 15, 2026). Evidence [jev_typesafe_blog.html](/references/evidence/models/jev_typesafe_blog.html), [jev_typesafe_blog.txt](/references/evidence/models/jev_typesafe_blog.txt)
-[^typesafe-primitives-docs]: TypeSafe docs, https://docs.typesafe.ai/primitives. Evidence [jev_typesafe_primitives.html](/references/evidence/models/jev_typesafe_primitives.html)
-[^pydantic-typesafe]: Pydantic AI docs, https://pydantic.dev/docs/ai/models/typesafe/. Evidence [jev_pydantic_docs.txt](/references/evidence/models/jev_pydantic_docs.txt)
-[^pydantic-decision]: Pydantic AI decision models, https://pydantic.dev/docs/ai/models/decision/. Evidence [jev_pydantic_decision.txt](/references/evidence/models/jev_pydantic_decision.txt)
-[^langchain-jev]: LangChain blog, https://www.langchain.com/blog/building-a-harness-with-jev. Evidence [jev_langchain.txt](/references/evidence/models/jev_langchain.txt)
-[^lyon-kg-jev]: William Lyon, https://lyonwj.com/blog/typesafe-jev-knowledge-graph-extraction (Sep 17, 2026). Evidence [jev_lyonwj.txt](/references/evidence/models/jev_lyonwj.txt)
-[^awesome-jev]: https://github.com/AbdelStark/awesome-typesafe-jev, README. Evidence [jev_awesome_readme.txt](/references/evidence/models/jev_awesome_readme.txt)
-[^calibrated-laya-graphrag]: https://calibrateddecisions.com/projects/laya-jev-graphrag. Evidence [jev_calibrated_laya_graphrag.txt](/references/evidence/models/jev_calibrated_laya_graphrag.txt)
-[^tds-graphrag]: https://towardsdatascience.com/graphrag-with-typesafe-jev-a-system-one-approach-to-scalable-knowledge-graphs/ returned "Attention Required! | Cloudflare" on obscura fetch. Evidence [jev_tds_graphrag.txt](/references/evidence/models/jev_tds_graphrag.txt)
-[^gliner2-decide-card]: fastino/GLiNER2.5-Decide card. Evidence [card_fastino_GLiNER2.5-Decide.txt](/references/evidence/models/card_fastino_GLiNER2.5-Decide.txt)
+[^typesafe-blog]: TypeSafe AI blog, https://typesafe.ai/blog/introducing-system-one-models-and-jev (page dated Sep 15, 2026). Evidence [jev_typesafe_blog.html](https://typesafe.ai/blog/introducing-system-one-models-and-jev), [jev_typesafe_blog.txt](https://typesafe.ai/blog/introducing-system-one-models-and-jev)
+[^typesafe-primitives-docs]: TypeSafe docs, https://docs.typesafe.ai/primitives. Evidence [jev_typesafe_primitives.html](https://docs.typesafe.ai/primitives)
+[^pydantic-typesafe]: Pydantic AI docs, https://pydantic.dev/docs/ai/models/typesafe/. Evidence [jev_pydantic_docs.txt](https://pydantic.dev/docs/ai/models/typesafe/)
+[^pydantic-decision]: Pydantic AI decision models, https://pydantic.dev/docs/ai/models/decision/. Evidence [jev_pydantic_decision.txt](https://pydantic.dev/docs/ai/models/decision/)
+[^langchain-jev]: LangChain blog, https://www.langchain.com/blog/building-a-harness-with-jev. Evidence [jev_langchain.txt](https://www.langchain.com/blog/building-a-harness-with-jev)
+[^lyon-kg-jev]: William Lyon, https://lyonwj.com/blog/typesafe-jev-knowledge-graph-extraction (Sep 17, 2026). Evidence [jev_lyonwj.txt](https://lyonwj.com/blog/typesafe-jev-knowledge-graph-extraction)
+[^awesome-jev]: https://github.com/AbdelStark/awesome-typesafe-jev, README. Evidence [jev_awesome_readme.txt](https://github.com/AbdelStark/awesome-typesafe-jev)
+[^calibrated-laya-graphrag]: https://calibrateddecisions.com/projects/laya-jev-graphrag. Evidence [jev_calibrated_laya_graphrag.txt](https://calibrateddecisions.com/projects/laya-jev-graphrag)
+[^tds-graphrag]: https://towardsdatascience.com/graphrag-with-typesafe-jev-a-system-one-approach-to-scalable-knowledge-graphs/ returned "Attention Required! | Cloudflare" on obscura fetch. Evidence [jev_tds_graphrag.txt](https://towardsdatascience.com/graphrag-with-typesafe-jev-a-system-one-approach-to-scalable-knowledge-graphs/)
+[^gliner2-decide-card]: fastino/GLiNER2.5-Decide card. Evidence [card_fastino_GLiNER2.5-Decide.txt](https://huggingface.co/fastino/GLiNER2.5-Decide)

@@ -9,7 +9,7 @@ generated: { by: claude-haiku-5-5/okf-agent, at: 2026-10-15T19:27:17Z }
 stale_after: 2026-11-15T00:00:00Z
 sources:
   - id: okf-spec
-    resource: references/okf-spec-v0.2.txt
+    resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
     title: OKF Version 0.2 spec (local copy, sha256 26aa5da0...1030101)
   - id: okf-issues
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/issues
@@ -18,17 +18,17 @@ sources:
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py
     title: Reference agent document.py (upstream helpers)
 evidence:
-  - { file: references/okf-spec-v0.2.txt, sha256: 26aa5da029278939f914e578107242d9607d4f2dc5fe153272b82f9ed1030101, retrieved_at: 2026-10-15T19:27:17Z, method: command }
-  - { file: references/evidence/okf/okfrepo-refagent-bundle_document.py, sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-issue-8.json, sha256: 631be075e7d0ba7363ecfccf41c937c3ce5f7ddc10caff96ff51d49fd089d0de, retrieved_at: 2026-10-15T19:24:42Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-issue-24.json, sha256: d4a7b006c9caff4a962be2b78c24fc1bf99ebf39cf0e86da79bc7e426ad43c60, retrieved_at: 2026-10-15T19:24:43Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-issue-29.json, sha256: 1b9cb53c379f7ebf7ebda6e5a9be6dc7f308db77806a1da89042e6a7585072a7, retrieved_at: 2026-10-15T19:24:43Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-issue-34.json, sha256: f712074ec4db8b3f7552fe1a71ef276b9d289ba544e2c42ee114b170670585d5, retrieved_at: 2026-10-15T19:24:44Z, method: curl }
-  - { file: references/evidence/okf/okf-pulls.json, sha256: 27f1f07e87abaae75b9525da9a8c3584475cc8b57c790e21773af8563c44db0c, retrieved_at: 2026-10-15T19:24:30Z, method: curl }
+  - { name: okf-spec-v0.2.txt, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md", sha256: 26aa5da029278939f914e578107242d9607d4f2dc5fe153272b82f9ed1030101, retrieved_at: 2026-10-15T19:27:17Z, method: command, redistributed: false }
+  - { name: okfrepo-refagent-bundle_document.py, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py", sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl, redistributed: false }
+  - { name: okfrepo-issue-8.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/8", sha256: 631be075e7d0ba7363ecfccf41c937c3ce5f7ddc10caff96ff51d49fd089d0de, retrieved_at: 2026-10-15T19:24:42Z, method: curl, redistributed: false }
+  - { name: okfrepo-issue-24.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/24", sha256: d4a7b006c9caff4a962be2b78c24fc1bf99ebf39cf0e86da79bc7e426ad43c60, retrieved_at: 2026-10-15T19:24:43Z, method: curl, redistributed: false }
+  - { name: okfrepo-issue-29.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/29", sha256: 1b9cb53c379f7ebf7ebda6e5a9be6dc7f308db77806a1da89042e6a7585072a7, retrieved_at: 2026-10-15T19:24:43Z, method: curl, redistributed: false }
+  - { name: okfrepo-issue-34.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/34", sha256: f712074ec4db8b3f7552fe1a71ef276b9d289ba544e2c42ee114b170670585d5, retrieved_at: 2026-10-15T19:24:44Z, method: curl, redistributed: false }
+  - { name: okf-pulls.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/pulls", sha256: 27f1f07e87abaae75b9525da9a8c3584475cc8b57c790e21773af8563c44db0c, retrieved_at: 2026-10-15T19:24:30Z, method: curl, redistributed: false }
   - { file: references/evidence/okf/validate_okf.py, sha256: 1cb592462e0515dd1381cf038f21beadc14f6df3457467a2fed7f6f58f98327b, retrieved_at: 2026-10-15T19:25:46Z, method: command }
 ---
 
-Every rule below cites the spec as `§n`. Line numbers are in `references/okf-spec-v0.2.txt`. The spec is authoritative. This sheet only summarises it, and the open questions at the end are not settled.[^okf-spec]
+Every rule below cites the spec as `§n`. Line numbers are in `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md`. The spec is authoritative. This sheet only summarises it, and the open questions at the end are not settled.[^okf-spec]
 
 # 1. Bundle layout (§3, L109-149)
 
@@ -203,6 +203,6 @@ When trust, lifecycle, provenance, or computation families are present, producer
 
 - `references/evidence/okf/validate_okf.py` checks C1-C5 (conformance) and C6 (broken links). Run output: `references/evidence/okf/validate_okf-run.txt`. See [tooling-and-examples](/okf/tooling-and-examples.md).
 
-[^okf-spec]: `references/okf-spec-v0.2.txt`. Sections and line numbers as cited above.
-[^okf-issues]: OKF issues and pull requests - evidence in `references/evidence/okf/okf-issues-open.json`, `okf-pulls.json`, `okfrepo-issue-8.json`, `okfrepo-issue-24.json`, `okfrepo-issue-29.json`, `okfrepo-issue-34.json`.
-[^okf-refagent]: `okfrepo-refagent-bundle_document.py`, `REQUIRED_FRONTMATTER_KEYS = ("type",)`, `is_stale()` (ignores stale_after without an explicit offset).
+[^okf-spec]: `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md`. Sections and line numbers as cited above.
+[^okf-issues]: OKF issues and pull requests - evidence in `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues?state=open`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/pulls`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/8`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/24`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/29`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/34`.
+[^okf-refagent]: `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py`, `REQUIRED_FRONTMATTER_KEYS = ("type",)`, `is_stale()` (ignores stale_after without an explicit offset).

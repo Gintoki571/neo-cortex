@@ -25,11 +25,11 @@ sources:
     title: 'google/embeddinggemma-300m (card page, returned 401 gated stub)'
     last_modified: 2025-09-25T15:11:17Z
 evidence:
-  - { file: references/evidence/models/card_google_embeddinggemma-2.txt, sha256: b677a0ee2818c36f091b65fd3d9b4baea9f04d53b02b49cae916c74bf9682037, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_google_embeddinggemma-2.json, sha256: 3958fb0b148794bc3037c6b628088c852f86c49408a7768024baef9f3efe937d, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_embeddinggemma-2_blobs.json, sha256: 28d9e7e5d095bfe387d1cd6c2bf07f4a081e718b77fd3a40c893d86c9bcc6e82, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/api_google_embeddinggemma-300m.json, sha256: c2ec6c9bb7ae75024b428924575a4102ccdcad10d56fc1db22768ecb9908d056, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/card_google_embeddinggemma-300m.txt, sha256: 340dda0e070bd01e5a655e0200e765080045baaa197d8576155baed3bcc12ca5, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: card_google_embeddinggemma-2.txt, url: "https://huggingface.co/google/embeddinggemma-2", sha256: b677a0ee2818c36f091b65fd3d9b4baea9f04d53b02b49cae916c74bf9682037, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_google_embeddinggemma-2.json, url: "https://huggingface.co/api/models/google/embeddinggemma-2", sha256: 3958fb0b148794bc3037c6b628088c852f86c49408a7768024baef9f3efe937d, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_embeddinggemma-2_blobs.json, url: "https://huggingface.co/api/models/google/embeddinggemma-2?blobs=true", sha256: 28d9e7e5d095bfe387d1cd6c2bf07f4a081e718b77fd3a40c893d86c9bcc6e82, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: api_google_embeddinggemma-300m.json, url: "https://huggingface.co/api/models/google/embeddinggemma-300m", sha256: c2ec6c9bb7ae75024b428924575a4102ccdcad10d56fc1db22768ecb9908d056, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: card_google_embeddinggemma-300m.txt, url: "https://huggingface.co/google/embeddinggemma-300m", sha256: 340dda0e070bd01e5a655e0200e765080045baaa197d8576155baed3bcc12ca5, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
 ---
 
 # Does the repo exist?
@@ -175,6 +175,6 @@ These are the vendor's numbers. No independent re-run was done. The card itself 
 - [system1-classifier-candidates](/models/system1-classifier-candidates.md) (embedding models are not a classifier; listed for context only)
 - [index](/models/index.md)
 
-[^egemma2-card]: google/embeddinggemma-2 model card, https://huggingface.co/google/embeddinggemma-2. Evidence [card_google_embeddinggemma-2.txt](/references/evidence/models/card_google_embeddinggemma-2.txt)
-[^egemma2-hf-api]: HF API, https://huggingface.co/api/models/google/embeddinggemma-2. Evidence [api_google_embeddinggemma-2.json](/references/evidence/models/api_google_embeddinggemma-2.json), [api_embeddinggemma-2_blobs.json](/references/evidence/models/api_embeddinggemma-2_blobs.json)
-[^egemma-300m-card]: https://huggingface.co/google/embeddinggemma-300m (401 gated). Evidence [card_google_embeddinggemma-300m.txt](/references/evidence/models/card_google_embeddinggemma-300m.txt)
+[^egemma2-card]: google/embeddinggemma-2 model card, https://huggingface.co/google/embeddinggemma-2. Evidence [card_google_embeddinggemma-2.txt](https://huggingface.co/google/embeddinggemma-2)
+[^egemma2-hf-api]: HF API, https://huggingface.co/api/models/google/embeddinggemma-2. Evidence [api_google_embeddinggemma-2.json](https://huggingface.co/api/models/google/embeddinggemma-2), [api_embeddinggemma-2_blobs.json](https://huggingface.co/api/models/google/embeddinggemma-2?blobs=true)
+[^egemma-300m-card]: https://huggingface.co/google/embeddinggemma-300m (401 gated). Evidence [card_google_embeddinggemma-300m.txt](https://huggingface.co/google/embeddinggemma-300m)

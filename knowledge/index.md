@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # Neo-Cortex knowledge bundle
 
-Verified research for the Graph Hacks (FalkorDB) project. Every fact links to saved evidence with a sha256. Start with the plan, then the area you need.
+Verified research for the Graph Hacks (FalkorDB) project. Every fact links to evidence: own outputs are saved with a sha256; third-party sources are cited by URL, sha256 and retrieved_at (not redistributed). Start with the plan, then the area you need.
 
 # Decisions
 
@@ -23,4 +23,4 @@ Verified research for the Graph Hacks (FalkorDB) project. Every fact links to sa
 # Reference
 
 * [Research protocol](references/research-protocol.md) - how evidence is recorded
-* [OKF spec v0.2 (verbatim)](references/okf-spec-v0.2.txt) - raw spec copy
+* [OKF spec v0.2 (verbatim)](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md) - raw spec copy

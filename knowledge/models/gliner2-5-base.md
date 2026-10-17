@@ -30,14 +30,14 @@ sources:
     title: 'gliner2 on PyPI (2.1.0)'
     last_modified: 2026-10-09T17:49:12Z
 evidence:
-  - { file: references/evidence/models/gliner2.5-api.json, sha256: a84548dd9a1a2b4004c8076f11d88ec625a3476072ea6db7514ed64d6ea11cea, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2.5-README.txt, sha256: 1b023a4786371699477e0b635d2a148f10fe5c23ab1e9d36211ff58754289bbe, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2.5-config.json, sha256: d6b515c21ae2100c12267fb42a3f02c1e99ad87580366aebedb161efd74441c7, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2.5-tree.json, sha256: 42e89697abecda303149b1d5f4a58628eb911a136cc7ff5c3f7524521950be68, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/gliner2_readme.txt, sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
-  - { file: references/evidence/models/pypi_gliner2.json, sha256: c133c8aafac94bfe3c18668127f6b102b6b85632ea569442e04fcade029bb02e, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: gliner2.5-api.json, url: "https://huggingface.co/api/models/fastino/gliner2.5-base-v1", url_basis: inferred, sha256: a84548dd9a1a2b4004c8076f11d88ec625a3476072ea6db7514ed64d6ea11cea, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2.5-README.txt, url: "https://huggingface.co/fastino/gliner2.5-base-v1/raw/main/README.md", url_basis: inferred, sha256: 1b023a4786371699477e0b635d2a148f10fe5c23ab1e9d36211ff58754289bbe, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2.5-config.json, url: "https://huggingface.co/fastino/gliner2.5-base-v1/raw/main/config.json", url_basis: inferred, sha256: d6b515c21ae2100c12267fb42a3f02c1e99ad87580366aebedb161efd74441c7, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2.5-tree.json, url: "https://huggingface.co/api/models/fastino/gliner2.5-base-v1/tree/main", url_basis: inferred, sha256: 42e89697abecda303149b1d5f4a58628eb911a136cc7ff5c3f7524521950be68, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: gliner2_readme.txt, url: "https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/README.md", sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
+  - { name: pypi_gliner2.json, url: "https://pypi.org/pypi/gliner2/json", sha256: c133c8aafac94bfe3c18668127f6b102b6b85632ea569442e04fcade029bb02e, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
   - { file: references/evidence/models/gliner2-pip-api-check.txt, sha256: c79df201c53c0311f4e32dd16d8dc2a3733608df41700405ae3d959c794a654a, retrieved_at: 2026-10-15T19:28:00Z, method: command }
-  - { file: references/evidence/models/gh_gliner2_repo.json, sha256: 705d251b6c293f2ad6319106eac69cdff1d0f311578855b506ee80a415ea5e26, retrieved_at: 2026-10-15T19:28:00Z, method: curl }
+  - { name: gh_gliner2_repo.json, url: "https://api.github.com/repos/fastino-ai/GLiNER2", sha256: 705d251b6c293f2ad6319106eac69cdff1d0f311578855b506ee80a415ea5e26, retrieved_at: 2026-10-15T19:28:00Z, method: curl, redistributed: false }
 ---
 
 # Summary
@@ -46,7 +46,7 @@ GLiNER2.5 Base is the English checkpoint of the GLiNER2.5 family. It is a schema
 
 > GLiNER2.5 Base is the English boundary checkpoint at DeBERTa-v3-base scale. It is the everyday English model for schema-driven NER, classification, records, and relations.[^gliner25-hf-card]
 
-Evidence: [gliner2.5-README.txt](/references/evidence/models/gliner2.5-README.txt).
+Evidence: [gliner2.5-README.txt](https://huggingface.co/fastino/gliner2.5-base-v1/raw/main/README.md).
 
 Family and paper history are in [gliner2-family-and-paper](/models/gliner2-family-and-paper.md). Classifier options that matter for a decision role are in [system1-classifier-candidates](/models/system1-classifier-candidates.md).
 
@@ -54,7 +54,7 @@ Family and paper history are in [gliner2-family-and-paper](/models/gliner2-famil
 
 | Item | Value | Source |
 |---|---|---|
-| HF repo | `fastino/gliner2.5-base-v1`, not gated, not private | [API JSON](/references/evidence/models/gliner2.5-api.json) |
+| HF repo | `fastino/gliner2.5-base-v1`, not gated, not private | [API JSON](https://huggingface.co/api/models/fastino/gliner2.5-base-v1) |
 | Repo sha | `54785d51df8d86a0d8f2eb212fec15871aad2c4d` | API JSON `sha` |
 | Last modified (HF) | 2026-10-08T18:52:12Z | API JSON `lastModified` |
 | Downloads / likes | 108,784 / 39 (snapshot) | API JSON |
@@ -64,7 +64,7 @@ Family and paper history are in [gliner2-family-and-paper](/models/gliner2-famil
 | Weight file | `model.safetensors` 774,366,564 bytes (F32) | API `siblings` with `blobs=true` |
 | Encoder | `microsoft/deberta-v3-base` | card |
 | Max span length | `max_len=4096` window | card |
-| Architecture | `Gliner2ForSchemaExtraction`, `architecture: boundary` | API `config`, [config.json](/references/evidence/models/gliner2.5-config.json) |
+| Architecture | `Gliner2ForSchemaExtraction`, `architecture: boundary` | API `config`, [config.json](https://huggingface.co/fastino/gliner2.5-base-v1/raw/main/config.json) |
 | Pipeline tag | `schema-extraction` | API `cardData` |
 
 ## Disk size: card and files disagree
@@ -73,7 +73,7 @@ The card says:
 
 > - **Weights:** ~407 MB (mostly FP16)[^gliner25-hf-card]
 
-The repo file listing says the safetensors file is 774,366,564 bytes, and the safetensors metadata says all 193,581,591 parameters are F32 (the metadata is the more direct source). The discrepancy is recorded here rather than resolved. Expect roughly 0.77 GB on disk for the default upload, plus tokenizer files (8.3 MB `tokenizer.json`). Source: [gliner2.5-tree.json](/references/evidence/models/gliner2.5-tree.json)[^gliner25-hf-api].
+The repo file listing says the safetensors file is 774,366,564 bytes, and the safetensors metadata says all 193,581,591 parameters are F32 (the metadata is the more direct source). The discrepancy is recorded here rather than resolved. Expect roughly 0.77 GB on disk for the default upload, plus tokenizer files (8.3 MB `tokenizer.json`). Source: [gliner2.5-tree.json](https://huggingface.co/api/models/fastino/gliner2.5-base-v1/tree/main)[^gliner25-hf-api].
 
 ## Tasks supported
 
@@ -152,7 +152,7 @@ The card gives `max_len=4096` as the encoded window. The `gliner2` config defaul
 
 ## Benchmarks
 
-- The model card for 2.5 Base has no benchmark table (checked the README text in [gliner2.5-README.txt](/references/evidence/models/gliner2.5-README.txt)).
+- The model card for 2.5 Base has no benchmark table (checked the README text in [gliner2.5-README.txt](https://huggingface.co/fastino/gliner2.5-base-v1/raw/main/README.md)).
 - The GLiNER2 paper's numbers are for the v1 span model, not 2.5. See [gliner2-family-and-paper](/models/gliner2-family-and-paper.md).
 - Lyon's KG experiment uses GLiNER2.5 base on a synthetic corpus and reports precision/recall/F1; that is one third-party run, not a benchmark. See [jev-typesafe-claim-check](/models/jev-typesafe-claim-check.md).
 
@@ -167,7 +167,7 @@ The card gives `max_len=4096` as the encoded window. The `gliner2` config defaul
 
 - PyPI latest version `2.1.0`, `requires_python >=3.10`, upload 2026-10-09T17:49:12. Project URLs point to the GitHub repo.[^gliner2-pypi]
 - Base install needs only pydantic, requests, tqdm, urllib3. `[local]` adds torch, transformers, peft, safetensors, numpy.[^gliner2-pypi]
-- The GitHub repo `fastino-ai/GLiNER2` is Apache-2.0, default branch `main`, `pushed_at` 2026-10-09T17:53:44Z, 2,374 stars at retrieval (one API snapshot, [gh_gliner2_repo.json](/references/evidence/models/gh_gliner2_repo.json)).
+- The GitHub repo `fastino-ai/GLiNER2` is Apache-2.0, default branch `main`, `pushed_at` 2026-10-09T17:53:44Z, 2,374 stars at retrieval (one API snapshot, [gh_gliner2_repo.json](https://api.github.com/repos/fastino-ai/GLiNER2)).
 
 ## Not run
 

@@ -1,6 +1,6 @@
 # Extraction area index
 
-Research on document and text extraction tools for the Neo-Cortex project: an LLM-based structured extractor (LangExtract), its pipeline, a document-to-Markdown converter (anydoc), and System 1 encoders (GLiNER family, label-set classifiers) in knowledge-graph pipelines. Research protocol: [/references/research-protocol.md](/references/research-protocol.md). Spec: [/references/okf-spec-v0.2.txt](/references/okf-spec-v0.2.txt).
+Research on document and text extraction tools for the Neo-Cortex project: an LLM-based structured extractor (LangExtract), its pipeline, a document-to-Markdown converter (anydoc), and System 1 encoders (GLiNER family, label-set classifiers) in knowledge-graph pipelines. Research protocol: [/references/research-protocol.md](/references/research-protocol.md). Spec: [/https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md).
 
 ## Concepts
 
@@ -34,4 +34,4 @@ Research on document and text extraction tools for the Neo-Cortex project: an LL
 
 ## Evidence
 
-All raw sources and test artifacts: `/references/evidence/extraction/` (checksums in `SHA256SUMS.txt` in the same folder). System 1 sources are the `system1-*` files, copied from the research pass's obscura fetches on 2026-10-17 and not re-fetched.
+Own test artifacts are stored in `/references/evidence/extraction/` (checksums in `SHA256SUMS.txt` and `anydoc-test-SHA256SUMS.txt` in the same folder). Third-party sources, including the System 1 pages (obscura fetches of 2026-10-17, not re-fetched), are not redistributed; URL and sha256 are in each note's frontmatter.

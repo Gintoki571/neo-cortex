@@ -36,13 +36,13 @@ sources:
     resource: https://docs.falkordb.com/cypher/indexing/vector-index
     title: Vector Indexing (Python example)
 evidence:
-  - { file: references/evidence/falkordb/pypi-falkordb.json, sha256: d0c590052d766d723cad9285c97cafbc863bf651010345ac8d83d50159daf6bc, retrieved_at: 2026-10-15T19:37:00Z, method: curl }
+  - { name: pypi-falkordb.json, url: "https://pypi.org/pypi/falkordb/json", sha256: d0c590052d766d723cad9285c97cafbc863bf651010345ac8d83d50159daf6bc, retrieved_at: 2026-10-15T19:37:00Z, method: curl, redistributed: false }
   - { file: references/evidence/falkordb/pypi-sdist-1.8.0-url-and-sha256.txt, sha256: 8af2d544b54ccb8f692c778a6bb417c02261f0843319ccb6dc7c9e170423360e, retrieved_at: 2026-10-15T19:45:00Z, method: curl }
-  - { file: references/evidence/falkordb/pyclient-1.8.0-source-excerpts.txt, sha256: ae5e72fa77ed957a9f477e2391674715fdfdbba5c352d9c53568073b9d15374c, retrieved_at: 2026-10-15T19:45:00Z, method: command }
-  - { file: references/evidence/falkordb/pyclient-1.8.0-pyproject.toml.txt, sha256: 2095e5d5610087dfe3cdc3f69c33a66c0926bc6f7732500a51e8ef36a5cf1794, retrieved_at: 2026-10-15T19:45:00Z, method: command }
-  - { file: references/evidence/falkordb/docs-getting-started__clients.txt, sha256: e5eeef46771daf198ef22df2f2a8cded0815f155f0ea57e3acde11daf48fd3db, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-commands__graph.profile.txt, sha256: 3cdeb327b32e35dc86dfb0bcb7c698b6bd49f596ed75457785ffaa99e43a11ea, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-commands__graph.explain.txt, sha256: 8f8d1254f7970d3122d6d1053cc4795de32ccb2625f317e374762c3be9a06fd1, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
+  - { name: pyclient-1.8.0-source-excerpts.txt, url: "https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz", sha256: ae5e72fa77ed957a9f477e2391674715fdfdbba5c352d9c53568073b9d15374c, retrieved_at: 2026-10-15T19:45:00Z, method: command, redistributed: false }
+  - { name: pyclient-1.8.0-pyproject.toml.txt, url: "https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz", sha256: 2095e5d5610087dfe3cdc3f69c33a66c0926bc6f7732500a51e8ef36a5cf1794, retrieved_at: 2026-10-15T19:45:00Z, method: command, redistributed: false }
+  - { name: docs-getting-started__clients.txt, url: "https://docs.falkordb.com/getting-started/clients", sha256: e5eeef46771daf198ef22df2f2a8cded0815f155f0ea57e3acde11daf48fd3db, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-commands__graph.profile.txt, url: "https://docs.falkordb.com/commands/graph.profile", sha256: 3cdeb327b32e35dc86dfb0bcb7c698b6bd49f596ed75457785ffaa99e43a11ea, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-commands__graph.explain.txt, url: "https://docs.falkordb.com/commands/graph.explain", sha256: 8f8d1254f7970d3122d6d1053cc4795de32ccb2625f317e374762c3be9a06fd1, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
   - { file: references/evidence/falkordb/run-4.22.1-client-api.txt, sha256: 76e5b0772a3a31f282d2d7b307c2d04b35b2407b4de7cc19f456deffabe7a853, retrieved_at: 2026-10-15T19:58:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-pypi-sync-example.txt, sha256: 6a55935e20b751e5ce8130ff40792ae23f8f919afe0e6df1ca34c4d62b6c1e87, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-readme-motogp.txt, sha256: 2c47144a59fc5600ba6e41118eed8f890fc37db177dc6bf021370ee9220aab9c, retrieved_at: 2026-10-15T19:58:00Z, method: command }
@@ -55,7 +55,7 @@ evidence:
 
 # FalkorDB Python client (falkordb package)
 
-The Python client is `FalkorDB` on PyPI (import name `falkordb`), MIT-licensed per the README table and the PyPI classifiers. Version 1.8.0, uploaded 2026-10-14. It needs Python 3.10 or newer (`pypi-falkordb.json`: `requires_python` `>=3.10`).
+The Python client is `FalkorDB` on PyPI (import name `falkordb`), MIT-licensed per the README table and the PyPI classifiers. Version 1.8.0, uploaded 2026-10-14. It needs Python 3.10 or newer (`https://pypi.org/pypi/falkordb/json`: `requires_python` `>=3.10`).
 
 Related: [Cypher support](/falkordb/cypher-support.md) (what to put in the query), [indexing and vectors](/falkordb/indexing-and-vectors.md), [data model](/falkordb/data-model-and-constraints.md) (what can be stored), [limits](/falkordb/limits-and-performance.md) (timeouts).
 
@@ -63,7 +63,7 @@ Run legend: **run** = executed against falkordb/falkordb:latest (module 4.22.1) 
 
 ## Install and dependencies
 
-PyPI page (`pypi-falkordb.json`, long description, verbatim):
+PyPI page (`https://pypi.org/pypi/falkordb/json`, long description, verbatim):
 
 ```sh
 pip install FalkorDB
@@ -73,9 +73,9 @@ pip install FalkorDB
 pip install "FalkorDB[hiredis]"
 ```
 
-> "For faster parsing of large results (for example vector properties), install the optional `hiredis` parser. `redis` uses it automatically:" — evidence: `pypi-falkordb.json` [^pypi-falkordb]
+> "For faster parsing of large results (for example vector properties), install the optional `hiredis` parser. `redis` uses it automatically:" — evidence: `https://pypi.org/pypi/falkordb/json` [^pypi-falkordb]
 
-Dependencies (src, `pyproject.toml` in `pyclient-1.8.0-pyproject.toml.txt`):
+Dependencies (src, `https://github.com/FalkorDB/GraphRAG-SDK/blob/35e67a0/pyproject.toml` in `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz`):
 
 ```toml
 dependencies = [
@@ -122,7 +122,7 @@ The README's MotoGP example (`github-README-main.md`) ran as written, except the
 
 ## FalkorDB class (src)
 
-`FalkorDB(host="localhost", port=6379, password=None, socket_timeout=None, ..., connection_pool=None, ..., max_connections=None, ...)` — evidence: `pyclient-1.8.0-source-excerpts.txt` (falkordb.py). Also:
+`FalkorDB(host="localhost", port=6379, password=None, socket_timeout=None, ..., connection_pool=None, ..., max_connections=None, ...)` — evidence: `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz` (falkordb.py). Also:
 
 - `FalkorDB.from_url(url, **kwargs)`
 - `select_graph(graph_id) -> Graph`
@@ -152,15 +152,15 @@ The README's MotoGP example (`github-README-main.md`) ran as written, except the
 | `create_edge_unique_constraint(relation, *props)` / `create_edge_mandatory_constraint(...)` | edge versions |
 | `drop_*_constraint(...)`, `list_constraints()` | constraint management |
 
-Source confirmation for the index helper (src, `pyclient-1.8.0-source-excerpts.txt`): "`if entity_type == "NODE": pattern = f"(e:{label})"`" and for edges `()-[e:{label}]->()`. The helper builds `CREATE {idx_type} INDEX FOR {pattern} ON (e.a,e.b)`, so composite range indexes are created through the helper too.
+Source confirmation for the index helper (src, `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz`): "`if entity_type == "NODE": pattern = f"(e:{label})"`" and for edges `()-[e:{label}]->()`. The helper builds `CREATE {idx_type} INDEX FOR {pattern} ON (e.a,e.b)`, so composite range indexes are created through the helper too.
 
-Vector helper defaults (src, `pyclient-1.8.0-source-excerpts.txt`): `dim` defaults to 0 and `similarity_function` to the string euclidean. Pass both explicitly. Run: `create_node_vector_index('Doc', 'emb', dim=3, similarity_function='cosine')` succeeded.
+Vector helper defaults (src, `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz`): `dim` defaults to 0 and `similarity_function` to the string euclidean. Pass both explicitly. Run: `create_node_vector_index('Doc', 'emb', dim=3, similarity_function='cosine')` succeeded.
 
 Call-procedure default (src): `read_only: bool = True`. Pass `read_only=False` for a write procedure.
 
 ## Parameters: how they are sent (src, important)
 
-Parameters are not sent as separate Redis arguments. The client renders them into a `CYPHER` header that is prepended to the query text. From `graph.py` (`_build_params_header`, verbatim lines from `pyclient-1.8.0-source-excerpts.txt`):
+Parameters are not sent as separate Redis arguments. The client renders them into a `CYPHER` header that is prepended to the query text. From `graph.py` (`_build_params_header`, verbatim lines from `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz`):
 
 ```python
 params_header = "CYPHER "
@@ -175,7 +175,7 @@ Consequences:
 - Parameter names cannot contain a backtick, and an empty name is rejected (src: `ValueError`).
 - Whether the plan cache keys on the rendered text (values included) was not verified. Open question. If it does, parameterised queries still avoid re-planning only when the text is identical.
 
-Value rendering (src, `helpers.py` docstring in `pyclient-1.8.0-source-excerpts.txt`): "you may pass any value that would be accepted by json.dumps()". The same docstring says strings are quoted, `None` becomes `null`, and dictionary keys are wrapped in backticks. Run results (`run-4.22.1-verify-client.txt`): a string containing a double quote came back unchanged, and a dictionary key containing a dash was accepted and returned as `{'a-b': 1}`.
+Value rendering (src, `helpers.py` docstring in `https://files.pythonhosted.org/packages/dd/96/a2f4d214a0c8871e72d0fdb80b5e7caf93037ff8583d1c4e822c4344bd17/falkordb-1.8.0.tar.gz`): "you may pass any value that would be accepted by json.dumps()". The same docstring says strings are quoted, `None` becomes `null`, and dictionary keys are wrapped in backticks. Run results (`run-4.22.1-verify-client.txt`): a string containing a double quote came back unchanged, and a dictionary key containing a dash was accepted and returned as `{'a-b': 1}`.
 
 Runs of the parameter path:
 
@@ -233,7 +233,7 @@ async def main():
 asyncio.run(main())
 ```
 
-The PyPI page shows this shape (`pypi-falkordb.json`; the snippet below drops the connection-pool host arguments that the local run needed). A shortened version ran against the local server: `await ag.query(...)` and `await ag.ro_query(...)` both worked (`run-4.22.1-verify-more.txt`, `async create -> [[11]]`). Pass `host` and `port` on the pool (`BlockingConnectionPool(host=..., port=...)`) when not using localhost.
+The PyPI page shows this shape (`https://pypi.org/pypi/falkordb/json`; the snippet below drops the connection-pool host arguments that the local run needed). A shortened version ran against the local server: `await ag.query(...)` and `await ag.ro_query(...)` both worked (`run-4.22.1-verify-more.txt`, `async create -> [[11]]`). Pass `host` and `port` on the pool (`BlockingConnectionPool(host=..., port=...)`) when not using localhost.
 
 ## Profile and explain (run)
 
@@ -244,7 +244,7 @@ print(g.explain("MATCH (a:A) RETURN a"))
 #         Node By Label Scan | (a:A)
 ```
 
-`ExecutionPlan` prints the operation tree (run; see the client-API run log). `profile` adds per-operation counts and timings, as in the docs (`docs-commands__graph.profile.txt`): "returning the operation tree structure alongside the number of records produced and total runtime of each operation" (`docs-commands__graph.profile.txt`). `GRAPH.PROFILE` executes the query; `GRAPH.EXPLAIN` does not.
+`ExecutionPlan` prints the operation tree (run; see the client-API run log). `profile` adds per-operation counts and timings, as in the docs (`https://docs.falkordb.com/commands/graph.profile`): "returning the operation tree structure alongside the number of records produced and total runtime of each operation" (`https://docs.falkordb.com/commands/graph.profile`). `GRAPH.PROFILE` executes the query; `GRAPH.EXPLAIN` does not.
 
 Index use check (run): an equality or range predicate on an indexed property shows `Node By Index Scan` (4.22.1). The docs show `Index Scan`. Look for `Index Scan` in the text.
 
@@ -256,7 +256,7 @@ The Python vector example in the docs builds its CREATE with an f-string that do
 graph.query(f"CREATE (p:Product {name: 'Laptop', embedding: vecf32({embedding.tolist()})})")
 ```
 
-The docs' Python vector example (`docs-cypher__indexing__vector-index.txt`, "Realistic Vector Search") builds its CREATE with an f-string whose braces are not escaped. Evaluating that line raises `NameError: name 'name' is not defined` (run). Escape the braces, or better, pass the vector as a parameter:
+The docs' Python vector example (`https://docs.falkordb.com/cypher/indexing/vector-index`, "Realistic Vector Search") builds its CREATE with an f-string whose braces are not escaped. Evaluating that line raises `NameError: name 'name' is not defined` (run). Escape the braces, or better, pass the vector as a parameter:
 
 ```python
 g.query("CREATE (p:Product {name:'Laptop', embedding: vecf32($e)})", {"e": embedding.tolist()})

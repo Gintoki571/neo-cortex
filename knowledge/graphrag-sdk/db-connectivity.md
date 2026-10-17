@@ -90,24 +90,24 @@ sources:
     resource: https://pypi.org/project/graphrag-sdk/1.4.0/
     title: "graphrag-sdk 1.4.0 source snapshot (evidence copy)"
 evidence:
-  - { file: references/evidence/graphrag-sdk/docs/configuration.txt, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/storage.txt, sha256: d75adfc930efbdc1181c912c5988ecc08fa9abfa16ceccf9568ea379a59ce606, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/core_connection.py, sha256: cc6f9d24023558ee718734f18a7f35f1e3c0ddbb32ef1fec688494a193529bef, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/api_main.py, sha256: b4245004e02fdb9095e580b35fc32797abd19f1566f1492261dbd5b00c60521d, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_vector_store.py, sha256: 57abad41d65d1aad6f590e368e2ffffa1801bf1360de75fac8fd474f853d318e, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-main-35e67a0/core_connection.py, sha256: c0e43c0630eabfb3690087c79285f2153b0381d493e3e111c6e9aaf21de084e2, retrieved_at: 2026-10-15T19:45:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-falkordblite-ae24b52/async_falkordb_client.py, sha256: dc4dbd89d47ecc5c10b833b687a84ae613ace84a69dd4e2ed6d3ba373207ec31, retrieved_at: 2026-10-15T19:45:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-falkordblite-ae24b52/README.txt, sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:45:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/pypi-falkordblite.json, sha256: 97ceafd4f0cd8e4e4f79dc68de4593ed420d08928db3e4c4b25fb5abf366b070, retrieved_at: 2026-10-15T19:36:00Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/gh-falkordblite.json, sha256: cd04fb995c6f474f09f6ec18238ea8b67f10f2c129fdbfa973f2d3ca0a63c5de, retrieved_at: 2026-10-15T19:36:00Z, method: curl }
+  - { name: configuration.txt, url: "https://docs.falkordb.com/graphrag/configuration", url_basis: inferred, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: storage.txt, url: "https://docs.falkordb.com/graphrag/storage", url_basis: inferred, sha256: d75adfc930efbdc1181c912c5988ecc08fa9abfa16ceccf9568ea379a59ce606, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: core_connection.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: cc6f9d24023558ee718734f18a7f35f1e3c0ddbb32ef1fec688494a193529bef, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: api_main.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: b4245004e02fdb9095e580b35fc32797abd19f1566f1492261dbd5b00c60521d, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: storage_vector_store.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: 57abad41d65d1aad6f590e368e2ffffa1801bf1360de75fac8fd474f853d318e, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: core_connection.py, url: "https://github.com/FalkorDB/GraphRAG-SDK/tree/35e67a0", url_basis: inferred, sha256: c0e43c0630eabfb3690087c79285f2153b0381d493e3e111c6e9aaf21de084e2, retrieved_at: 2026-10-15T19:45:00Z, method: command, redistributed: false }
+  - { name: async_falkordb_client.py, url: "https://github.com/FalkorDB/falkordblite/blob/ae24b52/redislite/async_falkordb_client.py", url_basis: inferred, sha256: dc4dbd89d47ecc5c10b833b687a84ae613ace84a69dd4e2ed6d3ba373207ec31, retrieved_at: 2026-10-15T19:45:00Z, method: command, redistributed: false }
+  - { name: README.txt, url: "https://github.com/FalkorDB/falkordblite/blob/ae24b52/README.md", url_basis: inferred, sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:45:00Z, method: command, redistributed: false }
+  - { name: pypi-falkordblite.json, url: "https://pypi.org/pypi/falkordblite/json", url_basis: inferred, sha256: 97ceafd4f0cd8e4e4f79dc68de4593ed420d08928db3e4c4b25fb5abf366b070, retrieved_at: 2026-10-15T19:36:00Z, method: curl, redistributed: false }
+  - { name: gh-falkordblite.json, url: "https://api.github.com/repos/FalkorDB/falkordblite", url_basis: inferred, sha256: cd04fb995c6f474f09f6ec18238ea8b67f10f2c129fdbfa973f2d3ca0a63c5de, retrieved_at: 2026-10-15T19:36:00Z, method: curl, redistributed: false }
   - { file: references/evidence/graphrag-sdk/gh-falkordblite-raw-readme-404.txt, sha256: d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed, retrieved_at: 2026-10-15T19:36:00Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/gh-issues-all-p1.json, sha256: dd881082d44be55d752428bc8e05776beed69cd9c52b353b512df3369fcc0634, retrieved_at: 2026-10-15T19:36:22Z, method: command }
+  - { name: gh-issues-all-p1.json, url: "https://api.github.com/repos/FalkorDB/GraphRAG-SDK/issues?state=all&page=1", url_basis: inferred, sha256: dd881082d44be55d752428bc8e05776beed69cd9c52b353b512df3369fcc0634, retrieved_at: 2026-10-15T19:36:22Z, method: command, redistributed: false }
   - { file: references/evidence/graphrag-sdk/runs/lite-smoke.txt, sha256: 2802962efffe184fc13c20327fc70cdca7f25c586f1ee10c6be4e308ee74f969, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/lite-tcp-probe.txt, sha256: f6f89cfe9e6ee88d2b6c5276a20e00a1e11e5dcce28547f9746ac8f212c1ada8, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt, sha256: 020b6a709e6bb4c6c18a3ae7c5e5c592e926dab1f9ca783dfb1889ac5224f283, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-inject-pypi140.txt, sha256: 955ef9ec6257e43575a3699f1ac3e5b48655725e63bd10500e3a15b398da101b, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/raw-driver-probe-pypi140.txt, sha256: aa922f9e099a38372916366243837763b8bdb66680622e264fa0b2f7fc87c499, retrieved_at: 2026-10-15T20:10:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_ontology_store.py, sha256: 1343680dfb32c86aba13029c0d217e15ffb08ed53841d90a703647606a719f77, retrieved_at: 2026-10-15T20:10:00Z, method: command }
+  - { name: storage_ontology_store.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: 1343680dfb32c86aba13029c0d217e15ffb08ed53841d90a703647606a719f77, retrieved_at: 2026-10-15T20:10:00Z, method: command, redistributed: false }
   - { file: references/evidence/graphrag-sdk/runs/falkordb-module-info.txt, sha256: 2deed28dfeab5d582e67d6f47be3f8c6c4ce5539c8db50e225e7c4f731875558, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/pip-freeze-sdk-venv.txt, sha256: 023d5dde752cccb89c3de0405bf2b1b316859e21137cc2896f886b907dcfce7b, retrieved_at: 2026-10-15T20:00:00Z, method: command }
 verified: { by: process:cross-check, at: 2026-10-15T20:00:00Z }
@@ -171,7 +171,7 @@ Retry and circuit breaker: query retries use `retry_count`, and non-transient me
 
 - `falkordblite` 0.10.0 (PyPI, uploaded 2026-05-02) is "FalkorDB embedded in a Python package". Requires Python `>=3.12.0`. Dependencies: `redis>=4.5`, `falkordb>=1.2.0`, `psutil`, `setuptools>38.0`.[^falkordblite-pypi]
 - The README: `It provides enhanced versions of the Redis-Py Python bindings with FalkorDB graph database functionality.` and `The falkordblite module requires Python 3.12 or higher.`[^falkordblite-readme]
-- Note: the falkordblite `raw.githubusercontent.com/.../main/README.md` URL returned 404 (evidence `gh-falkordblite-README.md` holds the 404 body). The clone's README at `ae24b52` is the saved copy. The GitHub API for the repo was rate-limited when we tried, so `gh-falkordblite.json` holds the rate-limit body.[^gh-falkordblite]
+- Note: the falkordblite `raw.githubusercontent.com/.../main/README.md` URL returned 404 (evidence `gh-falkordblite-README.md` holds the 404 body). The clone's README at `ae24b52` is the saved copy. The GitHub API for the repo was rate-limited when we tried, so `https://api.github.com/repos/FalkorDB/falkordblite` holds the rate-limit body.[^gh-falkordblite]
 - Bundled binaries (from the wheel, verified after install): `redislite/bin/redis-server` (Redis 8.6.2 per `package_metadata.json`) and `redislite/bin/falkordb.so`. `MODULE LIST` on the embedded server reports graph module `ver 41803` (FalkorDB 4.18.3 encoding), so the bundled module is **FalkorDB 4.18.3**.[^falkordb-module-info]
 - Python API: `redislite.falkordb_client.FalkorDB` (sync) and `redislite.async_falkordb_client.AsyncFalkorDB` (async). The async class subclasses `falkordb.asyncio.FalkorDB` but has its own constructor: `def __init__(self, dbfilename: Optional[str] = None, serverconfig: Optional[dict] = None, **kwargs):`, which builds its own `AsyncRedis`. It does not take a `connection_pool=` argument.[^falkordblite-src]
 - Default server config has `'port': '0'`, so no TCP listener. The server listens on a unix socket in a temp directory only. Setting `serverconfig={"port": ...}` opens TCP.[^falkordblite-conf][^run-tcp]
@@ -268,17 +268,17 @@ Our tests ran on FalkorDB module 4.18.3 (falkordblite bundle). **Not tested on 6
 - Is a supported, public injection hook planned? Today's workaround is private-API subclassing.
 - Does `falkordblite` work with Python 3.10 or 3.11? Its package requires 3.12, so the SDK's 3.10 floor can't be combined with falkordblite on those versions.
 
-[^docs-configuration]: `references/evidence/graphrag-sdk/docs/configuration.txt`
-[^docs-storage]: `references/evidence/graphrag-sdk/docs/storage.txt`
-[^readme]: `references/evidence/graphrag-sdk/github-readme-main.txt`
-[^src-pypi-conn]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/core_connection.py`
-[^src-pypi-api]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/api_main.py`
-[^src-pypi-storage]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_vector_store.py`
-[^src-pypi-storage-ontology]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_ontology_store.py`
-[^src-pypi-main]: `references/evidence/graphrag-sdk/src-main-35e67a0/core_connection.py`
-[^falkordblite-pypi]: `references/evidence/graphrag-sdk/pypi-falkordblite.json`
-[^falkordblite-readme]: `references/evidence/graphrag-sdk/src-falkordblite-ae24b52/README.txt`
-[^falkordblite-src]: `references/evidence/graphrag-sdk/src-falkordblite-ae24b52/async_falkordb_client.py`
+[^docs-configuration]: `https://docs.falkordb.com/graphrag/configuration`
+[^docs-storage]: `https://docs.falkordb.com/graphrag/storage`
+[^readme]: `https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/README.md`
+[^src-pypi-conn]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-pypi-api]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-pypi-storage]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-pypi-storage-ontology]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-pypi-main]: `https://github.com/FalkorDB/GraphRAG-SDK/tree/35e67a0`
+[^falkordblite-pypi]: `https://pypi.org/pypi/falkordblite/json`
+[^falkordblite-readme]: `https://github.com/FalkorDB/falkordblite/blob/ae24b52/README.md`
+[^falkordblite-src]: `https://github.com/FalkorDB/falkordblite/blob/ae24b52/redislite/async_falkordb_client.py`
 [^falkordblite-conf]: falkordblite `redislite/configuration.py` line 39 (`'port': '0',`), in the installed wheel; not saved as evidence
 [^falkordb-module-info]: `references/evidence/graphrag-sdk/runs/falkordb-module-info.txt`
 [^run-claims]: `references/evidence/graphrag-sdk/runs/claims-probe-pypi140.txt`
@@ -289,5 +289,5 @@ Our tests ran on FalkorDB module 4.18.3 (falkordblite bundle). **Not tested on 6
 [^run-raw]: `references/evidence/graphrag-sdk/runs/raw-driver-probe-pypi140.txt`
 [^run-rank-pypi]: `references/evidence/graphrag-sdk/runs/vector-rank-pypi140.txt`
 [^run-rank-main]: `references/evidence/graphrag-sdk/runs/vector-rank-main-35e67a0.txt`
-[^gh-issues]: `references/evidence/graphrag-sdk/gh-issues-all-p1.json`
-[^gh-falkordblite]: `references/evidence/graphrag-sdk/gh-falkordblite-raw-readme-404.txt` (404) and `references/evidence/graphrag-sdk/gh-falkordblite.json` (rate-limit body)
+[^gh-issues]: `https://api.github.com/repos/FalkorDB/GraphRAG-SDK/issues?state=all&page=1`
+[^gh-falkordblite]: `references/evidence/graphrag-sdk/gh-falkordblite-raw-readme-404.txt` (404) and `https://api.github.com/repos/FalkorDB/falkordblite` (rate-limit body)

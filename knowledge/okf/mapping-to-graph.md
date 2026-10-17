@@ -9,7 +9,7 @@ generated: { by: claude-haiku-5-5/okf-agent, at: 2026-10-15T19:27:17Z }
 stale_after: 2026-11-15T00:00:00Z
 sources:
   - id: okf-spec
-    resource: references/okf-spec-v0.2.txt
+    resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
     title: OKF Version 0.2 spec (local copy, sha256 26aa5da0...1030101)
   - id: okf-issues
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/issues
@@ -18,10 +18,10 @@ sources:
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py
     title: Reference agent document.py (trust_tier, is_stale helpers)
 evidence:
-  - { file: references/okf-spec-v0.2.txt, sha256: 26aa5da029278939f914e578107242d9607d4f2dc5fe153272b82f9ed1030101, retrieved_at: 2026-10-15T19:27:17Z, method: command }
-  - { file: references/evidence/okf/okfrepo-refagent-bundle_document.py, sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl }
-  - { file: references/evidence/okf/okf-issues-open.json, sha256: 15fb1334578e3e2dc863e8226dd4425118799d64dd83c510b3c1e24beda39e22, retrieved_at: 2026-10-15T19:24:29Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-issue-29.json, sha256: 1b9cb53c379f7ebf7ebda6e5a9be6dc7f308db77806a1da89042e6a7585072a7, retrieved_at: 2026-10-15T19:24:43Z, method: curl }
+  - { name: okf-spec-v0.2.txt, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md", sha256: 26aa5da029278939f914e578107242d9607d4f2dc5fe153272b82f9ed1030101, retrieved_at: 2026-10-15T19:27:17Z, method: command, redistributed: false }
+  - { name: okfrepo-refagent-bundle_document.py, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py", sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl, redistributed: false }
+  - { name: okf-issues-open.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues?state=open", sha256: 15fb1334578e3e2dc863e8226dd4425118799d64dd83c510b3c1e24beda39e22, retrieved_at: 2026-10-15T19:24:29Z, method: curl, redistributed: false }
+  - { name: okfrepo-issue-29.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/29", sha256: 1b9cb53c379f7ebf7ebda6e5a9be6dc7f308db77806a1da89042e6a7585072a7, retrieved_at: 2026-10-15T19:24:43Z, method: curl, redistributed: false }
   - { file: references/evidence/okf/validate_okf-upstream-bundles.txt, sha256: 8083575bb3f5696477b4b13e1c1ac0dbb5ff577d71ddff0e686e8c45b702255a, retrieved_at: 2026-10-15T19:27:17Z, method: command }
 ---
 
@@ -35,7 +35,7 @@ Load an OKF bundle into one FalkorDB graph so that:
 - every node and edge carries enough provenance to trace it back to a file and a content hash;
 - trust (`verified`), freshness (`stale_after`) and lifecycle (`status`) are queryable.
 
-Spec basis: concepts are markdown files (§4), links are untyped relationships (§6.1, L458-462), `sources` carries provenance (§5.1), `generated` and `verified` carry trust (§5.2), and `runtime`/`parameters`/`executor`/`attester` carry computations (§10.2). Spec references are to `references/okf-spec-v0.2.txt`.[^okf-spec]
+Spec basis: concepts are markdown files (§4), links are untyped relationships (§6.1, L458-462), `sources` carries provenance (§5.1), `generated` and `verified` carry trust (§5.2), and `runtime`/`parameters`/`executor`/`attester` carry computations (§10.2). Spec references are to `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md`.[^okf-spec]
 
 # 1. Node types
 
@@ -94,7 +94,7 @@ From frontmatter, copied as given unless noted:
 - `type`, `title`, `description`, `resource`, `status`, `stale_after`, `tags` (list), `generated_by`, `generated_at`.
 - Keep unknown keys in `extra` (JSON string) rather than promoting each one. The spec says consumers MUST NOT reject unknown keys (§4.1 L205-207). Promoting them makes the schema drift with every producer.
 - **Derived (`okf_derived: true`):**
-  - `trust_tier`: `unverified` / `machine-confirmed` / `human-reviewed` (§5.3, L403-410). Same rule as the reference agent's `trust_tier()` (`okfrepo-refagent-bundle_document.py`).[^okf-refagent]
+  - `trust_tier`: `unverified` / `machine-confirmed` / `human-reviewed` (§5.3, L403-410). Same rule as the reference agent's `trust_tier()` (`https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py`).[^okf-refagent]
   - `stale_after_ms` (epoch ms, parsed from `stale_after`) and `stale_now` (computed at ingest). A stale-check at query time is cleaner: store `stale_after_ms` and compare with the query clock (§5.5, L430-433).
   - `body` (the markdown body), if you want full-text search.
 
@@ -102,7 +102,7 @@ From frontmatter, copied as given unless noted:
 
 # 5. Ingest procedure (proposal)
 
-1. **Parse.** Use the same rules as `validate_okf.py` (`references/evidence/okf/validate_okf.py`). Split the frontmatter on `---`. Load YAML with the timestamp resolver off, so timestamps stay strings. Otherwise `2026-06-30T14:00:00Z` is rewritten on round-trip (see the `_Loader` docstring in `okfrepo-refagent-bundle_document.py`).
+1. **Parse.** Use the same rules as `validate_okf.py` (`references/evidence/okf/validate_okf.py`). Split the frontmatter on `---`. Load YAML with the timestamp resolver off, so timestamps stay strings. Otherwise `2026-06-30T14:00:00Z` is rewritten on round-trip (see the `_Loader` docstring in `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py`).
 2. **Normalise.** A bare `verified` mapping becomes a one-element list (§5.2, L395-399). A string `tags` value becomes a list, and emit a warning. Keep the raw form in `extra`.
 3. **Emit rows.** Batch with `UNWIND $rows AS r MERGE ... SET ...`. One Cypher statement per node or edge type. Pass the rows as parameters, never by string interpolation (labels are fixed, values are parameters).
 4. **Resolve links.** For `LINKS_TO`, resolve absolute (`/...`) paths against the bundle root and relative paths against the file's directory (§6.1, §6.2). Record `resolved: false` for broken links. Per §6.1 and §11, a broken link is not an error (L464-466, L749-762).
@@ -144,6 +144,6 @@ Then `LINKS_TO`, `CITES`, and the rest follow the same pattern. Confirm the exac
 - Trust: issue #13 proposes a third trust field, `refuted`.[^okf-issues] If accepted, `trust_tier` changes.
 - The FalkorDB side (Cypher subset, index support, datetime handling, bulk-load path) is unverified. Check against `/falkordb/` and `/falkordblite/` concepts once they are written, and test on a copy of the upstream `bundles/acme_retail` (17 `.md` files, includes Attested Computations).
 
-[^okf-spec]: `references/okf-spec-v0.2.txt`. Line numbers as cited.
-[^okf-issues]: OKF issues - evidence in `references/evidence/okf/okf-issues-open.json`, `okfrepo-issue-29.json`.
-[^okf-refagent]: `references/evidence/okf/okfrepo-refagent-bundle_document.py` (`trust_tier`, `is_stale`, `_Loader`).
+[^okf-spec]: `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md`. Line numbers as cited.
+[^okf-issues]: OKF issues - evidence in `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues?state=open`, `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/issues/29`.
+[^okf-refagent]: `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py` (`trust_tier`, `is_stale`, `_Loader`).

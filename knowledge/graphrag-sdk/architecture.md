@@ -57,12 +57,12 @@ sources:
     resource: https://pypi.org/project/graphrag-sdk/1.4.0/
     title: "graphrag-sdk 1.4.0 source snapshot (evidence copy)"
 evidence:
-  - { file: references/evidence/graphrag-sdk/docs/architecture.txt, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/getting-started.txt, sha256: 25524f91e16e58a35df4b9daadf7c4bb820d03bd3be2120dbe3fffaba8b8e9e7, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/extraction.txt, sha256: f7427360df531a63bb0dc09e097a42549ed05df942d821704d84b26268ef55f2, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/storage.txt, sha256: d75adfc930efbdc1181c912c5988ecc08fa9abfa16ceccf9568ea379a59ce606, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/api_main.py, sha256: b4245004e02fdb9095e580b35fc32797abd19f1566f1492261dbd5b00c60521d, retrieved_at: 2026-10-15T19:50:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/multi_path.py, sha256: ae39c1ccdc51d0202be1344ff6585fab1dec460c9f8b4c8bb3de5fa9280f6642, retrieved_at: 2026-10-15T19:50:00Z, method: command }
+  - { name: architecture.txt, url: "https://docs.falkordb.com/graphrag/architecture", url_basis: inferred, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: getting-started.txt, url: "https://docs.falkordb.com/graphrag/getting-started", url_basis: inferred, sha256: 25524f91e16e58a35df4b9daadf7c4bb820d03bd3be2120dbe3fffaba8b8e9e7, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: extraction.txt, url: "https://docs.falkordb.com/graphrag/extraction", url_basis: inferred, sha256: f7427360df531a63bb0dc09e097a42549ed05df942d821704d84b26268ef55f2, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: storage.txt, url: "https://docs.falkordb.com/graphrag/storage", url_basis: inferred, sha256: d75adfc930efbdc1181c912c5988ecc08fa9abfa16ceccf9568ea379a59ce606, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: api_main.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: b4245004e02fdb9095e580b35fc32797abd19f1566f1492261dbd5b00c60521d, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
+  - { name: multi_path.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: ae39c1ccdc51d0202be1344ff6585fab1dec460c9f8b4c8bb3de5fa9280f6642, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt, sha256: 020b6a709e6bb4c6c18a3ae7c5e5c592e926dab1f9ca783dfb1889ac5224f283, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/claims-probe-pypi140.txt, sha256: eee5456404439fc99e47fb8d0d650a46e4b724a195be4655cf7e34f42cd0e019, retrieved_at: 2026-10-15T20:00:00Z, method: command }
 verified: { by: process:cross-check, at: 2026-10-15T20:00:00Z }
@@ -92,7 +92,7 @@ Docs say 9 steps:
 
 > `The ingestion pipeline runs a 9-step process: Load, Chunk, Lexical Graph, Extract (includes quality filtering), Prune, Resolve, Write, then Mentions and Chunk Indexing in parallel.` [^docs-getting-started]
 
-Docs table (`docs/architecture.txt`): 1 Load (`LoaderStrategy`), 2 Chunk (`ChunkingStrategy`), 3 Lexical Graph (built-in), 4 Extract (`ExtractionStrategy`), 5 Prune (built-in, filters off-schema data), 6 Resolve (`ResolutionStrategy`), 7 Write (built-in MERGE), 8 Mentions (parallel), 9 Index Chunks (parallel).[^docs-architecture]
+Docs table (`https://docs.falkordb.com/graphrag/architecture`): 1 Load (`LoaderStrategy`), 2 Chunk (`ChunkingStrategy`), 3 Lexical Graph (built-in), 4 Extract (`ExtractionStrategy`), 5 Prune (built-in, filters off-schema data), 6 Resolve (`ResolutionStrategy`), 7 Write (built-in MERGE), 8 Mentions (parallel), 9 Index Chunks (parallel).[^docs-architecture]
 
 Source: `class IngestionPipeline:` in `ingestion/pipeline.py` whose docstring is `Sequential orchestrator for knowledge graph construction.`[^src-pypi-listing]
 
@@ -132,12 +132,12 @@ The ontology is the schema. Types are `Ontology`, `Entity`, `Relation`, `Attribu
 ### Resolution
 
 - `ExactMatchResolution` is the ingest default. It dedups by normalised name plus label.[^docs-strategies]
-- `LLMVerifiedResolution` is opt-in at ingest. It uses an embedder and an LLM for near-duplicates. Docs (main behavior): `Across documents, finalize() already runs it over the whole graph by default (resolve=False turns that off).`[^docs-strategies] On 1.4.0, `finalize()` does not use `LLMVerifiedResolution`; it runs `EntityDeduplicator` (exact name match, optional fuzzy) (verified by grep of `api_main.py`, no construction site). Main's CHANGELOG #317 and #327 describe the LLM-judged finalize dedup.
+- `LLMVerifiedResolution` is opt-in at ingest. It uses an embedder and an LLM for near-duplicates. Docs (main behavior): `Across documents, finalize() already runs it over the whole graph by default (resolve=False turns that off).`[^docs-strategies] On 1.4.0, `finalize()` does not use `LLMVerifiedResolution`; it runs `EntityDeduplicator` (exact name match, optional fuzzy) (verified by grep of `https://pypi.org/project/graphrag-sdk/1.4.0/`, no construction site). Main's CHANGELOG #317 and #327 describe the LLM-judged finalize dedup.
 - `finalize()` runs `deduplicate_entities`, `backfill_entity_embeddings`, `embed_relationships`, and `ensure_indices`. Docs: `It bundles four steps in order`.[^docs-configuration]
 
 ### Write and storage layout
 
-Nodes and edges are written with batched UNWIND MERGE (500 per batch). Quoting `docs/storage.txt`: `Nodes and relationships are written in batches of 500 items per query.`[^docs-storage]
+Nodes and edges are written with batched UNWIND MERGE (500 per batch). Quoting `https://docs.falkordb.com/graphrag/storage`: `Nodes and relationships are written in batches of 500 items per query.`[^docs-storage]
 
 Graph elements observed in a live run (`runs/sdk-e2e-tcp-pypi140.txt`, `get_statistics()` output): labels `Document`, `Chunk`, `__Entity__`, entity labels such as `Person`, `Organization`, `Location`, and the internal `__GraphRAGConfig__` node. Edge types: `PART_OF`, `RELATES`, `MENTIONED_IN`. The `__GraphRAGConfig__` node stores the embedding model and dimension, which retrieval checks (CHANGELOG 1.0.0: "`__GraphRAGConfig__` singleton stores the embedding model and dimension used to build the graph; mismatches are caught on retrieval.").[^run-e2e][^changelog]
 
@@ -166,19 +166,19 @@ The docs site's "Structured Ingestion" page describes `Ontology(tables=[TableMap
 - Whether the structured-ingestion and relation-vocabulary features ship in the next release (main is ahead of 1.4.0).
 - The docs site and main both changed chunk defaults (512 to 384) and the relation vocabulary after 1.4.0. Re-check at next release.
 
-[^docs-architecture]: `references/evidence/graphrag-sdk/docs/architecture.txt`
-[^docs-getting-started]: `references/evidence/graphrag-sdk/docs/getting-started.txt`
-[^docs-extraction]: `references/evidence/graphrag-sdk/docs/extraction.txt`
-[^docs-storage]: `references/evidence/graphrag-sdk/docs/storage.txt`
-[^docs-strategies]: `references/evidence/graphrag-sdk/docs/strategies.txt`
-[^docs-configuration]: `references/evidence/graphrag-sdk/docs/configuration.txt`
-[^src-pypi]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/api_main.py`
-[^src-pypi-listing]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/__init__.py` and the installed package at `venv-pypi/lib/python3.14/site-packages/graphrag_sdk/` (listed in `runs/pip-freeze-sdk-venv.txt`)
-[^src-extraction]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/graph_extraction.py`
-[^src-storage]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/storage_vector_store.py`
+[^docs-architecture]: `https://docs.falkordb.com/graphrag/architecture`
+[^docs-getting-started]: `https://docs.falkordb.com/graphrag/getting-started`
+[^docs-extraction]: `https://docs.falkordb.com/graphrag/extraction`
+[^docs-storage]: `https://docs.falkordb.com/graphrag/storage`
+[^docs-strategies]: `https://docs.falkordb.com/graphrag/strategies`
+[^docs-configuration]: `https://docs.falkordb.com/graphrag/configuration`
+[^src-pypi]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-pypi-listing]: `https://pypi.org/project/graphrag-sdk/1.4.0/` and the installed package at `venv-pypi/lib/python3.14/site-packages/graphrag_sdk/` (listed in `runs/pip-freeze-sdk-venv.txt`)
+[^src-extraction]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^src-storage]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
 [^run-claims]: `references/evidence/graphrag-sdk/runs/claims-probe-pypi140.txt`
 [^run-docs]: `references/evidence/graphrag-sdk/runs/docs-snippets-pypi140.txt`
 [^run-e2e]: `references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt`
-[^readme]: `references/evidence/graphrag-sdk/github-readme-main.txt`
-[^changelog]: `references/evidence/graphrag-sdk/src-main-35e67a0/CHANGELOG.txt`
-[^gh-issues]: `references/evidence/graphrag-sdk/gh-issues-all-p1.json`
+[^readme]: `https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/README.md`
+[^changelog]: `https://github.com/FalkorDB/GraphRAG-SDK/blob/35e67a0/CHANGELOG.md`
+[^gh-issues]: `https://api.github.com/repos/FalkorDB/GraphRAG-SDK/issues?state=all&page=1`

@@ -52,21 +52,21 @@ sources:
     resource: https://docs.falkordb.com/cypher/procedures
     title: Cypher Procedures
 evidence:
-  - { file: references/evidence/falkordb/docs-algorithms__index.txt, sha256: 68f89a1b39c41f512c093948b5661c81c6df1edf4aa4e05982de59c250e3fb08, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__sppath.txt, sha256: 35229cbf1b7ef99bda8536230dcc9e4bfc8b9bf96f86c06ec1f3809a1c0f8519, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__sspath.txt, sha256: 44b4fa43fb7586d3a9946931b7d69b10f924e2581982d5dcf80ae8681eafeb8a, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__astar.txt, sha256: bf6dcf5aac47715b2b159a8798a0943cff507c074ce80d7624a33c320b7e50d0, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__pagerank.txt, sha256: c0395c7c91add49b55e4b8f9fe313f7156ed88b080c08c9778797a1228585cb5, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__bfs.txt, sha256: 069b040a5fc8467b4ad123554a9c47b6bb1862c36c39dbf4d5b779a82ec15c76, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__wcc.txt, sha256: 59ffc4ef8bed5115f40ec4f55aa41f5495ae216a2d4217e8d9c30e4e6bae9ae9, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__cdlp.txt, sha256: d6f91453e5bd894e8f2f00d53c26ab702aa49dee6a02e40cb17bd31a51c69c55, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__msf.txt, sha256: 758df7006a5ec269ded88d1abaa96f3feda04a373391b858d44757a0156ffdec, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__betweenness-centrality.txt, sha256: bd63274040dc8355a23b97e0b6215f1faf62c203be5ddc6a8d07a6447c014761, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__harmonic-centrality.txt, sha256: 1764f18d199001a35cd932930529c4ce7fc9d25ab36c3c231fb3543831d0ce45, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-algorithms__maxflow.txt, sha256: 1bd24461d84119b63d0b7de3662a780325a6b8441ece4b721ce186dfcb25288c, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__procedures.txt, sha256: b87859e804610dc243820cd4b02d17d260bf2f7c899cb0c76bd96d9dee3ea8f8, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/docs-cypher__indexing__cch-index.txt, sha256: a825fc3f38908e0e9ec4752130cc62b803e58710de24e34efc0769b0cb5c1c94, retrieved_at: 2026-10-15T19:35:00Z, method: curl }
-  - { file: references/evidence/falkordb/doc-cypher-snippets-extracted.json, sha256: 49ee7fc0c96f547345caec375a83a4bd83e5ff30b31a2cd74fe83dba262519c5, retrieved_at: 2026-10-15T19:40:00Z, method: command }
+  - { name: docs-algorithms__index.txt, url: "https://docs.falkordb.com/algorithms/index", sha256: 68f89a1b39c41f512c093948b5661c81c6df1edf4aa4e05982de59c250e3fb08, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__sppath.txt, url: "https://docs.falkordb.com/algorithms/sppath", sha256: 35229cbf1b7ef99bda8536230dcc9e4bfc8b9bf96f86c06ec1f3809a1c0f8519, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__sspath.txt, url: "https://docs.falkordb.com/algorithms/sspath", sha256: 44b4fa43fb7586d3a9946931b7d69b10f924e2581982d5dcf80ae8681eafeb8a, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__astar.txt, url: "https://docs.falkordb.com/algorithms/astar", sha256: bf6dcf5aac47715b2b159a8798a0943cff507c074ce80d7624a33c320b7e50d0, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__pagerank.txt, url: "https://docs.falkordb.com/algorithms/pagerank", sha256: c0395c7c91add49b55e4b8f9fe313f7156ed88b080c08c9778797a1228585cb5, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__bfs.txt, url: "https://docs.falkordb.com/algorithms/bfs", sha256: 069b040a5fc8467b4ad123554a9c47b6bb1862c36c39dbf4d5b779a82ec15c76, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__wcc.txt, url: "https://docs.falkordb.com/algorithms/wcc", sha256: 59ffc4ef8bed5115f40ec4f55aa41f5495ae216a2d4217e8d9c30e4e6bae9ae9, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__cdlp.txt, url: "https://docs.falkordb.com/algorithms/cdlp", sha256: d6f91453e5bd894e8f2f00d53c26ab702aa49dee6a02e40cb17bd31a51c69c55, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__msf.txt, url: "https://docs.falkordb.com/algorithms/msf", sha256: 758df7006a5ec269ded88d1abaa96f3feda04a373391b858d44757a0156ffdec, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__betweenness-centrality.txt, url: "https://docs.falkordb.com/algorithms/betweenness-centrality", sha256: bd63274040dc8355a23b97e0b6215f1faf62c203be5ddc6a8d07a6447c014761, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__harmonic-centrality.txt, url: "https://docs.falkordb.com/algorithms/harmonic-centrality", sha256: 1764f18d199001a35cd932930529c4ce7fc9d25ab36c3c231fb3543831d0ce45, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-algorithms__maxflow.txt, url: "https://docs.falkordb.com/algorithms/maxflow", sha256: 1bd24461d84119b63d0b7de3662a780325a6b8441ece4b721ce186dfcb25288c, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__procedures.txt, url: "https://docs.falkordb.com/cypher/procedures", sha256: b87859e804610dc243820cd4b02d17d260bf2f7c899cb0c76bd96d9dee3ea8f8, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: docs-cypher__indexing__cch-index.txt, url: "https://docs.falkordb.com/cypher/indexing/cch-index", sha256: a825fc3f38908e0e9ec4752130cc62b803e58710de24e34efc0769b0cb5c1c94, retrieved_at: 2026-10-15T19:35:00Z, method: curl, redistributed: false }
+  - { name: doc-cypher-snippets-extracted.json, url: "https://docs.falkordb.com/cypher", url_basis: inferred, sha256: 49ee7fc0c96f547345caec375a83a4bd83e5ff30b31a2cd74fe83dba262519c5, retrieved_at: 2026-10-15T19:40:00Z, method: command, redistributed: false }
   - { file: references/evidence/falkordb/run-4.22.1-doc-snippets.txt, sha256: cc0852ee6c03b854201c782b71bb70e959b43d241327b1fe4beceaf1ac0d825e, retrieved_at: 2026-10-15T19:50:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-verify-more.txt, sha256: 31c4152d51a15164f974cfa17a21023e3bca1ec85f675cce4def1c6f68bb6775, retrieved_at: 2026-10-15T19:50:00Z, method: command }
   - { file: references/evidence/falkordb/run-4.22.1-bfs.txt, sha256: 49947e8ed2bfc195b172e72fc4eb7562387c61833f79f1fbf6c96ed8d27b29e0, retrieved_at: 2026-10-15T19:55:00Z, method: command }
@@ -75,9 +75,9 @@ evidence:
 
 # FalkorDB graph algorithms and weighted shortest paths
 
-Algorithms are CALL procedures. They run against the in-memory graph and stream rows. The docs list them in one table (`docs-cypher__procedures.txt`):
+Algorithms are CALL procedures. They run against the in-memory graph and stream rows. The docs list them in one table (`https://docs.falkordb.com/cypher/procedures`):
 
-> "| algo.SPpaths | `config` | `path`, `pathWeight`, `pathCost` | Finds shortest paths between a source and a target node. See [SPpaths Algorithm](/algorithms/sppath) for details. |" — evidence: `docs-cypher__procedures.txt` [^docs-procedures]
+> "| algo.SPpaths | `config` | `path`, `pathWeight`, `pathCost` | Finds shortest paths between a source and a target node. See [SPpaths Algorithm](/algorithms/sppath) for details. |" — evidence: `https://docs.falkordb.com/cypher/procedures` [^docs-procedures]
 
 Related: [Cypher support](/falkordb/cypher-support.md) (CALL syntax, YIELD), [indexing and vectors](/falkordb/indexing-and-vectors.md) (CCH index, `db.idx.cch.query`), [data model](/falkordb/data-model-and-constraints.md) (weights are properties).
 
@@ -106,7 +106,7 @@ The procedure table in the docs omits `algo.HarmonicCentrality`, `algo.maxFlow` 
 
 ### algo.SPpaths (point to point)
 
-Docs syntax (`docs-algorithms__sppath.txt`), verbatim:
+Docs syntax (`https://docs.falkordb.com/algorithms/sppath`), verbatim:
 
 ```cypher
 CALL algo.SPpaths({
@@ -125,11 +125,11 @@ YIELD path, pathWeight, pathCost
 
 Docs semantics (quotes):
 
-> "`weightProp` | String | Property to minimize along the path (e.g., `dist`, `time`)" — evidence: `docs-algorithms__sppath.txt` [^docs-sppath]
+> "`weightProp` | String | Property to minimize along the path (e.g., `dist`, `time`)" — evidence: `https://docs.falkordb.com/algorithms/sppath` [^docs-sppath]
 
-> "`pathCount` | Integer | Number of paths to return (0 = all shortest, 1 = default, n = max number of results)" — evidence: `docs-algorithms__sppath.txt`
+> "`pathCount` | Integer | Number of paths to return (0 = all shortest, 1 = default, n = max number of results)" — evidence: `https://docs.falkordb.com/algorithms/sppath`
 
-> "**weightProp** is the property the algorithm *minimizes* (e.g. distance). **costProp** is a separate property used as a *constraint* — you can set `maxCost` to exclude paths whose total cost exceeds a threshold." — evidence: `docs-algorithms__sppath.txt`
+> "**weightProp** is the property the algorithm *minimizes* (e.g. distance). **costProp** is a separate property used as a *constraint* — you can set `maxCost` to exclude paths whose total cost exceeds a threshold." — evidence: `https://docs.falkordb.com/algorithms/sppath`
 
 Run on a small graph (`run-4.22.1-verify-more.txt`). Nodes A, B, C, D. Edges A-B (dist 1, time 5), B-D (dist 1, time 5), A-C (dist 3, time 1), C-D (dist 3, time 1), A-D (dist 2, time 2).
 
@@ -160,7 +160,7 @@ Doc's own example uses a road-network image not present in the text. Its expecte
 
 ### algo.SSpaths (one source, many targets)
 
-Docs signature (`docs-algorithms__sspath.txt`): `CALL algo.SSpaths({ sourceNode, relTypes, weightProp, costProp, maxCost, maxLen, relDirection, pathCount })`. `weightProp` is optional. If omitted, "all edges are treated as having equal weight" (FAQ, doc) and the search counts hops.
+Docs signature (`https://docs.falkordb.com/algorithms/sspath`): `CALL algo.SSpaths({ sourceNode, relTypes, weightProp, costProp, maxCost, maxLen, relDirection, pathCount })`. `weightProp` is optional. If omitted, "all edges are treated as having equal weight" (FAQ, doc) and the search counts hops.
 
 Run (`run-4.22.1-verify-more.txt`):
 
@@ -175,7 +175,7 @@ Result: `[[1.0, ['A','D']], [1.0, ['A','C']], [1.0, ['A','B']], [2.0, ['A','B','
 
 ### algo.AStar (geographic heuristic)
 
-Docs: "Like [algo.SPpaths](/algorithms/sppath), it minimizes a numeric edge property (`weightProp`), but it is guided by a geographic heuristic" — evidence: `docs-algorithms__astar.txt` [^docs-astar]
+Docs: "Like [algo.SPpaths](/algorithms/sppath), it minimizes a numeric edge property (`weightProp`), but it is guided by a geographic heuristic" — evidence: `https://docs.falkordb.com/algorithms/astar` [^docs-astar]
 
 Every node needs latitude and longitude properties (doc: "Every node must carry latitude and longitude properties").
 
@@ -209,13 +209,13 @@ Run result: `[[7300.0, ['A', 'B', 'C']]]` (docs expected `7300`, match).
 
 Time-based (run): with `weightProp: 'time'` and `heuristicScale: 0.0333`, the result is `[[360.0, ['A', 'C']]]`. Check: A to C direct = 360 s; A-B-C = 240 + 300 = 540 s. Correct.
 
-Heuristic rule (doc): "`heuristicScale` must be a non-negative number." — evidence: `docs-algorithms__astar.txt`. The docs add that a smaller value stays optimal but explores more nodes, and a larger value than the true minimum weight-per-meter trades optimality for speed.
+Heuristic rule (doc): "`heuristicScale` must be a non-negative number." — evidence: `https://docs.falkordb.com/algorithms/astar`. The docs add that a smaller value stays optimal but explores more nodes, and a larger value than the true minimum weight-per-meter trades optimality for speed.
 
 Doc table: "| Travel time in seconds | `1 / max_speed_m_per_s` | Fastest possible time to cover one meter |". Use `heuristicScale` = 1 / max speed in m/s when `weightProp` is seconds (for example 0.0333 for 30 m/s).
 
 ### BFS
 
-Docs: "CALL algo.bfs(start_node, max_depth, relationship) YIELD nodes, edges" (`docs-algorithms__bfs.txt`). `relationship` may be null (all types). Run (`run-4.22.1-bfs.txt`):
+Docs: "CALL algo.bfs(start_node, max_depth, relationship) YIELD nodes, edges" (`https://docs.falkordb.com/algorithms/bfs`). `relationship` may be null (all types). Run (`run-4.22.1-bfs.txt`):
 
 ```cypher
 MATCH (alice:Person {name: 'Alice'}) CALL algo.bfs(alice, 2, 'FRIEND') YIELD nodes, edges RETURN [n IN nodes | n.name], size(edges)
@@ -241,7 +241,7 @@ Label propagation (CDLP), run with the docs' graph:
 CALL algo.labelPropagation() YIELD node, communityId RETURN node.name AS name, communityId ORDER BY communityId, name
 ```
 
-Run: Alice, Bob, Charlie, Diana, Grace, Henry = 0; Frank and Iris = 2; Eve and Jack = 4; Kate = 10. The docs expected Eve, Frank, Iris and Jack together in community 2. **Contradicted by run.** The docs also say "nodes are processed in random order" (`docs-algorithms__cdlp.txt`), so split results can vary between runs. Config keys `maxIterations`, `nodeLabels` and `relationshipTypes` ran. An unknown relationship type fails: `labelPropagation configuration, unknown relationship-type NOPE`.
+Run: Alice, Bob, Charlie, Diana, Grace, Henry = 0; Frank and Iris = 2; Eve and Jack = 4; Kate = 10. The docs expected Eve, Frank, Iris and Jack together in community 2. **Contradicted by run.** The docs also say "nodes are processed in random order" (`https://docs.falkordb.com/algorithms/cdlp`), so split results can vary between runs. Config keys `maxIterations`, `nodeLabels` and `relationshipTypes` ran. An unknown relationship type fails: `labelPropagation configuration, unknown relationship-type NOPE`.
 
 Minimum spanning forest (run). Docs example:
 
@@ -253,7 +253,7 @@ Result: one row with edges and nodes lists (run). Requires the graph from the do
 
 ### PageRank
 
-Docs syntax: `CALL algo.pageRank(label, relationship-type) YIELD node, score` with positional arguments (`docs-algorithms__pagerank.txt`). `label` null means all nodes; `relationship-type` null means all types.
+Docs syntax: `CALL algo.pageRank(label, relationship-type) YIELD node, score` with positional arguments (`https://docs.falkordb.com/algorithms/pagerank`). `label` null means all nodes; `relationship-type` null means all types.
 
 ```cypher
 CALL algo.pageRank('Paper', 'CITES')
@@ -274,13 +274,13 @@ Run on the docs' citation graph (run):
 
 **Contradicted by run.** The run values sum to 1.0. The order of the middle rows also differs. The docs' table may be illustrative. Use the ranking, not the docs' numbers.
 
-The docs state: "The sum of all scores in a graph equals 1.0" (quote from `docs-algorithms__pagerank.txt`).
+The docs state: "The sum of all scores in a graph equals 1.0" (quote from `https://docs.falkordb.com/algorithms/pagerank`).
 
 ### Betweenness and harmonic centrality
 
 Betweenness syntax (docs): `CALL algo.betweenness({nodeLabels: [...], relationshipTypes: [...], samplingSize: <int>, samplingSeed: <int>}) YIELD node, score`. Map keys are bare identifiers. The docs' FAQ example with quoted keys (`{'nodeLabels': ['Person']}`) fails with a parse error on 4.22.1 (`expected a property name or '}'`, run). Use bare keys.
 
-Harmonic (run): `CALL algo.HarmonicCentrality() YIELD node, score, reachable` ran; results for the docs' graph: `Alice 2.84`, `Bob 1.50`, `Charlie 1.50`, `David 1.00`, `Eve 0.0`. The docs say the score is "algorithm based on HyperLogLog (HLL) sketches" (`docs-algorithms__harmonic-centrality.txt`); expect estimates, not exact sums.
+Harmonic (run): `CALL algo.HarmonicCentrality() YIELD node, score, reachable` ran; results for the docs' graph: `Alice 2.84`, `Bob 1.50`, `Charlie 1.50`, `David 1.00`, `Eve 0.0`. The docs say the score is "algorithm based on HyperLogLog (HLL) sketches" (`https://docs.falkordb.com/algorithms/harmonic-centrality`); expect estimates, not exact sums.
 
 ### Max flow
 
@@ -296,17 +296,17 @@ Index DDL and details are in [indexing-and-vectors](/falkordb/indexing-and-vecto
 
 These are complexity statements, not measurements.
 
-> "The algorithm operates with a time complexity of **O(V · E²)**, where" — evidence: `docs-algorithms__maxflow.txt` (max flow)
+> "The algorithm operates with a time complexity of **O(V · E²)**, where" — evidence: `https://docs.falkordb.com/algorithms/maxflow` (max flow)
 
-> "WCC operates with a time complexity of **O(|V| + |E|)**" — evidence: `docs-algorithms__wcc.txt` [^docs-wcc]
+> "WCC operates with a time complexity of **O(|V| + |E|)**" — evidence: `https://docs.falkordb.com/algorithms/wcc` [^docs-wcc]
 
-> "CDLP operates with a time complexity of **O(m + n)** per iteration" — evidence: `docs-algorithms__cdlp.txt`
+> "CDLP operates with a time complexity of **O(m + n)** per iteration" — evidence: `https://docs.falkordb.com/algorithms/cdlp`
 
 Not timed here.
 
 ## Open questions
 
-- Does `algo.SPpaths` use Dijkstra? The docs never say so. The A* page compares only to "a plain Dijkstra search" (`docs-algorithms__astar.txt`). Not confirmed.
+- Does `algo.SPpaths` use Dijkstra? The docs never say so. The A* page compares only to "a plain Dijkstra search" (`https://docs.falkordb.com/algorithms/astar`). Not confirmed.
 - Behaviour with negative weights in SPpaths/SSpaths (docs say nothing).
 - The docs' road-network example for SPpaths and SSpaths (expected `pathWeight 12`) relies on a graph image; the text does not give the edges. Not reproduced.
 - BFS friend-recommendation snippet: correct form not documented (the docs' block fails on 4.22.1).

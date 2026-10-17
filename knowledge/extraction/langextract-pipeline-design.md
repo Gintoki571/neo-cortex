@@ -73,26 +73,26 @@ sources:
     resource: https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/LICENSE
     title: GLiNER2 LICENSE (Apache License 2.0 text)
 evidence:
-  - { file: references/evidence/extraction/gliner2-license-raw.txt, sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4, retrieved_at: 2026-10-15T19:24:00Z, method: curl }
-  - { file: references/evidence/extraction/gliner2-github-repo.json, sha256: cd04fb995c6f474f09f6ec18238ea8b67f10f2c129fdbfa973f2d3ca0a63c5de, retrieved_at: 2026-10-15T19:24:00Z, method: curl }
-  - { file: references/evidence/extraction/langextract-src-langextract_extraction.py.txt, sha256: 86d7dcab0c78e56be2ac943a02055f0d454783a6a76c54b351333c1a4db1e136, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_annotation.py.txt, sha256: 37f8d5d0398bc2d194dc6099e5a8cb93a50d1207424cad24e396bb97e5f67242, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_resolver.py.txt, sha256: d176e5cdada24b526e0ab559f9388e35df5057ca194a2552195dd101112b7f4b, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_base_model.py.txt, sha256: dfc7170a407af88618c916dc6bc172c0fe6283afea7e0648b705d66b3d1418ed, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_data.py.txt, sha256: 1bdd05d75387858d38b0bb6975a7b7753e957b855ce4e694dabe2985cf0fc8a3, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_chunking.py.txt, sha256: 0a620bc4c7c51b3dfee1ab7e9c4f9a51be3932b1b46555ae0c753ca661911941, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_tokenizer.py.txt, sha256: 2adf0f0e1d468d7a869314a5c3804ad0d67d4954f81e6f8bc635c51ef7c82922, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_prompting.py.txt, sha256: 0dd7568510b54f6ef12a955140c2bc8aef37ed71116aa14805e212b7bab5d765, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_format_handler.py.txt, sha256: 4cf27d4d6d861b3d626c66c47d52a556295a2cfbf7734215fdf3b25f824422ea, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_prompt_validation.py.txt, sha256: 04e52ec0b684060660cd7edbde7201818b5d8465dcae0b2446d916e61813058a, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_gemini.py.txt, sha256: 5a30e1c23f75a46accb099fd38782a3a71fc914a3a00e59d85e86321043078fa, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_openai.py.txt, sha256: 4710a8286f35931e38dec6fa7e294ccc2f7000e9c2c988b776965cf0095d0009, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_ollama.py.txt, sha256: 301586368ab9de065bed3b79f3004d6914dab14ca677612db6e64462097107a9, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_io.py.txt, sha256: 6718c46334306d038ab4b518e5c8a6566096faec7e6dc6244f4910d7d1b47495, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-doc-longer-text-example.txt, sha256: 52cd585f3580036bf32df1f4ca459b8f1e15ecb80a8bbaf209471650c181e6e7, retrieved_at: 2026-10-15T19:29:00Z, method: command }
-  - { file: references/evidence/extraction/langextract-readme.txt, sha256: 94e3bc80c96336a97a21281b596fd2e00b28acc5410ea0920bae398c741190e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/gliner2-pypi-description.txt, sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:24:00Z, method: curl }
-  - { file: references/evidence/extraction/pypi-gliner2.json, sha256: c133c8aafac94bfe3c18668127f6b102b6b85632ea569442e04fcade029bb02e, retrieved_at: 2026-10-15T19:24:00Z, method: curl }
+  - { name: gliner2-license-raw.txt, url: "https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/LICENSE", sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4, retrieved_at: 2026-10-15T19:24:00Z, method: curl, redistributed: false }
+  - { name: gliner2-github-repo.json, url: "https://api.github.com/repos/fastino-ai/GLiNER2", sha256: cd04fb995c6f474f09f6ec18238ea8b67f10f2c129fdbfa973f2d3ca0a63c5de, retrieved_at: 2026-10-15T19:24:00Z, method: curl, redistributed: false }
+  - { name: langextract-src-langextract_extraction.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/extraction.py", sha256: 86d7dcab0c78e56be2ac943a02055f0d454783a6a76c54b351333c1a4db1e136, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_annotation.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/annotation.py", sha256: 37f8d5d0398bc2d194dc6099e5a8cb93a50d1207424cad24e396bb97e5f67242, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_resolver.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/resolver.py", sha256: d176e5cdada24b526e0ab559f9388e35df5057ca194a2552195dd101112b7f4b, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_base_model.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/base_model.py", sha256: dfc7170a407af88618c916dc6bc172c0fe6283afea7e0648b705d66b3d1418ed, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_data.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/data.py", sha256: 1bdd05d75387858d38b0bb6975a7b7753e957b855ce4e694dabe2985cf0fc8a3, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_chunking.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/chunking.py", sha256: 0a620bc4c7c51b3dfee1ab7e9c4f9a51be3932b1b46555ae0c753ca661911941, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_tokenizer.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/tokenizer.py", sha256: 2adf0f0e1d468d7a869314a5c3804ad0d67d4954f81e6f8bc635c51ef7c82922, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_prompting.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/prompting.py", sha256: 0dd7568510b54f6ef12a955140c2bc8aef37ed71116aa14805e212b7bab5d765, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_format_handler.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/format_handler.py", sha256: 4cf27d4d6d861b3d626c66c47d52a556295a2cfbf7734215fdf3b25f824422ea, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_prompt_validation.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/prompt_validation.py", sha256: 04e52ec0b684060660cd7edbde7201818b5d8465dcae0b2446d916e61813058a, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_gemini.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/gemini.py", sha256: 5a30e1c23f75a46accb099fd38782a3a71fc914a3a00e59d85e86321043078fa, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_openai.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/openai.py", sha256: 4710a8286f35931e38dec6fa7e294ccc2f7000e9c2c988b776965cf0095d0009, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_ollama.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/ollama.py", sha256: 301586368ab9de065bed3b79f3004d6914dab14ca677612db6e64462097107a9, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_io.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/io.py", sha256: 6718c46334306d038ab4b518e5c8a6566096faec7e6dc6244f4910d7d1b47495, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-doc-longer-text-example.txt, url: "https://github.com/google/langextract/blob/main/docs/examples/longer_text_example.md", sha256: 52cd585f3580036bf32df1f4ca459b8f1e15ecb80a8bbaf209471650c181e6e7, retrieved_at: 2026-10-15T19:29:00Z, method: command, redistributed: false }
+  - { name: langextract-readme.txt, url: "https://raw.githubusercontent.com/google/langextract/main/README.md", sha256: 94e3bc80c96336a97a21281b596fd2e00b28acc5410ea0920bae398c741190e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: gliner2-pypi-description.txt, url: "https://pypi.org/pypi/gliner2/json", url_basis: inferred, sha256: 78f50ae3c773afe07941adea199311d6527a6001111b660f4110223f938feeae, retrieved_at: 2026-10-15T19:24:00Z, method: curl, redistributed: false }
+  - { name: pypi-gliner2.json, url: "https://pypi.org/pypi/gliner2/json", sha256: c133c8aafac94bfe3c18668127f6b102b6b85632ea569442e04fcade029bb02e, retrieved_at: 2026-10-15T19:24:00Z, method: curl, redistributed: false }
   - { file: references/evidence/extraction/langextract-test-output-offline-run.txt, sha256: e9514af04e393c631fb6d3e0fa5820b68c70ecadecf15a87ed577ef1712d7563, retrieved_at: 2026-10-15T19:27:00Z, method: command }
   - { file: references/evidence/extraction/langextract-test-output-passes-detail.txt, sha256: 7200a4b98e6ea939ef8f8f49fd613244ff8d4f8d3256cd315c1fbf6fd247a07a, retrieved_at: 2026-10-15T19:27:40Z, method: command }
 ---
@@ -313,24 +313,24 @@ GLiNER2 was not installed or run in this pass. Its PyPI JSON has `license: None`
 - [anydoc](/extraction/anydoc.md), for converting office files to Markdown before extraction
 - [Index](/extraction/index.md)
 
-[^src-extraction]: langextract/extraction.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_extraction.py.txt.
-[^src-annotation]: langextract/annotation.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_annotation.py.txt.
-[^src-resolver]: langextract/resolver.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_resolver.py.txt.
-[^src-base-model]: langextract/core/base_model.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_base_model.py.txt.
-[^src-data]: langextract/core/data.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_data.py.txt.
-[^src-chunking]: langextract/chunking.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_chunking.py.txt.
-[^src-tokenizer]: langextract/core/tokenizer.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_tokenizer.py.txt.
-[^src-prompting]: langextract/prompting.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_prompting.py.txt.
-[^src-format-handler]: langextract/core/format_handler.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_format_handler.py.txt.
-[^src-prompt-validation]: langextract/prompt_validation.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_prompt_validation.py.txt.
-[^src-gemini]: langextract/providers/gemini.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_gemini.py.txt.
-[^src-openai]: langextract/providers/openai.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_openai.py.txt.
-[^src-ollama]: langextract/providers/ollama.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_ollama.py.txt.
-[^src-io]: langextract/io.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_io.py.txt.
-[^readme]: LangExtract README. Evidence: references/evidence/extraction/langextract-readme.txt.
-[^longer-example]: docs/examples/longer_text_example.md at main. Evidence: references/evidence/extraction/langextract-doc-longer-text-example.txt.
-[^gliner2-pypi]: GLiNER2 PyPI description (version 2.1.0). Evidence: references/evidence/extraction/gliner2-pypi-description.txt and pypi-gliner2.json.
-[^gliner2-license]: GLiNER2 LICENSE from raw GitHub. Evidence: references/evidence/extraction/gliner2-license-raw.txt.
-[^gliner2-github]: GitHub API response for fastino-ai/GLiNER2 (rate-limited). Evidence: references/evidence/extraction/gliner2-github-repo.json.
+[^src-extraction]: langextract/extraction.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/extraction.py.
+[^src-annotation]: langextract/annotation.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/annotation.py.
+[^src-resolver]: langextract/resolver.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/resolver.py.
+[^src-base-model]: langextract/core/base_model.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/base_model.py.
+[^src-data]: langextract/core/data.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/data.py.
+[^src-chunking]: langextract/chunking.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/chunking.py.
+[^src-tokenizer]: langextract/core/tokenizer.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/tokenizer.py.
+[^src-prompting]: langextract/prompting.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/prompting.py.
+[^src-format-handler]: langextract/core/format_handler.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/format_handler.py.
+[^src-prompt-validation]: langextract/prompt_validation.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/prompt_validation.py.
+[^src-gemini]: langextract/providers/gemini.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/gemini.py.
+[^src-openai]: langextract/providers/openai.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/openai.py.
+[^src-ollama]: langextract/providers/ollama.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/ollama.py.
+[^src-io]: langextract/io.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/io.py.
+[^readme]: LangExtract README. Evidence: https://raw.githubusercontent.com/google/langextract/main/README.md.
+[^longer-example]: docs/examples/longer_text_example.md at main. Evidence: https://github.com/google/langextract/blob/main/docs/examples/longer_text_example.md.
+[^gliner2-pypi]: GLiNER2 PyPI description (version 2.1.0). Evidence: https://pypi.org/pypi/gliner2/json and pypi-gliner2.json.
+[^gliner2-license]: GLiNER2 LICENSE from raw GitHub. Evidence: https://raw.githubusercontent.com/fastino-ai/GLiNER2/main/LICENSE.
+[^gliner2-github]: GitHub API response for fastino-ai/GLiNER2 (rate-limited). Evidence: https://api.github.com/repos/fastino-ai/GLiNER2.
 [^test-run]: Local run of langextract 1.7.1. Evidence: references/evidence/extraction/langextract-test-output-offline-run.txt.
 [^test-passes]: Local run, extraction_passes=2. Evidence: references/evidence/extraction/langextract-test-output-passes-detail.txt.

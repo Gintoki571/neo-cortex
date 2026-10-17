@@ -9,11 +9,11 @@ stale_after: 2026-10-19T00:00:00Z
 generated: { by: claude-haiku-5-5/hackathon-agent, at: 2026-10-15T19:30:00Z }
 verified: { by: process:cross-check, at: 2026-10-15T19:30:00Z }
 evidence:
-  - { file: references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt, sha256: 71038654c4b6ec7420d82d902292d1abff9c5665e713b7205582b31ee44e333a, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
-  - { file: references/evidence/hackathon/falkordb-docs-algorithms-sppath.txt, sha256: cb9ba2707190b67e0f79c27add40fa67519ccb65d493fb67f6648f9bdd9b9def, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
-  - { file: references/evidence/hackathon/falkordb-docs-algorithms-pagerank.txt, sha256: a879b051ea27e1535d7c4da684631e17eba41dae545368a483bc8e9958ad63f4, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
-  - { file: references/evidence/hackathon/falkordb-docs-known-limitations.txt, sha256: 2a97b10da09db8ee7eef8ae40f819c1cb2f65936878d5d015e104168c5cad783, retrieved_at: 2026-10-15T19:24:00Z, method: obscura }
-  - { file: references/evidence/hackathon/github-api-falkordb-repo.json, sha256: f91b66969ebd41e390333b9af9e58f0f175970d726c66663193fb4221aeab580, retrieved_at: 2026-10-15T19:24:00Z, method: curl }
+  - { name: wemakedevs-blog-agent-reasons-over-graph.txt, url: "https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph", sha256: 71038654c4b6ec7420d82d902292d1abff9c5665e713b7205582b31ee44e333a, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
+  - { name: falkordb-docs-algorithms-sppath.txt, url: "https://docs.falkordb.com/algorithms/sppath", sha256: cb9ba2707190b67e0f79c27add40fa67519ccb65d493fb67f6648f9bdd9b9def, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
+  - { name: falkordb-docs-algorithms-pagerank.txt, url: "https://docs.falkordb.com/algorithms/pagerank", sha256: a879b051ea27e1535d7c4da684631e17eba41dae545368a483bc8e9958ad63f4, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
+  - { name: falkordb-docs-known-limitations.txt, url: "https://docs.falkordb.com/cypher/known-limitations", sha256: 2a97b10da09db8ee7eef8ae40f819c1cb2f65936878d5d015e104168c5cad783, retrieved_at: 2026-10-15T19:24:00Z, method: obscura, redistributed: false }
+  - { name: github-api-falkordb-repo.json, url: "https://api.github.com/repos/FalkorDB/FalkorDB", sha256: f91b66969ebd41e390333b9af9e58f0f175970d726c66663193fb4221aeab580, retrieved_at: 2026-10-15T19:24:00Z, method: curl, redistributed: false }
 sources:
   - id: blog-post
     resource: https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph
@@ -39,19 +39,19 @@ sources:
 A tutorial by WeMakeDevs COO Aayush Sharma. It frames the Graph Hacks challenge and then builds one example project, "Blast Radius", an on-call agent over a service dependency graph.[^blog-post]
 
 > "I have built a demo application called Blast Radius which is an on-call agent over a service dependency graph. You tell it a service is down, and it tells you what else breaks, who is on call for each of those things, and what changed in the last few hours. Every answer comes back with the hops it walked to get there."
-> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 The post's design claim:
 
 > "The design decision worth copying is that the agent never writes a query. It chooses from a fixed set of tools, a person wrote the Cypher inside each one, and the arguments are checked against the graph before anything runs."
-> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 Related: [overview](/hackathon/overview.md), [judging and prizes](/hackathon/judging-and-prizes.md).
 
 # Architecture
 
 > "One database, six tools, and a model that never touches the query language."
-> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 Stack, as the post's prerequisites table gives it:
 
@@ -71,7 +71,7 @@ Components table from the post (verbatim, abridged):
 > "FalkorDB algorithms | Shortest path and PageRank as agent tools"
 > "MCP | How the agent sees the six tools"
 > "FalkorDB Browser | Inspecting the model while you build"
-> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 Graph schema the demo uses (from the post):
 
@@ -86,7 +86,7 @@ Graph schema the demo uses (from the post):
 (:Finding {text, at, session})-[:ABOUT]->(:Service)
 ```
 
-Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 # Step-by-step flow
 
@@ -101,7 +101,7 @@ Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/ha
 Four answer outcomes the agent must distinguish:
 
 > "Answered with a path"; "Answered from memory"; "Not in the graph"; "Unknown service"
-> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+> Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 # Key code (verbatim from the post)
 
@@ -126,7 +126,7 @@ print(rows)
 # [['checkout-web', 'payments-api']]
 ```
 
-Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 Blast radius (Problem 1):
 
@@ -138,7 +138,7 @@ RETURN DISTINCT upstream.name AS service,
 ORDER BY hops, service
 ```
 
-Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
 Parallel-edge workaround (Problem 1). The docs confirm this behaviour:
 
@@ -147,7 +147,7 @@ MATCH (a)-[e]->(b) WHERE ID(e) >= 0 RETURN COUNT(b)
 ```
 
 > "When a relation in a match pattern is not referenced elsewhere in the query, FalkorDB will only verify that at least one matching relation exists (rather than operating on every matching relation)."
-> Evidence: [falkordb-docs-known-limitations.txt](/references/evidence/hackathon/falkordb-docs-known-limitations.txt)
+> Evidence: [falkordb-docs-known-limitations.txt](https://docs.falkordb.com/cypher/known-limitations)
 
 Tool catalogue (Problem 2):
 
@@ -173,9 +173,9 @@ def resolve_service(graph, name: str) -> str | None:
     return rows[0][0] if rows else None
 ```
 
-Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)
 
-Shortest path (Problem 3). Call syntax matches the FalkorDB docs ([sppath](/references/evidence/hackathon/falkordb-docs-algorithms-sppath.txt)), which show `CALL algo.SPpaths({ sourceNode: a, targetNode: g, relTypes: ['Road'], weightProp: 'dist' })` and `YIELD path, pathWeight`:
+Shortest path (Problem 3). Call syntax matches the FalkorDB docs ([sppath](https://docs.falkordb.com/algorithms/sppath)), which show `CALL algo.SPpaths({ sourceNode: a, targetNode: g, relTypes: ['Road'], weightProp: 'dist' })` and `YIELD path, pathWeight`:
 
 ```cypher
 MATCH (a:Service {name: $from}), (b:Service {name: $to})
@@ -191,7 +191,7 @@ YIELD path, pathWeight
 RETURN [n IN nodes(path) | n.name] AS hops, pathWeight
 ```
 
-PageRank (Problem 3). Matches the docs form `CALL algo.pageRank('Paper', 'CITES') YIELD node, score` ([pagerank](/references/evidence/hackathon/falkordb-docs-algorithms-pagerank.txt)):
+PageRank (Problem 3). Matches the docs form `CALL algo.pageRank('Paper', 'CITES') YIELD node, score` ([pagerank](https://docs.falkordb.com/algorithms/pagerank)):
 
 ```cypher
 CALL algo.pageRank('Service', 'DEPENDS_ON')
@@ -247,13 +247,13 @@ def accepts(sentence: str, answer: dict) -> tuple[bool, str]:
     return True, "ok"
 ```
 
-Evidence for the Problem 4 and 5 snippets: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt).
+Evidence for the Problem 4 and 5 snippets: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph).
 
 # Repos and links the post gives
 
 | Link | Kind | Note |
 |---|---|---|
-| https://github.com/FalkorDB/FalkorDB | Code repo | Database. Metadata in [github-api-falkordb-repo.json](/references/evidence/hackathon/github-api-falkordb-repo.json). Stars 10154, default branch `main`, pushed 2026-10-15T14:25:40Z, license "Other" (SSPLv1 per README). |
+| https://github.com/FalkorDB/FalkorDB | Code repo | Database. Metadata in [github-api-falkordb-repo.json](https://api.github.com/repos/FalkorDB/FalkorDB). Stars 10154, default branch `main`, pushed 2026-10-15T14:25:40Z, license "Other" (SSPLv1 per README). |
 | https://docs.falkordb.com | Docs | Hub. |
 | https://docs.falkordb.com/cypher, /cypher/known-limitations | Docs | Cypher and the parallel-edge note. |
 | https://docs.falkordb.com/algorithms | Docs | Algorithm list. |
@@ -267,7 +267,7 @@ Not linked: no repository for "Blast Radius" is given. The post shows no URL to 
 # Claims in the post, and their status
 
 - Verified against docs: the `algo.SPpaths` and `algo.pageRank` call syntax (see sources above).
-- Verified against docs: the parallel-relationship counting behaviour in [known limitations](/references/evidence/hackathon/falkordb-docs-known-limitations.txt).
+- Verified against docs: the parallel-relationship counting behaviour in [known limitations](https://docs.falkordb.com/cypher/known-limitations).
 - Not verified (marketing or design claims, not run): "Traversals are fast enough to run on every step of an agent loop"; "one instance holds a graph per tenant"; "`docker pull falkordb/falkordb:latest`" as the install path (the FalkorDB README gives `docker run -p 6379:6379 -p 3000:3000 -it --rm -v ./data:/var/lib/falkordb/data falkordb/falkordb`, which is the same image).
 - Not run: none of the Python in this post was executed by the research agent. The seed script and the `app:api` FastAPI app are not published.
 
@@ -278,4 +278,4 @@ Not linked: no repository for "Blast Radius" is given. The post shows no URL to 
 - The `seed.py` and `app:api` files it refers to: not published.
 - Whether the FalkorDB Cloud free tier or credits exist for hackathon use: not stated in this post.
 
-[^blog-post]: WeMakeDevs blog. Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](/references/evidence/hackathon/wemakedevs-blog-agent-reasons-over-graph.txt)
+[^blog-post]: WeMakeDevs blog. Evidence: [wemakedevs-blog-agent-reasons-over-graph.txt](https://www.wemakedevs.org/blogs/how-to-build-an-agent-that-reasons-over-a-graph)

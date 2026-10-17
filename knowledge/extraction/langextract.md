@@ -66,22 +66,22 @@ sources:
     resource: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/io.py
     title: langextract/io.py at commit e92a6b7
 evidence:
-  - { file: references/evidence/extraction/langextract-readme.txt, sha256: 94e3bc80c96336a97a21281b596fd2e00b28acc5410ea0920bae398c741190e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/langextract-api-repo.json, sha256: 283d461007ac576d3a9d1cadb4bcfb08d8cb6088bc5007320b99f57b834b0e91, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/langextract-releases-latest.json, sha256: 7e7ecca91d8394cde52aeac521fdac12988e6957f233b7f5f07eeec2a705a9e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/langextract-pypi.json, sha256: a11cb3c9204727547c07b792c8090f453d099d4995f3ab8148c3d8cbe785c39b, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
-  - { file: references/evidence/extraction/langextract-src-langextract_extraction.py.txt, sha256: 86d7dcab0c78e56be2ac943a02055f0d454783a6a76c54b351333c1a4db1e136, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_data.py.txt, sha256: 1bdd05d75387858d38b0bb6975a7b7753e957b855ce4e694dabe2985cf0fc8a3, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_core_base_model.py.txt, sha256: dfc7170a407af88618c916dc6bc172c0fe6283afea7e0648b705d66b3d1418ed, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_resolver.py.txt, sha256: d176e5cdada24b526e0ab559f9388e35df5057ca194a2552195dd101112b7f4b, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_annotation.py.txt, sha256: 37f8d5d0398bc2d194dc6099e5a8cb93a50d1207424cad24e396bb97e5f67242, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_gemini.py.txt, sha256: 5a30e1c23f75a46accb099fd38782a3a71fc914a3a00e59d85e86321043078fa, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_ollama.py.txt, sha256: 301586368ab9de065bed3b79f3004d6914dab14ca677612db6e64462097107a9, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_router.py.txt, sha256: 2eaaae485cbcc7bdc95b30210d4ab77c50d4a10304020490b5ffcbdf6ada1a50, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_providers_README.md.txt, sha256: dea79dc5d4fdd1e823243e61389600aa124db5a1d1b071b147632a67f6bea988, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-pyproject.toml.txt, sha256: 3f1cb85f94185c10778732b915ad88153a68ca9ccfa749880d55a1f68dc404a2, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-src-langextract_io.py.txt, sha256: 6718c46334306d038ab4b518e5c8a6566096faec7e6dc6244f4910d7d1b47495, retrieved_at: 2026-10-15T19:24:30Z, method: command }
-  - { file: references/evidence/extraction/langextract-license.txt, sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30, retrieved_at: 2026-10-15T19:23:41Z, method: curl }
+  - { name: langextract-readme.txt, url: "https://raw.githubusercontent.com/google/langextract/main/README.md", sha256: 94e3bc80c96336a97a21281b596fd2e00b28acc5410ea0920bae398c741190e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: langextract-api-repo.json, url: "https://api.github.com/repos/google/langextract", sha256: 283d461007ac576d3a9d1cadb4bcfb08d8cb6088bc5007320b99f57b834b0e91, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: langextract-releases-latest.json, url: "https://api.github.com/repos/google/langextract/releases/latest", sha256: 7e7ecca91d8394cde52aeac521fdac12988e6957f233b7f5f07eeec2a705a9e4, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: langextract-pypi.json, url: "https://pypi.org/pypi/langextract/json", sha256: a11cb3c9204727547c07b792c8090f453d099d4995f3ab8148c3d8cbe785c39b, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
+  - { name: langextract-src-langextract_extraction.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/extraction.py", sha256: 86d7dcab0c78e56be2ac943a02055f0d454783a6a76c54b351333c1a4db1e136, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_data.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/data.py", sha256: 1bdd05d75387858d38b0bb6975a7b7753e957b855ce4e694dabe2985cf0fc8a3, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_core_base_model.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/base_model.py", sha256: dfc7170a407af88618c916dc6bc172c0fe6283afea7e0648b705d66b3d1418ed, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_resolver.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/resolver.py", sha256: d176e5cdada24b526e0ab559f9388e35df5057ca194a2552195dd101112b7f4b, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_annotation.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/annotation.py", sha256: 37f8d5d0398bc2d194dc6099e5a8cb93a50d1207424cad24e396bb97e5f67242, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_gemini.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/gemini.py", sha256: 5a30e1c23f75a46accb099fd38782a3a71fc914a3a00e59d85e86321043078fa, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_ollama.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/ollama.py", sha256: 301586368ab9de065bed3b79f3004d6914dab14ca677612db6e64462097107a9, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_router.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/router.py", sha256: 2eaaae485cbcc7bdc95b30210d4ab77c50d4a10304020490b5ffcbdf6ada1a50, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_providers_README.md.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/README.md", sha256: dea79dc5d4fdd1e823243e61389600aa124db5a1d1b071b147632a67f6bea988, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-pyproject.toml.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/pyproject.toml", sha256: 3f1cb85f94185c10778732b915ad88153a68ca9ccfa749880d55a1f68dc404a2, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-src-langextract_io.py.txt, url: "https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/io.py", sha256: 6718c46334306d038ab4b518e5c8a6566096faec7e6dc6244f4910d7d1b47495, retrieved_at: 2026-10-15T19:24:30Z, method: command, redistributed: false }
+  - { name: langextract-license.txt, url: "https://raw.githubusercontent.com/google/langextract/main/LICENSE", sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30, retrieved_at: 2026-10-15T19:23:41Z, method: curl, redistributed: false }
   - { file: references/evidence/extraction/langextract-test-output-offline-run.txt, sha256: e9514af04e393c631fb6d3e0fa5820b68c70ecadecf15a87ed577ef1712d7563, retrieved_at: 2026-10-15T19:27:00Z, method: command }
   - { file: references/evidence/extraction/langextract-test-output-passes-detail.txt, sha256: 7200a4b98e6ea939ef8f8f49fd613244ff8d4f8d3256cd315c1fbf6fd247a07a, retrieved_at: 2026-10-15T19:27:40Z, method: command }
 ---
@@ -259,21 +259,21 @@ Apache-2.0 ([^repo-api], [^license]). The README adds an extra terms note: "For 
 - [anydoc](/extraction/anydoc.md) (document-to-Markdown, a possible upstream step)
 - [Index](/extraction/index.md)
 
-[^readme]: LangExtract README. Evidence: references/evidence/extraction/langextract-readme.txt (sha256 94e3bc80...).
-[^repo-api]: GitHub API, google/langextract. Evidence: references/evidence/extraction/langextract-api-repo.json.
-[^release-api]: GitHub latest release. Evidence: references/evidence/extraction/langextract-releases-latest.json.
-[^pypi]: PyPI JSON. Evidence: references/evidence/extraction/langextract-pypi.json.
-[^src-extraction]: langextract/extraction.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_extraction.py.txt.
-[^src-data]: langextract/core/data.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_data.py.txt.
-[^src-base-model]: langextract/core/base_model.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_core_base_model.py.txt.
-[^src-resolver]: langextract/resolver.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_resolver.py.txt.
-[^src-annotation]: langextract/annotation.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_annotation.py.txt.
-[^src-chunking]: langextract/chunking.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_chunking.py.txt.
-[^src-io]: langextract/io.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_io.py.txt.
-[^src-gemini]: langextract/providers/gemini.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_gemini.py.txt.
-[^src-ollama]: langextract/providers/ollama.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_ollama.py.txt.
-[^src-router]: langextract/providers/router.py at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_router.py.txt.
-[^src-provider-readme]: langextract/providers/README.md at e92a6b7. Evidence: references/evidence/extraction/langextract-src-langextract_providers_README.md.txt.
-[^src-pyproject]: pyproject.toml at e92a6b7. Evidence: references/evidence/extraction/langextract-src-pyproject.toml.txt.
-[^license]: LICENSE. Evidence: references/evidence/extraction/langextract-license.txt.
+[^readme]: LangExtract README. Evidence: https://raw.githubusercontent.com/google/langextract/main/README.md (sha256 94e3bc80...).
+[^repo-api]: GitHub API, google/langextract. Evidence: https://api.github.com/repos/google/langextract.
+[^release-api]: GitHub latest release. Evidence: https://api.github.com/repos/google/langextract/releases/latest.
+[^pypi]: PyPI JSON. Evidence: https://pypi.org/pypi/langextract/json.
+[^src-extraction]: langextract/extraction.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/extraction.py.
+[^src-data]: langextract/core/data.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/data.py.
+[^src-base-model]: langextract/core/base_model.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/core/base_model.py.
+[^src-resolver]: langextract/resolver.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/resolver.py.
+[^src-annotation]: langextract/annotation.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/annotation.py.
+[^src-chunking]: langextract/chunking.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/chunking.py.
+[^src-io]: langextract/io.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/io.py.
+[^src-gemini]: langextract/providers/gemini.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/gemini.py.
+[^src-ollama]: langextract/providers/ollama.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/ollama.py.
+[^src-router]: langextract/providers/router.py at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/router.py.
+[^src-provider-readme]: langextract/providers/README.md at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/langextract/providers/README.md.
+[^src-pyproject]: pyproject.toml at e92a6b7. Evidence: https://github.com/google/langextract/blob/e92a6b7e5e70d80a32ef55f9588c743fc6c12ffe/pyproject.toml.
+[^license]: LICENSE. Evidence: https://raw.githubusercontent.com/google/langextract/main/LICENSE.
 [^test-run]: Local run, langextract 1.7.1 in a throwaway venv, fake provider. Evidence: references/evidence/extraction/langextract-test-output-offline-run.txt and langextract-test-commands.txt.

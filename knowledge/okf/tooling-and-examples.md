@@ -23,22 +23,22 @@ sources:
     resource: https://registry.npmjs.org/okf-validator
     title: npm registry entry for okf-validator
 evidence:
-  - { file: references/evidence/okf/okfrepo-tree.json, sha256: 9eb22b075dbe9eb3682cbd0224093dd0020d135d77f2647ba7125fc7c7215877, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/okf/git-trees-main.json, sha256: f7072ac24dd44f02eeef75dacf0ee9b839b836e5c7830d311ebe2fb262a32e0c, retrieved_at: 2026-10-15T19:23:47Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-connector-gcp-knowledge-catalog.md.txt, sha256: 230a57a05f3e67a67cab952307436d9b35bf1d4479e6fc1f5962f3539619b58b, retrieved_at: 2026-10-15T19:24:15Z, method: curl }
-  - { file: references/evidence/okf/mdcode-README.md.txt, sha256: c25869affebe61933c40e3be3ce50c3a6cfa2fc8018dc3ba8a3ce0c4c0a0febd, retrieved_at: 2026-10-15T19:24:28Z, method: curl }
-  - { file: references/evidence/okf/okf-samples_ga4_merch_store_README.md.txt, sha256: 560f76b93f86b2769bfcc5e03df7992d72597ebd4b8669b1800c57e25c8e9a2b, retrieved_at: 2026-10-15T19:23:56Z, method: curl }
-  - { file: references/evidence/okf/okf-samples_crypto_bitcoin_README.md.txt, sha256: a8f11d07ac932df028e888692d20c5d57e60cb383e029fc9156de47e49975cc8, retrieved_at: 2026-10-15T19:23:56Z, method: curl }
-  - { file: references/evidence/okf/okf-samples_stackoverflow_README.md.txt, sha256: a2c15f82edb42f694eaf0a64ca8257a2e0958fda31d8f0be15d108211144f9f9, retrieved_at: 2026-10-15T19:23:56Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-pyproject.toml, sha256: 4926df9b322cc18fb1f77240b798143f32f0a83f9c4fa9d69d00d038946ac1a6, retrieved_at: 2026-10-15T19:24:16Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-CONTRIBUTING.md.txt, sha256: d9914ba5224f9123de02f2b1778c5a664d9c44faa587ce8d06cd9e64bcbc725a, retrieved_at: 2026-10-15T19:24:15Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-refagent-bundle_document.py, sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl }
-  - { file: references/evidence/okf/okfrepo-refagent-bundle_index.py, sha256: 252eacfb6ee3dd3263136f4af9512030b9c3bc42bf94cc043266865110ca301d, retrieved_at: 2026-10-15T19:25:09Z, method: curl }
-  - { file: references/evidence/okf/pypi-okf.json, sha256: 109babf962cba3eeafaea52de4bb1a6d4a77a1a570a6586ed15cad455b4ca4e4, retrieved_at: 2026-10-15T19:24:54Z, method: curl }
+  - { name: okfrepo-tree.json, url: "https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/git/trees/ad30107c31c06aec8a7d5636e0d1058118604e6f", sha256: 9eb22b075dbe9eb3682cbd0224093dd0020d135d77f2647ba7125fc7c7215877, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: git-trees-main.json, url: "https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/git/trees/6888b305651f366d878b084f68f86ff2c3effe2e", sha256: f7072ac24dd44f02eeef75dacf0ee9b839b836e5c7830d311ebe2fb262a32e0c, retrieved_at: 2026-10-15T19:23:47Z, method: curl, redistributed: false }
+  - { name: okfrepo-connector-gcp-knowledge-catalog.md.txt, url: "https://docs.cloud.google.com/dataplex/docs/catalog-overview", sha256: 230a57a05f3e67a67cab952307436d9b35bf1d4479e6fc1f5962f3539619b58b, retrieved_at: 2026-10-15T19:24:15Z, method: curl, redistributed: false }
+  - { name: mdcode-README.md.txt, url: "https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/toolbox/mdcode", url_basis: inferred, sha256: c25869affebe61933c40e3be3ce50c3a6cfa2fc8018dc3ba8a3ce0c4c0a0febd, retrieved_at: 2026-10-15T19:24:28Z, method: curl, redistributed: false }
+  - { name: okf-samples_ga4_merch_store_README.md.txt, url: "https://raw.githubusercontent.com/GoogleCloudPlatform/knowledge-catalog/main/okf/samples/ga4/merch_store/README.md", url_basis: inferred, sha256: 560f76b93f86b2769bfcc5e03df7992d72597ebd4b8669b1800c57e25c8e9a2b, retrieved_at: 2026-10-15T19:23:56Z, method: curl, redistributed: false }
+  - { name: okf-samples_crypto_bitcoin_README.md.txt, url: "https://raw.githubusercontent.com/GoogleCloudPlatform/knowledge-catalog/main/okf/samples/crypto/bitcoin/README.md", url_basis: inferred, sha256: a8f11d07ac932df028e888692d20c5d57e60cb383e029fc9156de47e49975cc8, retrieved_at: 2026-10-15T19:23:56Z, method: curl, redistributed: false }
+  - { name: okf-samples_stackoverflow_README.md.txt, url: "https://raw.githubusercontent.com/GoogleCloudPlatform/knowledge-catalog/main/okf/samples/stackoverflow/README.md", url_basis: inferred, sha256: a2c15f82edb42f694eaf0a64ca8257a2e0958fda31d8f0be15d108211144f9f9, retrieved_at: 2026-10-15T19:23:56Z, method: curl, redistributed: false }
+  - { name: okfrepo-pyproject.toml, url: "https://raw.githubusercontent.com/GoogleCloudPlatform/open-knowledge-format/main/pyproject.toml", url_basis: inferred, sha256: 4926df9b322cc18fb1f77240b798143f32f0a83f9c4fa9d69d00d038946ac1a6, retrieved_at: 2026-10-15T19:24:16Z, method: curl, redistributed: false }
+  - { name: okfrepo-CONTRIBUTING.md.txt, url: "https://raw.githubusercontent.com/GoogleCloudPlatform/open-knowledge-format/main/CONTRIBUTING.md", url_basis: inferred, sha256: d9914ba5224f9123de02f2b1778c5a664d9c44faa587ce8d06cd9e64bcbc725a, retrieved_at: 2026-10-15T19:24:15Z, method: curl, redistributed: false }
+  - { name: okfrepo-refagent-bundle_document.py, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py", sha256: 7d9be6961b38f0fd2196e1cbe630afb1a4682e33ccd43daf3f233401ca62a43b, retrieved_at: 2026-10-15T19:25:09Z, method: curl, redistributed: false }
+  - { name: okfrepo-refagent-bundle_index.py, url: "https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/index.py", url_basis: inferred, sha256: 252eacfb6ee3dd3263136f4af9512030b9c3bc42bf94cc043266865110ca301d, retrieved_at: 2026-10-15T19:25:09Z, method: curl, redistributed: false }
+  - { name: pypi-okf.json, url: "https://pypi.org/pypi/okf/json", sha256: 109babf962cba3eeafaea52de4bb1a6d4a77a1a570a6586ed15cad455b4ca4e4, retrieved_at: 2026-10-15T19:24:54Z, method: curl, redistributed: false }
   - { file: references/evidence/okf/pypi-okf-0.1.0-wheel-contents.txt, sha256: ed880f8b29357416bfafbbf8f89498d398fcb23489bedc33c1c601882f08fa78, retrieved_at: 2026-10-15T19:25:59Z, method: command }
-  - { file: references/evidence/okf/npm-okf.json, sha256: 48fe79b6337be33cc8078a08bed5f68c7a65bdaa836de805e8105fa49682a458, retrieved_at: 2026-10-15T19:24:54Z, method: curl }
-  - { file: references/evidence/okf/npm-okf-validator.json, sha256: 0a75f75344cc62f584bcad576bb42aeed3174aa809364660510c4d14c8f69b64, retrieved_at: 2026-10-15T19:24:54Z, method: curl }
-  - { file: references/evidence/okf/npm-open-knowledge-format.json, sha256: 6a280430824cbf9d50858c036b4ef7d4d7babf70ce87090f1bb62233f74ddaac, retrieved_at: 2026-10-15T19:24:55Z, method: curl }
+  - { name: npm-okf.json, url: "https://registry.npmjs.org/okf", url_basis: inferred, sha256: 48fe79b6337be33cc8078a08bed5f68c7a65bdaa836de805e8105fa49682a458, retrieved_at: 2026-10-15T19:24:54Z, method: curl, redistributed: false }
+  - { name: npm-okf-validator.json, url: "https://registry.npmjs.org/okf-validator", sha256: 0a75f75344cc62f584bcad576bb42aeed3174aa809364660510c4d14c8f69b64, retrieved_at: 2026-10-15T19:24:54Z, method: curl, redistributed: false }
+  - { name: npm-open-knowledge-format.json, url: "https://registry.npmjs.org/open-knowledge-format", url_basis: inferred, sha256: 6a280430824cbf9d50858c036b4ef7d4d7babf70ce87090f1bb62233f74ddaac, retrieved_at: 2026-10-15T19:24:55Z, method: curl, redistributed: false }
   - { file: references/evidence/okf/validate_okf.py, sha256: 1cb592462e0515dd1381cf038f21beadc14f6df3457467a2fed7f6f58f98327b, retrieved_at: 2026-10-15T19:27:17Z, method: command }
   - { file: references/evidence/okf/validate_okf-run.txt, sha256: f7228dc0b9c8a39bdecccb7849b99bdf78df9ae02cd7c6c3bd5ebee26ce46a7d, retrieved_at: 2026-10-15T19:27:17Z, method: command }
   - { file: references/evidence/okf/validate_okf-upstream-bundles.txt, sha256: 8083575bb3f5696477b4b13e1c1ac0dbb5ff577d71ddff0e686e8c45b702255a, retrieved_at: 2026-10-15T19:27:17Z, method: command }
@@ -47,11 +47,11 @@ evidence:
 
 # Summary
 
-There is **no official OKF validator or linter**. The upstream spec says "no required tooling" (`references/okf-spec-v0.2.txt` L11-12). The repo ships four example bundles, three sample configs for a reference enrichment agent, a viewer, and tests. A Dataplex connector is in the knowledge-catalog repo. Third-party packages named `okf` on PyPI and npm are placeholders or unrelated.[^okf-repo]
+There is **no official OKF validator or linter**. The upstream spec says "no required tooling" (`https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md` L11-12). The repo ships four example bundles, three sample configs for a reference enrichment agent, a viewer, and tests. A Dataplex connector is in the knowledge-catalog repo. Third-party packages named `okf` on PyPI and npm are placeholders or unrelated.[^okf-repo]
 
 # 1. Example bundles (canonical repo)
 
-Path: `bundles/<name>/` in `https://github.com/GoogleCloudPlatform/open-knowledge-format`. Each has `viz.html` (a viewer page built by the reference agent). Counts are from `okfrepo-tree.json` and the fetched `.md` files.
+Path: `bundles/<name>/` in `https://github.com/GoogleCloudPlatform/open-knowledge-format`. Each has `viz.html` (a viewer page built by the reference agent). Counts are from `https://api.github.com/repos/GoogleCloudPlatform/open-knowledge-format/git/trees/ad30107c31c06aec8a7d5636e0d1058118604e6f` and the fetched `.md` files.
 
 | Bundle | Concept / reserved `.md` (validator) | What it demonstrates (quoted from repo README) |
 |---|---|---|
@@ -71,7 +71,7 @@ Source: `okfrepo-readme.md` (quotes the bundle list). Validator run: `references
 
 ## Known problems in the upstream examples (found by our checker)
 
-- `bundles/stackoverflow/tables/votes.md` (and 7 other stackoverflow files) use `tags: Stack Overflow, votes, posts, community`, a plain string. §4.1 says `tags` is "A YAML list". The upstream commit "okf: write stackoverflow bundle tags as YAML lists (#293)" (2026-08-14) did not fix all of them (see `okf-commits-all.json`). Validator advisory, not a §11 failure.
+- `bundles/stackoverflow/tables/votes.md` (and 7 other stackoverflow files) use `tags: Stack Overflow, votes, posts, community`, a plain string. §4.1 says `tags` is "A YAML list". The upstream commit "okf: write stackoverflow bundle tags as YAML lists (#293)" (2026-08-14) did not fix all of them (see `https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/commits`). Validator advisory, not a §11 failure.
 - `bundles/stackoverflow/` has 11 concepts whose footnote `[^1]` has no matching `sources[].id`. §5.1 says the label is the join key, so this is a weak attribution (advisory).
 - Upstream bundles pass §11 C1-C5 (see the run output).
 
@@ -87,12 +87,12 @@ These samples need BigQuery and Gemini credentials to run. Nothing was run here.
 
 # 3. Reference agent (canonical repo `src/reference_agent/`)
 
-Python package, `pyproject.toml` name `reference-agent`, version `0.1.0`, `requires-python >=3.11`, script `reference-agent = reference_agent.cli:main` (`okfrepo-pyproject.toml`). Dependencies: `google-adk>=2.0`, `google-cloud-bigquery>=3.20`, `pyyaml>=6.0`, `pydantic>=2.0`, `markdownify>=0.11`.
+Python package, `https://github.com/FalkorDB/GraphRAG-SDK/blob/35e67a0/pyproject.toml` name `reference-agent`, version `0.1.0`, `requires-python >=3.11`, script `reference-agent = reference_agent.cli:main` (`https://raw.githubusercontent.com/GoogleCloudPlatform/open-knowledge-format/main/pyproject.toml`). Dependencies: `google-adk>=2.0`, `google-cloud-bigquery>=3.20`, `pyyaml>=6.0`, `pydantic>=2.0`, `markdownify>=0.11`.
 
 | Path | Role |
 |---|---|
 | `cli.py`, `__main__.py`, `runner.py`, `agent.py` | Entry point and agent loop (`python -m reference_agent`). |
-| `bundle/document.py` | `OKFDocument` parse/serialize, `validate()` (only `type` required), `trust_tier()`, `is_stale()`. Fetched as `okfrepo-refagent-bundle_document.py`. |
+| `bundle/document.py` | `OKFDocument` parse/serialize, `validate()` (only `type` required), `trust_tier()`, `is_stale()`. Fetched as `https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/src/reference_agent/bundle/document.py`. |
 | `bundle/index.py`, `bundle/paths.py`, `bundle/synthesizer.py` | Index generation and path handling. |
 | `sources/bigquery.py` | BigQuery metadata source (the "BQ pass"). |
 | `web/fetcher.py`, `tools/web_tools.py` | Web fetch for the "web pass" (`--web-seed`, `--web-max-pages`). |
@@ -120,7 +120,7 @@ Tests: `tests/` has 7 modules (`test_bigquery_source.py`, `test_bundle_tools.py`
 Repo: `https://github.com/GoogleCloudPlatform/knowledge-catalog`, paths `toolbox/mdcode/` and `connectors/gcp-knowledge-catalog.md` in the OKF repo (`okfrepo-connector-gcp-knowledge-catalog.md`).
 
 - `toolbox/mdcode` README: "Metadata as Code is a Knowledge Catalog (Dataplex) provides data stewards and data producers and AI agents with a source code artifact-based UX for metadata management and context engineering." It ships "a CLI tool (kcmd), and an MCP server" (`mdcode-README.md`).[^kc-repo]
-- The OKF demo: `toolbox/mdcode/demo/okf/` with `setup.ts`, `push.ts`, `pull.ts`, `cleanup.ts`, `okf.ts`, `okf-aspect.json`, and a `catalog/` copy of the GA4 bundle (`git-trees-main.json`).
+- The OKF demo: `toolbox/mdcode/demo/okf/` with `setup.ts`, `push.ts`, `pull.ts`, `cleanup.ts`, `okf.ts`, `okf-aspect.json`, and a `catalog/` copy of the GA4 bundle (`https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/git/trees/6888b305651f366d878b084f68f86ff2c3effe2e`).
 - Run per the connector doc: `bun setup.ts && bun push.ts && bun pull.ts`, then `git diff --exit-code catalog/`. Requires GCP project, `gcloud`, Bun. Build: `npm install && npm run build` (produces `dist/kcmd`).
 - Its limitations, quoted: "**Only `.md` files are carried.**", "**Cross-links resolve to nothing.** Relative paths (§6.1) are stored verbatim.", "**Scale is untested** beyond the 14-file demo." Also: "Seven frontmatter keys are carried, plus the markdown body."
 
@@ -128,7 +128,7 @@ This connector is the only tool in the repos that round-trips OKF into a real ca
 
 # 5. Frozen copy inside knowledge-catalog
 
-`https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf`. Same spec (identical sha256), and its own README says "Stop using the copy under `okf/` in this repository." The knowledge-catalog repo has no releases or tags (`releases.json`, `tags.json`). Last commit touching `okf/` is `62651738da` (2026-08-21). The frozen copy's bundle and agent files were not diffed against the canonical repo.[^kc-repo]
+`https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf`. Same spec (identical sha256), and its own README says "Stop using the copy under `okf/` in this repository." The knowledge-catalog repo has no releases or tags (`https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/releases`, `https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/tags`). Last commit touching `okf/` is `62651738da` (2026-08-21). The frozen copy's bundle and agent files were not diffed against the canonical repo.[^kc-repo]
 
 # 6. Third-party packages named okf (checked 2026-10-15)
 
@@ -172,6 +172,6 @@ Results:
 - Is `log.md` allowed frontmatter? §9 says nothing; upstream `acme_retail` uses it.
 - Are the `attesters/sql_equality.py` and `skills/run-on-bq.md` files in the canonical repo runnable as shown? Not checked. They are not in the local evidence.
 
-[^okf-repo]: GoogleCloudPlatform/open-knowledge-format repo. Evidence: `references/evidence/okf/okfrepo-*.json|md|py`, `okf-samples_*`, `validate_okf-upstream-bundles.txt`.
-[^kc-repo]: GoogleCloudPlatform/knowledge-catalog repo. Evidence: `references/evidence/okf/mdcode-README.md.txt`, `okf-README.md`, `okf-commits-all.json`, `git-trees-main.json`.
-[^pypi-okf]: PyPI `okf` 0.1.0 metadata and wheel contents. Evidence: `references/evidence/okf/pypi-okf.json`, `pypi-okf-0.1.0-wheel-contents.txt`.
+[^okf-repo]: GoogleCloudPlatform/open-knowledge-format repo. Evidence: upstream files are not redistributed (URL and sha256 in frontmatter); `validate_okf-upstream-bundles.txt` is stored in `references/evidence/okf/`.
+[^kc-repo]: GoogleCloudPlatform/knowledge-catalog repo. Evidence: `https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/toolbox/mdcode`, `okf-README.md`, `https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/commits`, `https://api.github.com/repos/GoogleCloudPlatform/knowledge-catalog/git/trees/6888b305651f366d878b084f68f86ff2c3effe2e`.
+[^pypi-okf]: PyPI `okf` 0.1.0 metadata and wheel contents. Evidence: `https://pypi.org/pypi/okf/json`, `pypi-okf-0.1.0-wheel-contents.txt`.

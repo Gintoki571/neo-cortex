@@ -40,17 +40,17 @@ sources:
     resource: /hackathon/judging-and-prizes.md
     title: Graph Hacks judging and prizes (bundle)
 evidence:
-  - { file: references/evidence/self-improvement/dream-rsi/repo-readme.txt, sha256: 88d12a26bc683b49b74824488d40661ea91ad28feac25566aa4d1ef8fa064747, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-api.json, sha256: c6475a444c053fb10ea67f48e46d195b8dde1a3db4797c61440ca76de1a80f06, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-tree.json, sha256: c604206ac99249a50b8b7ec3a5981abe25f4013a49ddab314de6033326d401ef, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-contents-root.json, sha256: 30c5c335a2c3a9c333c35bf9fccb0a8041d6b184d06a71a2275282ffe81d25d6, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-releases-latest.json, sha256: 3be3b9547eef51cc49a1de5d482554e118735d9b860dd24f5cf1b6eccc3ab69e, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-citation.cff, sha256: fefb67e343b06255c91876c3ad5dd765bebe43c7017cef2a4fa8a2f2571d8e52, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/repo-paper.pdf, sha256: 5701649cd9793b29cd5fb32d727d101ad21fb23639c0d9f33c9adef826194342, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/paper-extracted.txt, sha256: 6064d1ce7f60eaf6609931538fc6c759c1bc9aa652950df84fab9d54c8f57f68, retrieved_at: 2026-10-16T08:20:18Z, method: command }
-  - { file: references/evidence/self-improvement/dream-rsi/arxiv-2609.14858-abs.html, sha256: c002e325483579fa807c204175013cb54133c9388578b7846746260a9a71d3bc, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/arxiv-2609.14858-api.xml, sha256: 3e7c052cf1b8168fec17d23de2458cf5c603140153d27a56417c38b0a8cb2d0d, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
-  - { file: references/evidence/self-improvement/dream-rsi/project-page.html, sha256: 1266046c2ab5a5a78ee764676c494bdf3e71d2cdd9c3760fb9c449a7c8872963, retrieved_at: 2026-10-16T08:20:18Z, method: curl }
+  - { name: repo-readme.txt, url: "https://raw.githubusercontent.com/zhengkid/Dream-RSI/main/README.md", sha256: 88d12a26bc683b49b74824488d40661ea91ad28feac25566aa4d1ef8fa064747, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-api.json, url: "https://api.github.com/repos/zhengkid/Dream-RSI", sha256: c6475a444c053fb10ea67f48e46d195b8dde1a3db4797c61440ca76de1a80f06, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-tree.json, url: "https://api.github.com/repos/zhengkid/Dream-RSI/git/trees/4149ea9181ab1db80f85717ffda2c9f0f130e85b", sha256: c604206ac99249a50b8b7ec3a5981abe25f4013a49ddab314de6033326d401ef, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-contents-root.json, url: "https://api.github.com/repos/zhengkid/Dream-RSI/contents?ref=main", sha256: 30c5c335a2c3a9c333c35bf9fccb0a8041d6b184d06a71a2275282ffe81d25d6, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-releases-latest.json, url: "https://api.github.com/repos/zhengkid/Dream-RSI/releases/latest", url_basis: inferred, sha256: 3be3b9547eef51cc49a1de5d482554e118735d9b860dd24f5cf1b6eccc3ab69e, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-citation.cff, url: "https://raw.githubusercontent.com/zhengkid/Dream-RSI/main/CITATION.cff", url_basis: inferred, sha256: fefb67e343b06255c91876c3ad5dd765bebe43c7017cef2a4fa8a2f2571d8e52, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: repo-paper.pdf, url: "https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf", sha256: 5701649cd9793b29cd5fb32d727d101ad21fb23639c0d9f33c9adef826194342, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: paper-extracted.txt, url: "https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf", url_basis: inferred, sha256: 6064d1ce7f60eaf6609931538fc6c759c1bc9aa652950df84fab9d54c8f57f68, retrieved_at: 2026-10-16T08:20:18Z, method: command, redistributed: false }
+  - { name: arxiv-2609.14858-abs.html, url: "https://arxiv.org/abs/2609.14858", sha256: c002e325483579fa807c204175013cb54133c9388578b7846746260a9a71d3bc, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: arxiv-2609.14858-api.xml, url: "https://export.arxiv.org/api/query?id_list=2609.14858", url_basis: inferred, sha256: 3e7c052cf1b8168fec17d23de2458cf5c603140153d27a56417c38b0a8cb2d0d, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
+  - { name: project-page.html, url: "https://www.dream-rsi.com/", sha256: 1266046c2ab5a5a78ee764676c494bdf3e71d2cdd9c3760fb9c449a7c8872963, retrieved_at: 2026-10-16T08:20:18Z, method: curl, redistributed: false }
 ---
 
 # What it is
@@ -145,18 +145,18 @@ The demo should show a query whose answer changes after a dream run, not a claim
 
 # Evidence
 
-Stored in `references/evidence/self-improvement/dream-rsi/`. Method: `curl` for raw GitHub and API, `curl` for arXiv abs and API, `curl` for the project page, `pdftotext -layout` to derive `paper-extracted.txt` from the PDF. The hashes were recorded together at 2026-10-16T08:20:18Z.
+Third-party copies are not redistributed (URLs and sha256 are in the frontmatter); `references/evidence/self-improvement/dream-rsi/SHA256SUMS.txt` keeps the hashes. Method: `curl` for raw GitHub and API, `curl` for arXiv abs and API, `curl` for the project page, `pdftotext -layout` to derive `https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf` from the PDF. The hashes were recorded together at 2026-10-16T08:20:18Z.
 
-- `repo-readme.txt` — sha256 88d12a26bc683b49b74824488d40661ea91ad28feac25566aa4d1ef8fa064747
-- `repo-api.json` — sha256 c6475a444c053fb10ea67f48e46d195b8dde1a3db4797c61440ca76de1a80f06
-- `repo-tree.json` — sha256 c604206ac99249a50b8b7ec3a5981abe25f4013a49ddab314de6033326d401ef
-- `repo-contents-root.json` — sha256 30c5c335a2c3a9c333c35bf9fccb0a8041d6b184d06a71a2275282ffe81d25d6
-- `repo-releases-latest.json` — sha256 3be3b9547eef51cc49a1de5d482554e118735d9b860dd24f5cf1b6eccc3ab69e (404 response; recorded as a finding, not an error)
-- `repo-citation.cff` — sha256 fefb67e343b06255c91876c3ad5dd765bebe43c7017cef2a4fa8a2f2571d8e52
-- `repo-paper.pdf` — sha256 5701649cd9793b29cd5fb32d727d101ad21fb23639c0d9f33c9adef826194342
-- `paper-extracted.txt` — sha256 6064d1ce7f60eaf6609931538fc6c759c1bc9aa652950df84fab9d54c8f57f68
-- `arxiv-2609.14858-abs.html` — sha256 c002e325483579fa807c204175013cb54133c9388578b7846746260a9a71d3bc
-- `arxiv-2609.14858-api.xml` — sha256 3e7c052cf1b8168fec17d23de2458cf5c603140153d27a56417c38b0a8cb2d0d
+- `https://raw.githubusercontent.com/zhengkid/Dream-RSI/main/README.md` — sha256 88d12a26bc683b49b74824488d40661ea91ad28feac25566aa4d1ef8fa064747
+- `https://api.github.com/repos/zhengkid/Dream-RSI` — sha256 c6475a444c053fb10ea67f48e46d195b8dde1a3db4797c61440ca76de1a80f06
+- `https://api.github.com/repos/zhengkid/Dream-RSI/git/trees/4149ea9181ab1db80f85717ffda2c9f0f130e85b` — sha256 c604206ac99249a50b8b7ec3a5981abe25f4013a49ddab314de6033326d401ef
+- `https://api.github.com/repos/zhengkid/Dream-RSI/contents?ref=main` — sha256 30c5c335a2c3a9c333c35bf9fccb0a8041d6b184d06a71a2275282ffe81d25d6
+- `https://api.github.com/repos/zhengkid/Dream-RSI/releases/latest` — sha256 3be3b9547eef51cc49a1de5d482554e118735d9b860dd24f5cf1b6eccc3ab69e (404 response; recorded as a finding, not an error)
+- `https://raw.githubusercontent.com/zhengkid/Dream-RSI/main/CITATION.cff` — sha256 fefb67e343b06255c91876c3ad5dd765bebe43c7017cef2a4fa8a2f2571d8e52
+- `https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf` — sha256 5701649cd9793b29cd5fb32d727d101ad21fb23639c0d9f33c9adef826194342
+- `https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf` — sha256 6064d1ce7f60eaf6609931538fc6c759c1bc9aa652950df84fab9d54c8f57f68
+- `https://arxiv.org/abs/2609.14858` — sha256 c002e325483579fa807c204175013cb54133c9388578b7846746260a9a71d3bc
+- `https://export.arxiv.org/api/query?id_list=2609.14858` — sha256 3e7c052cf1b8168fec17d23de2458cf5c603140153d27a56417c38b0a8cb2d0d
 - `project-page.html` — sha256 1266046c2ab5a5a78ee764676c494bdf3e71d2cdd9c3760fb9c449a7c8872963
 
 The `SHA256SUMS.txt` file in the same directory lists these hashes.

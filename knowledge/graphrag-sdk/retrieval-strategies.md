@@ -42,15 +42,15 @@ sources:
     resource: https://pypi.org/project/graphrag-sdk/1.4.0/
     title: "graphrag-sdk 1.4.0 source snapshot (evidence copy)"
 evidence:
-  - { file: references/evidence/graphrag-sdk/docs/retrieval.txt, sha256: b00732cd7252678fce2c2e8d7003bf0bdfe0326f4e1597121236d0bc7d69e80f, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/strategies.txt, sha256: 406b86359245d89b44a5d991f87fc9bfca12711056decb7109cd7bec100bf9e6, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/configuration.txt, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/architecture.txt, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/docs/graphrag-accuracy-benchmark.txt, sha256: 9eb49b6db3d36eaf3e7374d4de719b5c374cc1665c4d47073fefd8d27f628b1e, retrieved_at: 2026-10-15T19:24:06Z, method: curl }
-  - { file: references/evidence/graphrag-sdk/src-pypi-1.4.0/multi_path.py, sha256: ae39c1ccdc51d0202be1344ff6585fab1dec460c9f8b4c8bb3de5fa9280f6642, retrieved_at: 2026-10-15T19:50:00Z, method: command }
+  - { name: retrieval.txt, url: "https://docs.falkordb.com/graphrag/retrieval", url_basis: inferred, sha256: b00732cd7252678fce2c2e8d7003bf0bdfe0326f4e1597121236d0bc7d69e80f, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: strategies.txt, url: "https://docs.falkordb.com/graphrag/strategies", url_basis: inferred, sha256: 406b86359245d89b44a5d991f87fc9bfca12711056decb7109cd7bec100bf9e6, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: configuration.txt, url: "https://docs.falkordb.com/graphrag/configuration", url_basis: inferred, sha256: 236cc936b838ef8845465aa04f852feea891a7d434c91cd35939be389045b7de, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: architecture.txt, url: "https://docs.falkordb.com/graphrag/architecture", url_basis: inferred, sha256: 4e67b3f2efb2668dfcf75e1b28cd40cb190c7aad9a8a760e0b499192499fc5c7, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: graphrag-accuracy-benchmark.txt, url: "https://docs.falkordb.com/graphrag/graphrag-accuracy-benchmark", url_basis: inferred, sha256: 9eb49b6db3d36eaf3e7374d4de719b5c374cc1665c4d47073fefd8d27f628b1e, retrieved_at: 2026-10-15T19:24:06Z, method: curl, redistributed: false }
+  - { name: multi_path.py, url: "https://pypi.org/project/graphrag-sdk/1.4.0/", sha256: ae39c1ccdc51d0202be1344ff6585fab1dec460c9f8b4c8bb3de5fa9280f6642, retrieved_at: 2026-10-15T19:50:00Z, method: command, redistributed: false }
   - { file: references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt, sha256: 020b6a709e6bb4c6c18a3ae7c5e5c592e926dab1f9ca783dfb1889ac5224f283, retrieved_at: 2026-10-15T20:00:00Z, method: command }
   - { file: references/evidence/graphrag-sdk/runs/docs-snippets-pypi140.txt, sha256: 9e579b3fff87111d5772ddcf35378c4222d1b4d84906605ddc862c500bf05674, retrieved_at: 2026-10-15T20:00:00Z, method: command }
-  - { file: references/evidence/graphrag-sdk/github-readme-main.txt, sha256: 6c18e22352b6b0cc7c84299a4cff996c23d883bb2c94f6173fe3d226d3e68b46, retrieved_at: 2026-10-15T19:23:43Z, method: curl }
+  - { name: github-readme-main.txt, url: "https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/README.md", url_basis: inferred, sha256: 6c18e22352b6b0cc7c84299a4cff996c23d883bb2c94f6173fe3d226d3e68b46, retrieved_at: 2026-10-15T19:23:43Z, method: curl, redistributed: false }
 verified: { by: process:cross-check, at: 2026-10-15T20:00:00Z }
 ---
 
@@ -72,7 +72,7 @@ Docs: `Production-grade retrieval with RELATES edge vector search, 2-path entity
 
 ## MultiPathRetrieval parameters (verified in 1.4.0 source)
 
-Constructor from the installed 1.4.0 `multi_path.py`: `MultiPathRetrieval(graph_store, vector_store, embedder, llm, *, chunk_top_k=15, max_entities=30, max_relationships=20, rel_top_k=15, keyword_limit=10, enable_cypher=False, ontology=None, schema=None)`.[^src-multipath]
+Constructor from the installed 1.4.0 `https://pypi.org/project/graphrag-sdk/1.4.0/`: `MultiPathRetrieval(graph_store, vector_store, embedder, llm, *, chunk_top_k=15, max_entities=30, max_relationships=20, rel_top_k=15, keyword_limit=10, enable_cypher=False, ontology=None, schema=None)`.[^src-multipath]
 
 | Parameter | Default | Meaning (docs) |
 |---|---|---|
@@ -114,7 +114,7 @@ Docs on the 3b path: `Runs in parallel with step 3a to avoid adding latency. If 
 
 These come from the FalkorDB docs and README. Nothing here was rerun. Treat each as a vendor claim.
 
-Retrieval page, "Enhancement Comparison". The text extraction concatenates table cells, so the numbers are shown as they appear in `docs/retrieval.txt`:[^docs-retrieval]
+Retrieval page, "Enhancement Comparison". The text extraction concatenates table cells, so the numbers are shown as they appear in `https://docs.falkordb.com/graphrag/retrieval`:[^docs-retrieval]
 
 > `Baseline (MultiPath only)83.8%—4.2sCurrent default`
 > `+ Text-to-Cypher84.2%+0.4%5.7sAdded graph query path`
@@ -141,13 +141,13 @@ README: `FalkorDB scored August 2026 with gpt-4o-mini ... text-to-Cypher retriev
 - Re-run the 71.48 benchmark with the released 1.4.0 package: not done. The reproduction package is "available on request" per the benchmark page.
 - Is `LocalRetrieval` ported to 1.4.0 with the same ordering behavior? Not tested.
 
-[^docs-strategies]: `references/evidence/graphrag-sdk/docs/strategies.txt`
-[^docs-retrieval]: `references/evidence/graphrag-sdk/docs/retrieval.txt`
-[^docs-configuration]: `references/evidence/graphrag-sdk/docs/configuration.txt`
-[^docs-architecture]: `references/evidence/graphrag-sdk/docs/architecture.txt`
-[^docs-accuracy]: `references/evidence/graphrag-sdk/docs/graphrag-accuracy-benchmark.txt`
-[^src-multipath]: `references/evidence/graphrag-sdk/src-pypi-1.4.0/multi_path.py`
-[^readme]: `references/evidence/graphrag-sdk/github-readme-main.txt`
+[^docs-strategies]: `https://docs.falkordb.com/graphrag/strategies`
+[^docs-retrieval]: `https://docs.falkordb.com/graphrag/retrieval`
+[^docs-configuration]: `https://docs.falkordb.com/graphrag/configuration`
+[^docs-architecture]: `https://docs.falkordb.com/graphrag/architecture`
+[^docs-accuracy]: `https://docs.falkordb.com/graphrag/graphrag-accuracy-benchmark`
+[^src-multipath]: `https://pypi.org/project/graphrag-sdk/1.4.0/`
+[^readme]: `https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/README.md`
 [^run-e2e]: `references/evidence/graphrag-sdk/runs/sdk-e2e-tcp-pypi140.txt`
 [^run-docs]: `references/evidence/graphrag-sdk/runs/docs-snippets-pypi140.txt`
-[^gh-issues]: `references/evidence/graphrag-sdk/gh-issues-all-p1.json`
+[^gh-issues]: `https://api.github.com/repos/FalkorDB/GraphRAG-SDK/issues?state=all&page=1`

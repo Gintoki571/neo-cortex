@@ -59,16 +59,16 @@ sources:
     title: falkordblite 0.10.0 wheel METADATA
 
 evidence:
-  - { file: references/evidence/falkordblite/gh-issues-open.json, sha256: adf4f503f3d1bae939a7ce98b106d6d6c2b96f5c555e5a8d168cc27fe10ee5c4, retrieved_at: 2026-10-15T19:24:11Z, method: curl }
-  - { file: references/evidence/falkordblite/gh-pulls-open.json, sha256: 9ab0a7381be1b16fd9abc6945f1d5df047a703973b0ec4976903261dc2eb19f9, retrieved_at: 2026-10-15T19:24:18Z, method: curl }
-  - { file: references/evidence/falkordblite/readme-raw.txt, sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:23:42Z, method: curl }
-  - { file: references/evidence/falkordblite/src__LICENSE.txt, sha256: bff2923b7403b23bafd97e6e974b2e3b5bceb84e25b8df92eeeaec2b736e78c1, retrieved_at: 2026-10-15T19:23:50Z, method: curl }
-  - { file: references/evidence/falkordblite/setup-master-raw.py, sha256: 056618ffe2099f682b9a14206d1707b8b0593af91c42667b5e62478c845c0660, retrieved_at: 2026-10-15T19:23:45Z, method: curl }
-  - { file: references/evidence/falkordblite/src__redislite_configuration.py, sha256: 6d48aaabd251ab17b251dd55f1a0d057271de650d2759d6c0e13d3577d228b0f, retrieved_at: 2026-10-15T19:23:48Z, method: curl }
-  - { file: references/evidence/falkordblite/wheel-redislite-client.py.txt, sha256: b1dba5d9f35c0de1df504b23c148058c247c2f95cf521cdab13becdc4670db9b, retrieved_at: 2026-10-15T19:29:15Z, method: command }
+  - { name: gh-issues-open.json, url: "https://api.github.com/repos/FalkorDB/falkordblite/issues?state=open", url_basis: inferred, sha256: adf4f503f3d1bae939a7ce98b106d6d6c2b96f5c555e5a8d168cc27fe10ee5c4, retrieved_at: 2026-10-15T19:24:11Z, method: curl, redistributed: false }
+  - { name: gh-pulls-open.json, url: "https://api.github.com/repos/FalkorDB/falkordblite/pulls?state=open", url_basis: inferred, sha256: 9ab0a7381be1b16fd9abc6945f1d5df047a703973b0ec4976903261dc2eb19f9, retrieved_at: 2026-10-15T19:24:18Z, method: curl, redistributed: false }
+  - { name: readme-raw.txt, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/README.md", sha256: 668d42ad26430520bc50891f1bc36c69efd3549281bd6504c020a461115513b2, retrieved_at: 2026-10-15T19:23:42Z, method: curl, redistributed: false }
+  - { name: src__LICENSE.txt, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/LICENSE.txt", url_basis: inferred, sha256: bff2923b7403b23bafd97e6e974b2e3b5bceb84e25b8df92eeeaec2b736e78c1, retrieved_at: 2026-10-15T19:23:50Z, method: curl, redistributed: false }
+  - { name: setup-master-raw.py, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/setup.py", url_basis: inferred, sha256: 056618ffe2099f682b9a14206d1707b8b0593af91c42667b5e62478c845c0660, retrieved_at: 2026-10-15T19:23:45Z, method: curl, redistributed: false }
+  - { name: src__redislite_configuration.py, url: "https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/configuration.py", url_basis: inferred, sha256: 6d48aaabd251ab17b251dd55f1a0d057271de650d2759d6c0e13d3577d228b0f, retrieved_at: 2026-10-15T19:23:48Z, method: curl, redistributed: false }
+  - { name: wheel-redislite-client.py.txt, url: "https://pypi.org/project/falkordblite/0.10.0/", url_basis: inferred, sha256: b1dba5d9f35c0de1df504b23c148058c247c2f95cf521cdab13becdc4670db9b, retrieved_at: 2026-10-15T19:29:15Z, method: command, redistributed: false }
   - { file: references/evidence/falkordblite/orphan-server-driver-output.txt, sha256: fa57433a89da6689f4e254ff16acd8b2a04bb1e3f10a3c167b02f17f20f48cde, retrieved_at: 2026-10-15T19:30:23Z, method: command }
   - { file: references/evidence/falkordblite/listen-probe-output.txt, sha256: ad80d05d668cf6dad0a8bca4a531ad765810258f19c62a0feda3f3088112c8da, retrieved_at: 2026-10-15T19:31:20Z, method: command }
-  - { file: references/evidence/falkordblite/wheel-falkordblite-0.10.0-METADATA.txt, sha256: 97ab0e6fee2876049ca0848a493daca8ceda5610432e34a35bd00d0ddc12ed8f, retrieved_at: 2026-10-15T19:29:15Z, method: command }
+  - { name: wheel-falkordblite-0.10.0-METADATA.txt, url: "https://pypi.org/project/falkordblite/0.10.0/", url_basis: inferred, sha256: 97ab0e6fee2876049ca0848a493daca8ceda5610432e34a35bd00d0ddc12ed8f, retrieved_at: 2026-10-15T19:29:15Z, method: command, redistributed: false }
   - { file: references/evidence/falkordblite/timing-probe-output.txt, sha256: 4df99ef91f74a1971167cfeae4238b8ea6bd520f4a1fb76bb3b04eb72e3ac0e3, retrieved_at: 2026-10-15T19:31:03Z, method: command }
   - { file: references/evidence/falkordblite/constraints-command-probe-output.txt, sha256: 790b1b026574c7c00f164e52bf63af4ae9cd084505cc0ae911d4934df17ad9e5, retrieved_at: 2026-10-15T19:28:30Z, method: command }
   - { file: references/evidence/falkordblite/sspaths-rowcount-output.txt, sha256: c00dd109fba0bcc4e0422514f0afc0b5a3936baa6f6dfa40a56384fbcc979694, retrieved_at: 2026-10-15T19:27:50Z, method: command }
@@ -102,7 +102,7 @@ Three sources disagree or are incomplete:
 - PyPI and wheel metadata say `License: BSD License`. [^local-run]
 - GitHub API says the license is `Other`, with `"spdx_id": "NOASSERTION"`. [^gh-issues]
 - The README says `FalkorDBLite is Free software under the New BSD license, see LICENSE.txt for details.` [^readme]
-- The `LICENSE` path returns 404. `LICENSE.txt` is the upstream redislite text, which opens with `Redislite license and trademark information` and copyright `2015, Yahoo Inc.`. [^license-txt]
+- The `LICENSE` path returns 404. `https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/LICENSE` is the upstream redislite text, which opens with `Redislite license and trademark information` and copyright `2015, Yahoo Inc.`. [^license-txt]
 
 Action: a legal read is needed before this is used in a product. For the hackathon the risk is low, but the notice must still carry the Yahoo copyright if the code is redistributed.
 
@@ -242,14 +242,14 @@ Open issues at fetch time (9 of the first 100 items, excluding PRs):
 - Are the closed Windows and WSL2 issues (`#60`, `#74`) still relevant? Only their titles were read.
 
 [^local-run]: `references/evidence/falkordblite/capabilities-run-all-output.txt`, `runtime-versions.txt`.
-[^wheel]: Wheel METADATA of falkordblite 0.10.0, evidence `references/evidence/falkordblite/wheel-falkordblite-0.10.0-METADATA.txt`.
-[^readme]: FalkorDBLite README, evidence `references/evidence/falkordblite/readme-raw.txt`.
-[^gh-issues]: GitHub issues list, evidence `references/evidence/falkordblite/gh-issues-open.json`.
-[^gh-pulls]: GitHub open PRs, evidence `references/evidence/falkordblite/gh-pulls-open.json`.
-[^setup-master]: `setup.py` on master, evidence `references/evidence/falkordblite/setup-master-raw.py`.
-[^license-txt]: `LICENSE.txt` on master, evidence `references/evidence/falkordblite/src__LICENSE.txt`.
-[^redislite-config]: `redislite/configuration.py`, evidence `references/evidence/falkordblite/src__redislite_configuration.py`.
-[^redislite-client]: `redislite/client.py` from the 0.10.0 wheel, evidence `references/evidence/falkordblite/wheel-redislite-client.py.txt`.
+[^wheel]: Wheel METADATA of falkordblite 0.10.0, evidence `https://pypi.org/project/falkordblite/0.10.0/`.
+[^readme]: FalkorDBLite README, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/README.md`.
+[^gh-issues]: GitHub issues list, evidence `https://api.github.com/repos/FalkorDB/falkordblite/issues?state=open`.
+[^gh-pulls]: GitHub open PRs, evidence `https://api.github.com/repos/FalkorDB/falkordblite/pulls?state=open`.
+[^setup-master]: `setup.py` on master, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/setup.py`.
+[^license-txt]: `https://raw.githubusercontent.com/FalkorDB/GraphRAG-SDK/main/LICENSE` on master, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/LICENSE.txt`.
+[^redislite-config]: `redislite/configuration.py`, evidence `https://raw.githubusercontent.com/FalkorDB/falkordblite/master/redislite/configuration.py`.
+[^redislite-client]: `redislite/client.py` from the 0.10.0 wheel, evidence `https://pypi.org/project/falkordblite/0.10.0/`.
 [^listen-probe]: `references/evidence/falkordblite/listen-probe-output.txt`, script `listen-probe.py`.
 [^orphan]: `references/evidence/falkordblite/orphan-server-driver-output.txt`, scripts `orphan-server-driver.sh` and `orphan-server-probe.py`.
 [^timing]: `references/evidence/falkordblite/timing-probe-output.txt`, script `timing-probe.py`.
