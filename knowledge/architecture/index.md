@@ -1,5 +1,6 @@
 # Design proposals
 
+* [Build status](build-status.md) - what was actually built versus the unified plan: done/changed/cut with reasons, key design changes (PPR graph channel, graph-native answer tools), final eval numbers, open risks (stable)
 * [Unified build plan](unified-plan.md) - the current plan: one system for all three tracks, data model, hybrid RRF retrieval, MCP tools, eval, timeline (draft)
 * [Stack de-risking spike](spike-2026-10-16.md) - first real runs of GLiNER2.5, EmbeddingGemma 2, falkordblite full-text/temporal/algorithms and MCP SDK 2.x
 * [Stack decisions and risks](project-plan.md) - proposed stack checked against verified findings, blockers, fallbacks, 2.9-day order of work

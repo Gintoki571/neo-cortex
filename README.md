@@ -60,42 +60,62 @@ NEO_DEVICE=cuda uv run --no-sync python eval/graph_quality.py --ingest   # extra
 **Prerequisites:** Linux, Python 3.12, [uv](https://docs.astral.sh/uv/), and optionally an NVIDIA GPU (`NEO_DEVICE=auto` uses CUDA when torch sees one, else CPU).
 
 ```bash
-# 1. Install the Python environment (dependencies are pinned in uv.lock)
+# 1. Install the Python environment (dependencies are pinned in uv.lock).
+#    Keep about 3 GB free. On tmpfs or when the uv cache is on another
+#    filesystem, run `UV_LINK_MODE=symlink uv sync` instead.
 uv sync
+# Verify the environment before downloading models.
+uv run --no-sync python -c "import torch, gliner2"
+# If a sync is interrupted and the venv is broken: rm -rf .venv, then rerun uv sync.
 
 # 2. Download the models into the repo root (they are not in git).
-#    Skip this step to let the first run fetch the hub ids instead (NEO_GLINER / NEO_EMBED).
+#    Alternatively, point these variables at already-downloaded local directories.
 uv run --no-sync hf download fastino/gliner2.5-base-v1 --local-dir gliner2.5-base-v1
 uv run --no-sync hf download google/embeddinggemma-2 --local-dir embeddinggemma-2
+# export NEO_GLINER=/path/to/gliner2.5-base-v1
+# export NEO_EMBED=/path/to/embeddinggemma-2
 
-# 3. Start the daemon: the only process that opens the graph.
-#    MCP at http://127.0.0.1:8765/mcp, hook API at /api, health at /health.
-uv run --no-sync neo serve --warm
+# 3. In one terminal, start the daemon: the only process that opens the graph.
+#    --port is the daemon HTTP port (MCP /mcp, hooks /api, health /health).
+uv run --no-sync neo serve --port 8765 --warm
+# Leave this terminal running; stop the daemon with Ctrl-C.
 
-# 4. Connect Claude Code to the MCP tools (the command prints; run it yourself)
-claude mcp add --transport http --scope user neo-cortex http://127.0.0.1:8765/mcp
-
-# 5. Put `neo` on PATH so hooks start in milliseconds, then install the hooks
+# 4. In another terminal, put `neo` on PATH so hooks start in milliseconds.
+#    This is a global editable install: it follows this checkout and can shadow
+#    another `neo` command on PATH.
 uv tool install --editable .
 neo --version
-neo install-claude --scope user            # prints the hooks JSON; add --yes to merge into ~/.claude/settings.json
+# Register MCP and hooks. Run the printed `claude mcp add ...` command; its URL
+# uses the daemon port you chose above. Add --yes to merge hooks into settings.
+neo install-claude --scope user
 
-# 6. Load the synthetic company corpus and ask a question
-for d in doc adr ticket chat meeting session; do uv run --no-sync neo ingest data/synthetic/$d; done
+# 5. Load the synthetic company corpus and ask a question.
+#    --wait follows each asynchronous directory job before the next one starts.
+for d in doc adr ticket chat meeting session; do uv run --no-sync neo ingest --wait data/synthetic/$d; done
 uv run --no-sync neo status
 uv run --no-sync neo ask "Who should review a change to the session cache today?"
 ```
 
-Example queries on the synthetic corpus (`data/synthetic`, fictional company):
+`neo status` reports daemon health, background jobs and graph counts. On a fresh
+graph, `0 rows: label | n` is an empty count, not an error. The daemon uses
+`--port` for its HTTP endpoints; embedded falkordblite uses `NEO_PORT` for its
+own Redis-compatible port (default `6390`). If hooks should use `NEO_*` settings,
+export them in the environment that launches Claude Code: hooks inherit Claude
+Code's environment.
+
+Example queries on the synthetic corpus (`data/synthetic`, fictional company);
+the comments name the data kinds needed for each answer:
 
 ```bash
-neo ask "Whose configuration edit lay behind the 41-minute payment outage that hit Orchard & Vane?"   # multi-hop
-neo recall "What was the session lifetime setting on 15 July 2026?" -k 5                              # temporal
-neo who "session cache"                                                                                # owners and experts
-neo timeline "session lifetime"                                                                        # what changed, dated, with sources
-neo brief --project <project>                                                                          # session-start context
+neo ask "Whose configuration edit lay behind the 41-minute payment outage that hit Orchard & Vane?"   # ticket, chat, adr
+neo recall "What is the current session TTL?" -k 5                                                      # adr, doc, chat
+neo who "session cache"                                                                                # doc, adr, meeting
+neo timeline "session TTL"                                                                              # adr, doc, chat, session
+neo brief                                                                                               # session/memory data
 ```
 
+`ask` returns an evidence pack rather than prose: read its seeds, bridging
+paths, cited chunks and facts, then have the calling agent write the answer.
 Ingest only the six kind folders: `data/synthetic/WORLD.md` is the answer key the corpus was written from, so it must never be in the graph. See [eval/README.md](eval/README.md).
 
 Without the daemon running, `neo` commands open the embedded database themselves, but only when no daemon answers. Run one owner at a time.
@@ -230,7 +250,12 @@ Hooks are installed by `neo install-claude`. Details: [integrations/claude-code/
 
 ## AI use disclosure
 
-Neo-Cortex was built with AI coding assistants: Claude Code, with Anthropic Claude models as the orchestrator and coding sub-agents. The synthetic company corpus and the gold questions were AI-generated from a written specification and are fictional. Humans directed the design, reviewed and verified the code and the evaluation, and are responsible for the architecture, the correctness claims and the submitted material.
+Neo-Cortex was built with Claude Code, using Anthropic Claude models as the
+orchestrator and coding sub-agents. Some tasks were done with GitHub Copilot
+CLI, CodeBuddy (GLM-5.3-Flash) and OpenCode. The synthetic company corpus and
+gold questions were AI-generated from a written specification and are
+fictional. Humans directed, reviewed and verified the work, and are
+responsible for the architecture, correctness claims and submitted material.
 
 Team: <!-- TEAM -->
 

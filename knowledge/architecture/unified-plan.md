@@ -36,6 +36,10 @@ sources:
     title: GraphRAG SDK retrieval strategies
 ---
 
+# Status
+
+Superseded by the build report: [/architecture/build-status.md](/architecture/build-status.md) (what was actually built, final eval numbers, open risks).
+
 # Goal
 
 Win all three tracks with one product. Judges ask "whether the graph is doing work the agent could not do without it"[^judging], and rule 3 says the product must stop working without FalkorDB[^rules]. Entering several tracks is allowed, and each track has its own prize[^rules].
