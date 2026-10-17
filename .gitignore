@@ -12,3 +12,6 @@ __pycache__/
 *.rdb
 /.neo/
 .env
+
+# third-party public data: regenerate with scripts/fetch_public.py (not redistributed)
+/data/public/
