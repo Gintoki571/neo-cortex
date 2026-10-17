@@ -28,7 +28,7 @@
 {"id": "Q28", "type": "where", "question": "Which module runs the Personalized PageRank over the local subgraph?", "gold_paths": ["knowledge/architecture/build-status.md"], "answer": "retrieve/channels.py"}
 {"id": "Q29", "type": "where", "question": "Which file is the answer key the synthetic company corpus was generated from, and what must never be ingested?", "gold_paths": ["README.md"], "answer": "data/synthetic/WORLD.md"}
 {"id": "Q30", "type": "where", "question": "Where do I find the saved numbers from the graph-native answers evaluation?", "gold_paths": ["README.md"], "answer": "eval/answers.md"}
-{"id": "E01", "type": "entity", "entity": "FalkorDB", "entity_types": ["product", "tool"], "gold_paths": ["README.md"]}
+{"id": "E01", "type": "entity", "entity": "FalkorDB", "entity_types": ["product", "tool", "service"], "gold_paths": ["README.md"]}
 {"id": "E02", "type": "entity", "entity": "EmbeddingGemma", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}
 {"id": "E03", "type": "entity", "entity": "GLiNER2.5", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}
 {"id": "E04", "type": "entity", "entity": "bm25s", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}

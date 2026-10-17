@@ -114,7 +114,7 @@ def make_server(store, on_shutdown=None) -> MCPServer:
 
     @s.tool()
     def read(id: str, max_chars: int = 4000) -> str:
-        """Full text of a chunk, memory or document by id (results cut text at 240 chars), with metadata, neighbours and mentioned entities."""
+        """Full text of a chunk, memory or document by id (recall and ask show only the best-matching sentences of each hit), with metadata, neighbours and mentioned entities."""
         return T.read(store, id, max_chars)
 
     @s.tool()

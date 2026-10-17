@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import torch
 
 from .models import gliner
+from .resolve import PIN_EXPLICIT, PIN_REGEX
 from .util import normalize_key
 
 # GLiNER label -> (contract type, description). The description is what steers the model.
@@ -143,8 +144,17 @@ def _junk(name: str, etype: str = "other") -> bool:
 _FILE_EXT = re.compile(r"\.(?:py|md|txt|json|jsonl|ya?ml|toml|ini|cfg|conf|env|csv|xml|html?|sql|sh|log|lock|proto|tf|rst|pdf|"
                        r"docx?|xlsx?|pptx?|png|jpe?g|gif|svg|zip|gz|ipynb)$", re.I)
 _LOWER_SLUG = re.compile(r"[a-z0-9][a-z0-9_.-]*")
+# a file entity is a repo or code path (a code, doc or config extension, or a well-known bare name); data and evidence dumps
+# (.txt .json .csv .log .rdb, bare format words such as "xlsx") are not entities: their text stays searchable in the chunk
+_REPO_FILE = re.compile(r"\.(?:py|ts|tsx|js|jsx|go|rs|java|rb|sh|sql|proto|tf|md|rst|ya?ml|toml|cfg|ini|conf|env|lock|ipynb)$", re.I)
+_REPO_BARE = {"Makefile", "Dockerfile", "package.json", "tsconfig.json"}
 _PERSON_WORD = r"(?:[A-Z]\.|[A-Z][A-Za-z]*(?:['’-][A-Z][A-Za-z]*)*|de|da|del|della|di|du|van|von|der|den|la|le|bin|al|el|dos|das)"
 _PERSON = re.compile(_PERSON_WORD + r"(?: " + _PERSON_WORD + r")*")
+
+
+def _repo_file(name: str) -> bool:
+    n = name.strip()
+    return bool(_REPO_FILE.search(n)) or n in _REPO_BARE
 
 
 def _sane_type(name: str, etype: str) -> str:
@@ -236,7 +246,7 @@ def _entities(raw: dict, text: str, title: str = "", author: str = "", teams=())
     ents: dict[str, dict] = {}
     for pat, etype in _IDS:
         for mt in pat.findall(text):
-            ents[normalize_key(mt)] = {"name": mt, "type": etype, "conf": 0.95}
+            ents[normalize_key(mt)] = {"name": mt, "type": etype, "conf": 0.95, "pin": PIN_REGEX}
     ctx = _ctx_entity(title)
     if ctx:
         ents[normalize_key(ctx["name"])] = ctx
@@ -256,15 +266,17 @@ def _entities(raw: dict, text: str, title: str = "", author: str = "", teams=())
             etype = _sane_type(name, label_type)
             if conf < ENTITY_CONF[etype] or _junk(name, etype) or (k in ents and ents[k]["conf"] == 0.95):
                 continue
+            if etype == "file" and not _repo_file(name):
+                continue
             if k not in ents or conf > ents[k]["conf"]:
                 ents[k] = {"name": name, "type": etype, "conf": round(conf, 4)}
     if ctx:
         ents[normalize_key(ctx["name"])] = ctx
     if author:
-        ents[normalize_key(author)] = {"name": author, "type": "person", "conf": 0.95}
+        ents[normalize_key(author)] = {"name": author, "type": "person", "conf": 0.95, "pin": PIN_EXPLICIT}
     for who, _, thing, wt, tt in _table_facts(text):
         for n, t in ((who, wt), (thing, tt)):
-            ents[normalize_key(n)] = {"name": n, "type": t, "conf": 0.95}
+            ents[normalize_key(n)] = {"name": n, "type": t, "conf": 0.95, "pin": PIN_REGEX}
     return ents
 
 

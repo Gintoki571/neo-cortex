@@ -47,7 +47,7 @@ Graph routing ties text retrieval on finding documents; the CIs include 0. Full 
 
 **Extraction** (`eval/graph_quality.py`, graded relation types on the ingested graph): relation precision 0.88, recall 0.83.
 
-**Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.40), and the answer string is in the top-5 documents' chunks for 0.77 (facts are often repeated across docs). Recall p50 147 ms, `ask` p50 198 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
+**Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.39); the answer string is in the top-5 documents' chunks for 0.73 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 150 ms, `ask` about 200 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
 
 Reproduce: measurement details in [eval/README.md](eval/README.md); numbers in [eval/results.md](eval/results.md) and [eval/answers.md](eval/answers.md).
 

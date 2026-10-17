@@ -1,5 +1,6 @@
 """Entity and relation quality in extract.py: generic words, type sanity, relation type constraints, new patterns."""
 from neo_cortex import extract as X
+from neo_cortex.resolve import PIN_REGEX
 from neo_cortex.util import normalize_key
 
 
@@ -37,13 +38,14 @@ def test_sane_type_files_persons_customers():
 def test_entities_apply_type_sanity_and_generic_filter():
     raw = {"entities": {
         "person": [{"text": "gliner25-hf-card", "confidence": 0.95}, {"text": "Noor Haddad", "confidence": 0.9}],
-        "file": [{"text": "gliner2_readme.txt", "confidence": 0.9}],
+        "file": [{"text": "gliner2_readme.txt", "confidence": 0.9}, {"text": "config/ci.yaml", "confidence": 0.9}],
         "customer": [{"text": "falkordblite", "confidence": 0.95}],
         "component": [{"text": "Entity", "confidence": 0.95}, {"text": "MODULE", "confidence": 0.95}],
     }}
-    ents = X._entities(raw, "Noor Haddad reads gliner2_readme.txt. The Entity and MODULE are listed.")
+    ents = X._entities(raw, "Noor Haddad reads gliner2_readme.txt and config/ci.yaml. The Entity and MODULE are listed.")
     got = {k: v["type"] for k, v in ents.items()}
-    assert got == {"noor haddad": "person", "gliner2 readme txt": "file", "gliner25 hf card": "other"}
+    # a data dump (.txt) is not an entity; a repo path is
+    assert got == {"noor haddad": "person", "config ci yaml": "file", "gliner25 hf card": "other"}
     assert "entity" not in ents and "module" not in ents and "falkordblite" not in ents
     assert "gliner25 hf card" in ents and ents["gliner25 hf card"]["type"] == "other"
 
@@ -92,3 +94,20 @@ def test_known_team_names_skip_generic_words():
     # the graph's team list can hold a generic word from an earlier ingest; it must not come back as a team
     ents = X._entities({"entities": {}}, "The Entity team and the Payments team.", teams=["Entity", "Payments"])
     assert "entity" not in ents and ents["payments"]["type"] == "team"
+
+
+def test_file_entities_are_repo_paths_not_data_dumps():
+    keep = ["eval/results.md", "retrieve/channels.py", "pyproject.toml", "docker-compose.yml", "README.md", "Makefile"]
+    drop = ["wemakedevs-falkordb-hackathon.txt", "gh repo json", "okf-commits-all.json", "NEO_HOME/neo.rdb", "xlsx", "md",
+            "GoogleCloudPlatform/knowledge-catalog repo", "algo.SPpaths", "/tmp/falkordb.db", "LICENSE.txt"]
+    assert all(X._repo_file(n) for n in keep) and not any(X._repo_file(n) for n in drop)
+    raw = {"entities": {"file": [{"text": n, "confidence": 0.95} for n in keep + drop]}}
+    got = {v["name"] for v in X._entities(raw, "").values()}
+    assert got == set(keep)
+
+
+def test_regex_ids_keep_their_type_over_gliner():
+    raw = {"entities": {"tool": [{"text": "ADR-006", "confidence": 0.95}]}}
+    ents = X._entities(raw, "We follow ADR-006 and IDN-212.")
+    assert ents["adr 006"]["type"] == "decision" and ents["adr 006"]["pin"] == PIN_REGEX
+    assert ents["idn 212"]["type"] == "ticket"

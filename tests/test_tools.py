@@ -469,3 +469,48 @@ def test_relate_check_and_create_hold_the_write_lock(g):
     spy = g.write_lock = Spy()  # the lock Store exposes for the write path
     out = tools.relate(g, "Priya Shah", "OWNS", "Checkout", source="d1#0")
     assert out.startswith("created") and spy.entered == 1  # the check and the create run under one lock acquisition
+
+
+def _long_chunk(g):
+    """A chunk whose answer sentence sits past the first 400 chars (retrieval trims text there)."""
+    text = "The team reviews dashboards each sprint and keeps notes on alerting noise. " * 7 + "Signing keys are rotated every 45 days."
+    g.query("MATCH (d:Document {id:'d1'}) CREATE (d)-[:HAS_CHUNK]->(c:Chunk {id:'d1#2', doc_id:'d1', pos:2, text:$t, kind:d.kind, "
+            "date_ms:$m, emb:vecf32($v)})", {"t": text, "m": ms("2026-03-06T00:00:00"), "v": vec(text).tolist()})
+
+
+def test_recall_shows_answer_sentence_past_the_head(g):
+    _long_chunk(g)
+    out = tools.recall(g, "how often are signing keys rotated", k=3)
+    print(out)
+    assert "d1#2" in out and "Signing keys are rotated every 45 days." in out
+    assert "alerting noise" not in out  # the sentences without query terms are not shown
+
+
+def test_ask_shows_answer_sentence_past_the_head(g):
+    _long_chunk(g)
+    out = tools.ask(g, "how often are signing keys rotated")
+    print(out)
+    assert "Signing keys are rotated every 45 days." in out
+
+
+def test_snippets_stay_within_max_chars(g):
+    _long_chunk(g)
+    for n in (300, 600):
+        assert len(tools.recall(g, "how often are signing keys rotated", k=3, max_chars=n)) <= n
+        assert len(tools.ask(g, "how often are signing keys rotated", max_chars=n * 4)) <= n * 4
+
+
+def test_snip_picks_best_sentences_in_document_order():
+    text = "Intro about nothing. " + "Filler words here. " * 20 + "Refunds take 5 days. " + "More filler. " * 20 + "Refund limit is 500 USD. Closing remark."
+    out = tools._snip(text, "refund days limit", 240)
+    print(out)
+    assert out == "Refunds take 5 days. … Refund limit is 500 USD."
+    assert tools._snip("Short text.", "anything", 240) == "Short text."
+    assert tools._snip("A" * 300, "zzz", 50).endswith("…")  # no sentence matches: the head, as before
+
+
+def test_snip_skips_an_over_long_match_for_a_shorter_one():
+    s = "a very long bullet of words " * 12 + "The local subgraph is capped at 500 nodes in total. Node count is 500."
+    out = tools._snip(s, "node count", 240)
+    print(out)
+    assert out == "Node count is 500." and len(tools._snip(s, "local subgraph node", 240)) <= 240

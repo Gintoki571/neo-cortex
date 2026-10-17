@@ -96,13 +96,46 @@ def _mem_line(r) -> str:
     return f"- [{i}] {kind} {_d(date)} ({meta}) {_t(text)}"
 
 
-def _item(n, r) -> str:
+def _full_text(store, rs, tenant):
+    """retrieve trims each hit's text to 400 chars; the snippet needs the whole text to reach the answer sentence."""
+    if rs:
+        full = dict(store.query("MATCH (n) WHERE (n:Chunk OR n:Memory) AND n.id IN $i RETURN n.id, n.text",
+                                {"i": [r["id"] for r in rs]}, tenant))
+        for r in rs:
+            r["text"] = full.get(r["id"]) or r["text"]
+    return rs
+
+
+def _snip(text, query, n=240) -> str:
+    """The n-char view of a hit: its 1-3 sentences sharing the most terms with the query, in document order, "…" across gaps.
+    Terms are tokenised as BM25 does (stemmed, stopwords out); no IDF. Falls back to the head when nothing matches."""
+    flat = re.sub(r"\s+", " ", text or "").strip()
+    qs = set(ch._tok([query])[0])
+    if len(flat) <= n or not qs:
+        return _t(flat, n)
+    sents = [s for line in (text or "").splitlines() for s in write._sentences(re.sub(r"\s+", " ", line).strip())]
+    hits = sorted(((len(qs & set(t)), i) for i, t in enumerate(ch._tok(sents)) if qs & set(t)), key=lambda x: (-x[0], x[1]))
+    if not hits:
+        return _t(flat, n)
+
+    def view(idx):
+        return "".join(("" if k == 0 else " " if idx[k - 1] == j - 1 else " … ") + sents[j] for k, j in enumerate(idx))
+
+    keep = []  # shortcut: a matching sentence over n chars is skipped for shorter ones, upgrade: a window around its matched terms (measured lower on eval/real_check)
+    for _, i in hits[:3]:
+        cand = sorted(keep + [i])
+        if len(view(cand)) <= n:
+            keep = cand
+    return view(keep) if keep else _t(sents[hits[0][1]], n)
+
+
+def _item(n, r, query) -> str:
     s = r["source"]
     src = (f'doc "{_t(s.get("title"), 60)}" ({s.get("kind")}) [{s.get("doc_id")}]' + (f' by {s["author"]}' if s.get("author") else "") if r["label"] == "Chunk"
            else "memory " + "/".join(x for x in (s.get("agent"), s.get("project")) if x) + (f" session {s['source_id']}" if s.get("source_id") else ""))
     why = ",".join(f"{c}#{k}" for c, k in r["channels"].items())
     out = f"{n}. [{r['id']}] {r['kind'] or r['label'].lower()} {_d(r['date_ms'])}" + (" SUPERSEDED" if r["status"] == "superseded" else "")
-    out += f" | {src} | via {why}\n   {_t(r['text'])}"
+    out += f" | {src} | via {why}\n   {_snip(r['text'], query)}"
     return out + "".join(f"\n   path: {p}" for p in r["paths"][:1])
 
 
@@ -206,8 +239,9 @@ def recall(store, query, k=8, since=None, until=None, kinds=None, max_chars=MAX,
     rs = _recall(store, query, k=k, since_ms=_ms(since), until_ms=_ms(until, end=True), kinds=kinds, tenant=tenant)
     if not rs:
         return f'No results for "{_t(query, 80)}". Try other words, drop since/until/kinds, or ask(question).'
+    rs = _full_text(store, rs, tenant)
     return _cap([f'# recall "{_t(query, 80)}": {len(rs)} results (id | source | channels#rank)']
-                + [_item(i, r) for i, r in enumerate(rs, 1)], max_chars, "kinds=, since=, or a smaller k")
+                + [_item(i, r, query) for i, r in enumerate(rs, 1)], max_chars, "kinds=, since=, or a smaller k")
 
 
 @_guarded
@@ -259,7 +293,7 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
     pq = parse_query(question)
     ginfo = {}
     k = max(8, min(50, int(max_chars) // 300))
-    rs = _recall(store, question, k=k, weights={"graph": 2.0}, info=ginfo, tenant=tenant)
+    rs = _full_text(store, _recall(store, question, k=k, weights={"graph": 2.0}, info=ginfo, tenant=tenant), tenant)
     seeds = ginfo["seeds"] if "seeds" in ginfo else ch.link_entities(store, pq["entities"], question, tenant)  # seeds the walk actually used
     out = ["# ask: evidence pack"]
     if seeds:
@@ -291,7 +325,7 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
         out += [f"- [{e}] {n}: {tr}" for e, n, _, tr in ginfo["entities"][:6]]
     if rs:
         out.append("## Evidence (cite ids)")
-        out += [_item(i, r) for i, r in enumerate(rs, 1)]
+        out += [_item(i, r, question) for i, r in enumerate(rs, 1)]
     top = max(pq["intent"], key=pq["intent"].get) if pq["intent"] else None
     first = next(iter(seeds.values()))[0] if seeds else None
     if not seeds:

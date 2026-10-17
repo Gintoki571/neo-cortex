@@ -10,7 +10,7 @@ import yaml
 
 from . import extract as X
 from .models import embed_docs
-from .resolve import _RANK, resolve_many
+from .resolve import PIN_EXPLICIT, PIN_REGEX, resolve_many
 from .session_mem import read_transcript, select
 from .util import content_hash, new_id, normalize_key, now_ms
 
@@ -240,24 +240,27 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
         ex = X.extract_batch(prose, [title] * len(chunks), [author or ""] * len(chunks), teams, kind=kind)
         for e, n in zip(ex, names):  # a def/class name is a component entity in its own chunk
             if n:
-                e["entities"].append({"name": n, "type": "component", "conf": 1.0})
+                e["entities"].append({"name": n, "type": "component", "conf": 1.0, "pin": PIN_REGEX})
         embs = embed_docs(chunks, [title] * len(chunks))
 
-        # one (name -> type, conf) map for the document, then a single resolution pass
-        seen: dict[str, tuple[str, str, float]] = {}  # key -> (name, type, conf)
+        # one vote per (name, type) for the document: confidences summed over its chunks, then a single resolution pass
+        seen: dict[str, dict] = {}  # key -> {"name": first spelling, "votes": {type: [weight, pin]}}
 
-        def note(name, typ, conf):
+        def note(name, typ, weight, pin):
             k = normalize_key(name)
-            if k and (k not in seen or _RANK.get(typ, 0) > _RANK.get(seen[k][1], 0)):
-                seen[k] = (name, typ, conf)
+            if k:
+                v = seen.setdefault(k, {"name": name, "votes": {}})["votes"]
+                w, p = v.get(typ, [0.0, 0])
+                v[typ] = [w + weight, max(p, pin)]
 
         for name in ([author] if author else []) + people:
-            note(name, "person", 1.0)
+            note(name, "person", 1.0, PIN_EXPLICIT)
         for e in ex:
             for x in e["entities"]:
-                note(x["name"], x["type"], x["conf"])
-        keys = list(seen)
-        ids = {k: i for k, i in zip(keys, resolve_many(store, [(seen[k][0], seen[k][1]) for k in keys], tenant)) if i}
+                note(x["name"], x["type"], x["conf"], x.get("pin", 0))
+        keys = [k for k in seen for _ in seen[k]["votes"]]
+        items = [(seen[k]["name"], t, w, p) for k in seen for t, (w, p) in seen[k]["votes"].items()]
+        ids = {k: i for k, i in zip(keys, resolve_many(store, items, tenant)) if i}
 
         cid = [f"{doc_id}#{i}" for i in range(len(chunks))]
         store.query("CREATE (:Document {id:$id, kind:$kind, title:$title, uri:$uri, path:$path, author:$author, "
@@ -351,18 +354,20 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
             kind, kconf = X.classify_memory(text)
         else:
             kconf = 1.0 if confidence is None else confidence
-        names = {} if structured else {normalize_key(x["name"]): (x["name"], x["type"]) for x in X.extract(text)["entities"]}
+        # name -> (name, type, weight, pin): GLiNER's confidence, the caller's own type (explicit), or no type ("other")
+        names = {} if structured else {normalize_key(x["name"]): (x["name"], x["type"], x["conf"], 0)
+                                       for x in X.extract(text)["entities"]}
         etypes = {t for t, _ in X.ENTITY_LABELS.values()}
         for e in entities or []:
-            names[normalize_key(e["name"])] = (e["name"], e["type"] if e.get("type") in etypes else "other")
+            names[normalize_key(e["name"])] = (e["name"], e["type"] if e.get("type") in etypes else "other", 1.0, PIN_EXPLICIT)
         for a in ([about] if isinstance(about, str) else about or []):
-            names.setdefault(normalize_key(a), (a, "other"))
+            names.setdefault(normalize_key(a), (a, "other", 1.0, 0))
         for h, _, tl in relations or []:
             for n in (h, tl):
-                names.setdefault(normalize_key(n), (n, "other"))
+                names.setdefault(normalize_key(n), (n, "other", 1.0, 0))
         resolved = resolve_many(store, list(names.values()), tenant)
         eids = [i for i in resolved if i]
-        ids = {n: i for (n, _), i in zip(names.values(), resolved) if i}
+        ids = {n: i for (n, *_), i in zip(names.values(), resolved) if i}
 
         cands = [(r[0], r[1], 1 - r[2], r[3]) for r in q(
             "CALL db.idx.vector.queryNodes('Memory','emb',8,vecf32($e)) YIELD node, score "
@@ -374,7 +379,7 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
             same_src = source_id and q("MATCH (m:Memory {id:$m})-[:DERIVED_FROM]->(s {id:$s}) RETURN 1", {"m": mid, "s": source_id})
             if not same_src:  # re-ingesting the same session must not count as another use
                 q("MATCH (m:Memory {id:$m}) SET m.uses = m.uses + 1, m.last_used_ms = $t", {"m": mid, "t": now_ms()})
-            return {"id": mid, "status": "reinforced", "kind": kind, "entities": [n for n, _ in names.values()], "entity_ids": ids, "conflicts": []}
+            return {"id": mid, "status": "reinforced", "kind": kind, "entities": [n for n, *_ in names.values()], "entity_ids": ids, "conflicts": []}
         shared = {r[0] for r in q("MATCH (m:Memory)-[:MENTIONS]->(e:Entity) WHERE e.id IN $e AND m.status='active' "
                                   "RETURN DISTINCT m.id", {"e": eids})} if eids else set()
         # a near-duplicate that differs in a number or negation ("24 hours" vs "48 hours") is a conflict, shared entity or not
@@ -396,7 +401,7 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
               "WITH m, coalesce(s, c) AS src WHERE src IS NOT NULL CREATE (m)-[:DERIVED_FROM]->(src)", {"m": mid, "s": source_id})
         if agent:
             _agent_edge(store, agent, mid, tenant)
-        return {"id": mid, "status": "created", "kind": kind, "entities": [n for n, _ in names.values()], "entity_ids": ids, "conflicts": conflicts}
+        return {"id": mid, "status": "created", "kind": kind, "entities": [n for n, *_ in names.values()], "entity_ids": ids, "conflicts": conflicts}
 
 
 # ---------------------------------------------------------------- sessions

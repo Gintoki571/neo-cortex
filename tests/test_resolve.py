@@ -52,3 +52,41 @@ def test_similarity_still_merges_plain_names(store, fake_models):
     v = np.ones(768, dtype=np.float32) / np.sqrt(768)   # control for the test above: plain names do merge on similarity
     g = resolve.resolve_entity(store, "api-gateway", "service", emb=v)
     assert resolve.resolve_entity(store, "api-gateways", "service", emb=v) == g
+
+
+def _types(store, eid):
+    return store.query("MATCH (e:Entity {id:$i}) RETURN e.type", {"i": eid})[0][0]
+
+
+def test_majority_vote_beats_one_higher_ranked_mention(store, fake_models):
+    # 50 GLiNER tool votes against one team vote: the type is tool (the old rank rule made it team)
+    eid = resolve.resolve_entity(store, "FalkorDB", "team", weight=0.85)
+    for _ in range(50):
+        assert resolve.resolve_entity(store, "FalkorDB", "tool", weight=0.8) == eid
+    assert _types(store, eid) == "tool"
+
+
+def test_pins_explicit_beats_regex_beats_vote(store, fake_models):
+    eid = resolve.resolve_entity(store, "IDN-212", "tool", weight=5.0)       # many confident GLiNER votes
+    resolve.resolve_entity(store, "IDN-212", "ticket", weight=1.0, pin=resolve.PIN_REGEX)
+    assert _types(store, eid) == "ticket"
+    resolve.resolve_entity(store, "IDN-212", "decision", weight=0.1, pin=resolve.PIN_EXPLICIT)
+    assert _types(store, eid) == "decision"
+    resolve.resolve_entity(store, "IDN-212", "tool", weight=50.0)           # a vote never overrides a pin
+    assert _types(store, eid) == "decision"
+
+
+def test_other_votes_abstain_and_ties_fall_back_to_rank(store, fake_models):
+    eid = resolve.resolve_entity(store, "auth gateway", "other", weight=3.0)
+    assert _types(store, eid) == "other"
+    resolve.resolve_entity(store, "auth gateway", "service", weight=0.5)
+    assert _types(store, eid) == "service"                                  # one real vote beats any number of "other"
+    a = resolve.resolve_entity(store, "api edge", "component", weight=1.0)
+    resolve.resolve_entity(store, "api edge", "service", weight=1.0)
+    assert _types(store, a) == "service"                                     # equal votes: _RANK decides
+
+
+def test_resolve_many_accepts_weighted_items(store, fake_models):
+    ids = resolve.resolve_many(store, [("session cache", "service", 0.9, resolve.PIN_VOTE),
+                                       ("session cache", "tool", 0.2, resolve.PIN_VOTE), ("Session Cache", "tool")])
+    assert len(set(ids)) == 1 and _types(store, ids[0]) == "tool"           # 0.9 service vs 0.2 + 1.0 tool

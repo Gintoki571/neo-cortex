@@ -85,6 +85,19 @@ def test_ingest_two_docs_and_idempotence(store, fake_models, tmp_path):
     assert _q(store, "MATCH ()-[r:REL]->() RETURN count(r)") == [[1]]
 
 
+def test_entity_type_is_the_document_majority_vote(store, fake_models, tmp_path, monkeypatch):
+    # one chunk says team, every other chunk says tool: the entity is a tool (the first or highest-ranked mention no longer decides)
+    def fake(texts, titles=None, authors=None, teams=(), kind=""):
+        return [{"entities": [{"name": "FalkorDB", "type": "team" if i == 0 else "tool", "conf": 0.9 if i == 0 else 0.8}],
+                 "relations": []} for i in range(len(texts))]
+    monkeypatch.setattr(X, "extract_batch", fake)
+    d = tmp_path / "docs"
+    d.mkdir()
+    (d / "a.md").write_text("# Graph\n\n" + "\n\n".join(("word " * 200 + str(i)) for i in range(3)))
+    assert write.ingest_path(store, d)["chunks"] >= 2
+    assert _q(store, "MATCH (e:Entity {key:'falkordb'}) RETURN e.type, e.type_votes")[0][0] == "tool"
+
+
 def test_remember_dedupe_reinforce(store, fake_models):
     a = write.remember(store, "Always run pytest with NEO_TEST_PORT set to avoid port collisions")
     b = write.remember(store, "Always run pytest with NEO_TEST_PORT set to avoid port collisions")
