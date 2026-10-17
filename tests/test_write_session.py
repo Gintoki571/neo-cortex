@@ -166,3 +166,54 @@ def test_ingest_session_waits_for_the_store_write_lock(store, fake_models, sessi
         store.write_lock.release()
     t.join(60)
     assert reached.is_set() and out["r"]["memories"] > 0
+
+
+def test_subagent_file_is_the_conversation(tmp_path, store, fake_models, monkeypatch):
+    monkeypatch.setattr(extract, "worth_keeping_batch", lambda ts: [0.8] * len(ts))
+    monkeypatch.setattr(extract, "classify_memory_batch", lambda ts: [("semantic", 0.9)] * len(ts))
+    side = lambda kind, content, n: {**_line(kind, content, n), "isSidechain": True, "agentId": "a1"}  # noqa: E731
+    rows = [side("user", "Do NOT commit. Always run the tests before you report back to the orchestrator.", 0),
+            side("user", [{"type": "tool_result", "tool_use_id": "x", "content": "ok", "is_error": False}], 1),
+            side("assistant", [{"type": "text", "text": "The session TTL is 900 seconds for auth-service, set in the config file."}], 2)]
+    p = tmp_path / "agent-a1.jsonl"
+    p.write_text("\n".join(json.dumps(x) for x in rows))
+    meta, ev = S.read_transcript(p)
+    assert meta["session_id"] == "agent-a1"                       # the parent's sessionId would collide
+    assert [e["k"] for e in ev] == ["ok", "assistant"]            # the parent's brief is not the user's words
+    r = write.ingest_session(store, p, agent="subagent")
+    assert r["session"] == "agent-a1" and r["memories"] == 1 and r["kinds"] == {"semantic": 1}
+    assert store.query("MATCH (s:Session {id:'agent-a1'})-[:BY]->(a:Agent) RETURN a.name") == [["subagent"]]
+
+
+def test_main_file_drops_sidechain_lines(tmp_path):
+    rows = [_a("We decided to keep Redis for sessions because it is fast enough.", 1),
+            {**_a("The session TTL is 900 seconds for auth-service.", 2), "isSidechain": True}]
+    p = tmp_path / "s1.jsonl"
+    p.write_text("\n".join(json.dumps(x) for x in rows))
+    meta, ev = S.read_transcript(p)
+    assert meta["session_id"] == "s1"
+    assert [e["text"] for e in ev] == ["We decided to keep Redis for sessions because it is fast enough."]
+
+
+def test_fragments_plans_and_status(monkeypatch):
+    monkeypatch.setattr(extract, "worth_keeping_batch", lambda ts: [0.8] * len(ts))
+    monkeypatch.setattr(extract, "classify_memory_batch", lambda ts: [("semantic", 0.9)] * len(ts))
+    frag = ["`back()` after a click returned \"No previous page in history\", which SKILL.md documents.",
+            "Click gap: `click(ref=\"e21\")` on the link returned Clicked, but the page stayed on the home page.",
+            "With `--stealth`, chapter 60 comes back clean in 0.7s.",
+            "and then the second navigation also returned the same stale page in 0.4s."]
+    assert all(S._fragment(t) for t in frag)
+    assert not S._fragment("The session TTL is 900 seconds for auth-service, set in the config file.")
+    assert not S._fragment("Tor was verified: `IsTor: true`, versus `false` when direct.")   # a label with a verb is a clause
+    assert not S._fragment("When `uv sync` failed with \"error: lockfile out of date\", the agent regenerated the lock file.")
+    assert S._keep({"text": "We will use Redis because it is fast enough.", "kind": "decision"})
+    assert not S._keep({"text": "Next the agent will check the documented workaround and run a live crawl.", "kind": "procedural"})
+    ev = [{"k": "assistant", "text": t, "ts": i} for i, t in enumerate([
+        "The timeline fix is committed as the latest change on the branch, 2026-10-15.",
+        "The session TTL is 900 seconds for auth-service, set in the config file.",
+        "Click gap: `click(ref=\"e21\")` on the link returned Clicked, but the page stayed on the home page.",
+        "Next the agent will check the documented workaround and run a live crawl of the site."])]
+    out = S.select(ev)
+    kind = {c["text"].split(" ")[1]: c["kind"] for c in out}          # keyed by the second word, enough to tell them apart
+    assert kind == {"timeline": "episodic", "session": "semantic"}     # a time-bound status ages out; a fact stays
+    assert not any(x in c["text"] for c in out for x in ("Click gap", "Next the agent"))

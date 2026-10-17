@@ -22,7 +22,7 @@ def test_multihop_question_answered_by_graph(store):
     q = "Who should be paged about the checkout failures?"
     pq = parse_query(q)
     assert "checkout" in " ".join(e["name"].lower() for e in pq["entities"])
-    assert set(pq["intent"]) == {"fact", "connection", "temporal", "owner", "howto"}
+    assert set(pq["intent"]) == {"fact", "connection", "temporal", "owner", "decision", "howto"}
     ents = [("e_ck", "Checkout", "service"), ("e_auth", "Auth Service", "service"), ("e_plat", "Platform Team", "team")]
     for (i, n, t), e in zip(ents, models.embed_docs([n for _, n, _ in ents])):
         store.query("CREATE (:Entity {id:$i, name:$n, key:$k, type:$t, emb:vecf32($e)})",

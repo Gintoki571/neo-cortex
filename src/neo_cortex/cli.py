@@ -3,6 +3,7 @@ local Store when no daemon is listening. Hooks never open the DB and never fail 
 import argparse
 import json
 import os
+import re
 import shlex
 import shutil
 import sys
@@ -60,29 +61,53 @@ def jobs(job_id=None):
     return 0
 
 
+def _ingest_report(out):
+    """Print an ingest summary. Exit 2 when nothing was stored and something was unsupported or failed (a silent 0 hid it)."""
+    print(out)
+    c = {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out.rsplit(": ", 1)[-1])}  # "ingested <path>: documents 0, ..."
+    if c.get("unsupported"):
+        print(f"neo: warning: {c['unsupported']} file(s) unsupported (see the daemon log or run on one file for the reason)", file=sys.stderr)
+    if c.get("documents", 1) == 0 and (c.get("unsupported") or c.get("errors")):
+        print(f"neo: nothing ingested: {c.get('unsupported', 0)} unsupported, {c.get('errors', 0)} failed", file=sys.stderr)
+        return 2
+    return 0
+
+
 def ingest(path, tenant, max_chars, wait):
     """A directory runs as a daemon job: print its id at once (no client timeout), `--wait` follows it. A file or no daemon runs inline."""
     args = {"path_or_text": _abs(path), "tenant": tenant, "max_chars": max_chars}
     if not Path(path).expanduser().is_dir():
-        print(call("ingest", args))
-        return 0
+        return _ingest_report(call("ingest", args))
     try:
         job = json.loads(_post("/api/ingest", {k: v for k, v in args.items() if v is not None} | {"background": True}))["job"]
     except Down:
-        print(call("ingest", args))
-        return 0
+        return _ingest_report(call("ingest", args))
     if not wait:
         print(f"{job} queued {path}; follow with `neo jobs {job}`")
         return 0
+    last_ok = last_print = time.monotonic()  # a busy daemon can miss a poll: give up only after 2 min of silence
     while True:
-        js = _get(f"/api/jobs?id={job}")
+        try:
+            js = _get(f"/api/jobs?id={job}")
+        except (OSError, ValueError) as e:  # timeout, reset, or a half-written reply
+            if time.monotonic() - last_ok > 120:
+                print(f"neo ingest: no answer from the daemon for 2 min ({e}); job {job} may still run: `neo jobs {job}`", file=sys.stderr)
+                return 1
+            time.sleep(2)
+            continue
+        last_ok = time.monotonic()
         if not js:
             print("job not found")
             return 1
         j = js[0]
-        if j["status"] in ("done", "error"):
-            print(j.get("result") or j.get("error"))
-            return int(j["status"] == "error")
+        if j["status"] == "error":
+            print(j.get("error"))
+            return 1
+        if j["status"] == "done":
+            return _ingest_report(j.get("result") or "")
+        if time.monotonic() - last_print >= 30:
+            last_print = time.monotonic()
+            print(f"neo ingest: {job} {j['status']} ({path})", file=sys.stderr)
         time.sleep(1)
 
 
@@ -101,8 +126,25 @@ def call(tool, args):
     try:
         return _post("/api/" + tool, args)
     except Down:
+        if daemon_url() != DEFAULT_URL:  # an explicit NEO_DAEMON_URL is never replaced by the embedded store
+            raise RuntimeError(f"daemon at {daemon_url()} is not reachable (start it with `neo serve`)") from None
         args.pop("background", None)
         return _local(tool, args)
+
+
+def _entity(s):
+    """'name:type', split on the last colon so names may contain colons."""
+    name, _, typ = s.rpartition(":")
+    if not name.strip() or not typ.strip():
+        raise ValueError(f'--entity "{s}" must look like name:type')
+    return {"name": name.strip(), "type": typ.strip()}
+
+
+def _relation(s):
+    parts = [x.strip() for x in s.split("|")]
+    if len(parts) != 3 or not all(parts):
+        raise ValueError(f'--rel "{s}" must look like head|TYPE|tail')
+    return parts
 
 
 def _agent(sid=""):
@@ -210,6 +252,7 @@ def parser():
     p = add("relate", "write or correct a typed edge: HEAD TYPE TAIL", "head", "type", "tail")
     p.add_argument("--source", help="chunk/doc/memory id or free text recorded on the edge")
     p.add_argument("--supersede", action="store_true", help="close the edge it replaces; OWNS, RENAMED_TO, REPLACED_BY only")
+    p.add_argument("--end", action="store_true", help="close the current edge with no replacement (ended, not superseded)")
     p.add_argument("--agent", default=_agent())
     add("read", "full text of a chunk, memory or document by id", "id")
     p = add("remember", "store one memory", "text")
@@ -218,6 +261,8 @@ def parser():
     p.add_argument("--supersedes", help="id of the memory this one replaces")
     p.add_argument("--agent", default=_agent())
     p.add_argument("--project")
+    p.add_argument("--entity", action="append", help="name:type this memory is about, repeatable (split on the last colon)")
+    p.add_argument("--rel", action="append", help="head|TYPE|tail edge the memory states, repeatable")
     p = add("ingest", "ingest a file or directory (a directory runs as a daemon job)", "path")
     p.add_argument("--wait", action="store_true", help="follow a directory job until it finishes")
     p = sub.add_parser("jobs", help="status of the daemon's background jobs")
@@ -261,6 +306,12 @@ def main(argv=None):
         from . import mcp_server
         mcp_server.main(["--transport", "http", "--port", str(a.port)] + ["--warm"] * a.warm)
         return 0
+    try:  # flag syntax is checked before any network call
+        ents = [_entity(x) for x in getattr(a, "entity", None) or []]
+        rels = [_relation(x) for x in getattr(a, "rel", None) or []]
+    except ValueError as e:
+        print(f"neo {a.cmd}: {e}", file=sys.stderr)
+        return 2
     t = a.tenant
     if t is not None:
         from .tools import TENANT_RE  # imported only for tool commands; the hooks never reach here
@@ -280,11 +331,12 @@ def main(argv=None):
                 "who": lambda: {"topic": a.topic},
                 "timeline": lambda: {"topic": a.topic},
                 "remember": lambda: {"text": a.text, "kind": a.kind, "about": a.about, "supersedes": a.supersedes,
-                                     "agent": a.agent, "project": a.project},
+                                     "agent": a.agent, "project": a.project or Path.cwd().name or None,  # as the hooks do
+                                     "entities": ents or None, "relations": rels or None},
                 "connect": lambda: {"a": a.a, "b": a.b, "max_hops": a.max_hops},
                 "explore": lambda: {"entity": a.entity, "hops": a.hops, "since": a.since},
                 "impact": lambda: {"entity": a.entity, "max_hops": a.max_hops},
-                "relate": lambda: {"head": a.head, "type": a.type, "tail": a.tail, "source": a.source, "supersede": a.supersede, "agent": a.agent},
+                "relate": lambda: {"head": a.head, "type": a.type, "tail": a.tail, "source": a.source, "supersede": a.supersede, "end": a.end, "agent": a.agent},
                 "read": lambda: {"id": a.id},
                 "handoff": lambda: {"to": a.to, "summary": a.summary, "tasks": a.task, "from_agent": a.from_agent},
                 "cypher": lambda: {"query": a.query},

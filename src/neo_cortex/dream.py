@@ -4,7 +4,6 @@ Planning reads the graph once and works on a Python copy, so `dry_run` reports e
 Writes are batched UNWIND statements. A second run right after a first one changes no Memory or edge."""
 from collections import defaultdict
 from dataclasses import dataclass, field
-from itertools import combinations
 
 import numpy as np
 
@@ -17,7 +16,6 @@ PROMOTE_CAP = 0.95
 DECAY_PERIOD_MS = 30 * 86_400_000
 DECAY_FACTOR, DECAY_FLOOR = 0.9, 0.1
 EXEMPT_KINDS = {"preference", "decision"}   # never decay
-CONFLICT_KINDS = {"semantic", "decision"}
 
 
 @dataclass
@@ -145,23 +143,22 @@ def _plan_decay(mems, now):
     return rows
 
 
-def _plan_conflicts(mems, existing):
-    """Pairs of active semantic/decision memories sharing an entity that differ in a number or negation and have
-    cosine >= CONFLICT (a near-duplicate that differs is a conflict, not a merge)."""
-    pool = [m for m in mems.values() if m.status == "active" and m.kind in CONFLICT_KINDS]
-    by_ent = defaultdict(list)
-    for m in pool:
-        for e in m.ents:
-            by_ent[e].append(m)
+def _plan_conflicts(mems, nb, existing):
+    """Active pairs that differ in a number or negation (write._differ), with the rule write.remember flags them by:
+    cosine >= DEDUPE needs nothing else (a near-duplicate that differs is a conflict, not a merge); cosine CONFLICT..DEDUPE
+    also needs a shared entity. Any kind. Nothing is resolved; the agent decides via remember(..., supersedes=)."""
     seen, out = set(), []
-    for group in by_ent.values():
-        for a, b in combinations(sorted(group, key=lambda m: m.id), 2):
-            key = (a.id, b.id)
-            if key in seen or key in existing or (b.id, a.id) in existing:
+    for a in sorted((m for m in mems.values() if m.status == "active"), key=lambda m: m.id):
+        for bid, sim in nb[a.id]:
+            b = mems[bid]
+            key = tuple(sorted((a.id, b.id)))
+            if b.status != "active" or sim < W.CONFLICT or key in seen or (a.id, b.id) in existing or (b.id, a.id) in existing:
+                continue
+            if sim < W.DEDUPE and not a.ents.keys() & b.ents.keys():
                 continue
             seen.add(key)
-            if _cos(a.emb, b.emb) >= W.CONFLICT and W._differ(a.text, b.text):
-                out.append(key)
+            if W._differ(a.text, b.text):
+                out.append((a.id, b.id))
     return out
 
 
@@ -206,7 +203,7 @@ def dream(store, tenant=None, now_ms=None, dry_run=False) -> dict:
         merged, uses_add, ent_new, src_new, ent_touch = _plan_merge(mems, nb)
         promos = _plan_promote(mems, nb, now)
         decays = _plan_decay(mems, now)
-        conflicts = _plan_conflicts(mems, existing)
+        conflicts = _plan_conflicts(mems, nb, existing)
         counts = {"merged": len(merged), "promoted": len(promos),
                   "decayed": sum(1 for m, c, _ in decays if c < m.conf), "conflicts": len(conflicts)}
         run_id = None if dry_run else util.new_id("dream")

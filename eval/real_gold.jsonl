@@ -1,0 +1,40 @@
+{"id": "Q01", "type": "fact", "question": "Which model turns the text into vectors for the similarity search?", "gold_paths": ["README.md"], "answer": "EmbeddingGemma"}
+{"id": "Q02", "type": "fact", "question": "What model pulls entities and their types out of documents without calling a language model?", "gold_paths": ["README.md"], "answer": "GLiNER2.5"}
+{"id": "Q03", "type": "fact", "question": "Which library runs the keyword side of search inside the Python process?", "gold_paths": ["README.md"], "answer": "bm25s"}
+{"id": "Q04", "type": "fact", "question": "When a newer document names a different owner for something, what happens to the old owner edge?", "gold_paths": ["docs/architecture.md"], "answer": "end their old edge"}
+{"id": "Q05", "type": "fact", "question": "If I supersede a memory, is the old one removed from the database?", "gold_paths": ["README.md"], "answer": "never deleted"}
+{"id": "Q06", "type": "fact", "question": "If the daemon is not running, does a Claude Code hook make the session fail?", "gold_paths": ["integrations/claude-code/README.md"], "answer": "exit 0 silently"}
+{"id": "Q07", "type": "fact", "question": "Which graph procedure builds the shortest bridging paths that connect and ask return?", "gold_paths": ["README.md"], "answer": "algo.SPpaths"}
+{"id": "Q08", "type": "fact", "question": "What is the exact Hugging Face id of the GLiNER checkpoint the project loads?", "gold_paths": ["README.md"], "answer": "fastino/gliner2.5-base-v1"}
+{"id": "Q09", "type": "why", "question": "Why does Neo-Cortex leave answer writing to the calling agent instead of generating answers itself?", "gold_paths": ["README.md"], "answer": "no LLM inside the system"}
+{"id": "Q10", "type": "why", "question": "Why did the team take graphrag-sdk out of the core?", "gold_paths": ["AGENTS.md"], "answer": "user decision 2026-10-16"}
+{"id": "Q11", "type": "why", "question": "Why does the graph-routed retrieval not improve on plain vector plus BM25 for finding documents?", "gold_paths": ["README.md"], "answer": "ties text search"}
+{"id": "Q12", "type": "why", "question": "Why does the embedded FalkorDB server get an explicit bind address instead of the library default?", "gold_paths": ["src/neo_cortex/AGENTS.md"], "answer": "redislite defaults to all interfaces"}
+{"id": "Q13", "type": "why", "question": "Why was the tuned retrieval weight set left out of the shipped product?", "gold_paths": ["knowledge/architecture/build-status.md"], "answer": "scored -0.019 on the held-out even split"}
+{"id": "Q14", "type": "why", "question": "Why is there a single REL edge type with a type property rather than one Neo4j-style relationship type per relation?", "gold_paths": ["README.md"], "answer": "so Cypher never builds types from strings"}
+{"id": "Q15", "type": "how", "question": "What command starts the daemon so MCP clients and hooks can reach it on port 8765?", "gold_paths": ["README.md"], "answer": "neo serve --port 8765 --warm"}
+{"id": "Q16", "type": "how", "question": "What command registers the Neo-Cortex MCP endpoint with Claude Code at user scope?", "gold_paths": ["integrations/claude-code/README.md"], "answer": "claude mcp add --transport http --scope user neo-cortex"}
+{"id": "Q17", "type": "how", "question": "How do I load a folder of synthetic documents into the graph and block until the job is done?", "gold_paths": ["README.md"], "answer": "neo ingest --wait"}
+{"id": "Q18", "type": "how", "question": "My GPU keeps running out of memory during the eval. How do I force the eval onto the CPU?", "gold_paths": ["eval/README.md"], "answer": "NEO_DEVICE=cpu"}
+{"id": "Q19", "type": "how", "question": "How do I throw away the eval tenant and re-ingest the corpus from zero?", "gold_paths": ["eval/README.md"], "answer": "--reingest"}
+{"id": "Q20", "type": "how", "question": "Which script do I run to hammer the daemon with concurrent clients and count lost writes?", "gold_paths": ["eval/stress.md"], "answer": "python3 scripts/stress.py"}
+{"id": "Q21", "type": "number", "question": "How many gold questions does the retrieval evaluation use?", "gold_paths": ["README.md"], "answer": "80 questions"}
+{"id": "Q22", "type": "number", "question": "At what cosine similarity does a new memory count as a repeat and reinforce the stored one?", "gold_paths": ["README.md"], "answer": "0.92"}
+{"id": "Q23", "type": "number", "question": "What is the most memories one finished session can add?", "gold_paths": ["README.md"], "answer": "up to 15 memories"}
+{"id": "Q24", "type": "number", "question": "How large can the local subgraph for the graph channel get, in nodes?", "gold_paths": ["README.md"], "answer": "500 nodes"}
+{"id": "Q25", "type": "number", "question": "What was the read p95 latency in milliseconds with 16 clients hitting the daemon?", "gold_paths": ["eval/stress.md"], "answer": "3280"}
+{"id": "Q26", "type": "where", "question": "Which file lists every Cypher query the product issues and the function that runs it?", "gold_paths": ["README.md"], "answer": "docs/cypher.md"}
+{"id": "Q27", "type": "where", "question": "Where is the binding graph data model contract for the Python package written down?", "gold_paths": ["AGENTS.md"], "answer": "src/neo_cortex/AGENTS.md"}
+{"id": "Q28", "type": "where", "question": "Which module runs the Personalized PageRank over the local subgraph?", "gold_paths": ["knowledge/architecture/build-status.md"], "answer": "retrieve/channels.py"}
+{"id": "Q29", "type": "where", "question": "Which file is the answer key the synthetic company corpus was generated from, and what must never be ingested?", "gold_paths": ["README.md"], "answer": "data/synthetic/WORLD.md"}
+{"id": "Q30", "type": "where", "question": "Where do I find the saved numbers from the graph-native answers evaluation?", "gold_paths": ["README.md"], "answer": "eval/answers.md"}
+{"id": "E01", "type": "entity", "entity": "FalkorDB", "entity_types": ["product", "tool"], "gold_paths": ["README.md"]}
+{"id": "E02", "type": "entity", "entity": "EmbeddingGemma", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}
+{"id": "E03", "type": "entity", "entity": "GLiNER2.5", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}
+{"id": "E04", "type": "entity", "entity": "bm25s", "entity_types": ["tool", "product", "component"], "gold_paths": ["README.md"]}
+{"id": "E05", "type": "entity", "entity": "retrieve/channels.py", "entity_types": ["file", "component"], "gold_paths": ["knowledge/architecture/build-status.md"]}
+{"id": "R01", "type": "relation", "head": "Neo-Cortex", "rel": "DEPENDS_ON", "tail": "algo.SPpaths", "evidence": "The product depends on these queries: the write path (`MERGE`/`CREATE`/`UNWIND` batches), vector and full-text lookups, variable-length paths (`who`), shortest paths (`algo.SPpaths`, in `connect` and `ask`)", "gold_paths": ["docs/cypher.md"]}
+{"id": "R02", "type": "relation", "head": "Claude Code hooks", "rel": "DEPENDS_ON", "tail": "daemon", "evidence": "Agents reach it over MCP (streamable HTTP on `127.0.0.1:8765/mcp`) or through the `neo` CLI and the Claude Code hooks, which call the same daemon's `/api` routes.", "gold_paths": ["docs/architecture.md"]}
+{"id": "R03", "type": "relation", "head": "k-hop expansion", "rel": "REPLACED_BY", "tail": "Personalized PageRank", "evidence": "the graph channel became HippoRAG-style Personalized PageRank instead of k-hop expansion + `algo.pageRank` + `algo.SPpaths`.", "gold_paths": ["knowledge/architecture/build-status.md"]}
+{"id": "R04", "type": "relation", "head": "user", "rel": "DECIDED", "tail": "graphrag-sdk", "evidence": "graphrag-sdk is dropped from the core (user decision 2026-10-16).", "gold_paths": ["AGENTS.md"]}
+{"id": "R05", "type": "relation", "head": "daemon", "rel": "OWNS", "tail": "graph", "evidence": "**Single node:** one daemon owns one graph.", "gold_paths": ["README.md"]}

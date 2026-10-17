@@ -385,3 +385,34 @@ def test_writes_wait_for_the_store_write_lock(store, fake_models, tmp_path, monk
         store.write_lock.release()
     t.join(60)
     assert reached.is_set() and "r" in out
+
+
+def test_titles_from_heading_or_parent_dir(store, fake_models, tmp_path):
+    d = tmp_path / "wiki"
+    d.mkdir()
+    (d / "index.md").write_text("Intro text.\n\n## Not a title\n\n```\n# shell comment\n```\n\n# Design notes\n\nBody text here.\n")
+    (d / "log.md").write_text("Only prose, no heading at all.\n")
+    (d / "README.md").write_text("---\ntitle: Real Title\n---\n\n# Ignored heading\n\nBody.\n")
+    write.ingest_path(store, d)
+    titles = dict(_q(store, "MATCH (d:Document) RETURN d.path, d.title"))
+    assert titles[str(d / "index.md")] == "Design notes"
+    assert titles[str(d / "log.md")] == "wiki/log"
+    assert titles[str(d / "README.md")] == "Real Title"
+
+
+def test_frontmatter_type_description_tags_are_stored_and_searchable(store, fake_models, tmp_path):
+    f = tmp_path / "decision.md"
+    f.write_text("---\ntype: Decision\ntitle: Queue choice\ndescription: Picked the outbox pattern over direct sends.\n"
+                 "tags: [messaging, outbox]\nstatus: draft\n---\n\n# Queue choice\n\nWe write events to a table first.\n")
+    write.ingest_path(store, f)
+    row = _q(store, "MATCH (d:Document) RETURN d.kind, d.doc_type, d.description, d.tags, d.status")[0]
+    assert row == ["doc", "Decision", "Picked the outbox pattern over direct sends.", ["messaging", "outbox"], "draft"]
+    text = _q(store, "MATCH (c:Chunk) RETURN c.text ORDER BY c.pos LIMIT 1")[0][0]
+    assert text.startswith("Picked the outbox pattern over direct sends.")  # the description is in the first chunk text
+
+
+def test_tags_as_comma_string_and_missing_fields(store, fake_models, tmp_path):
+    f = tmp_path / "plain.md"
+    f.write_text("---\ntags: alpha, beta\n---\n\nJust a body with no heading.\n")
+    write.ingest_path(store, f)
+    assert _q(store, "MATCH (d:Document) RETURN d.tags, d.doc_type, d.description") == [[["alpha", "beta"], None, None]]

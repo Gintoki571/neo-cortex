@@ -69,9 +69,11 @@ def make_server(store, on_shutdown=None) -> MCPServer:
 
     @s.tool()
     def remember(text: str, kind: str | None = None, about: list[str] | None = None, supersedes: str | None = None,
-                 agent: str | None = None, project: str | None = None, max_chars: int = 4000) -> str:
-        """Save one decision, lesson, preference or fact. kind: episodic|semantic|procedural|preference|decision (auto if omitted). supersedes: id of the memory this replaces."""
-        return T.remember(store, text, kind, about, supersedes, agent, project, max_chars)
+                 agent: str | None = None, project: str | None = None, entities: list[dict] | None = None,
+                 relations: list[list[str]] | None = None, max_chars: int = 4000) -> str:
+        """Save one decision, lesson, preference or fact. kind: episodic|semantic|procedural|preference|decision (auto if omitted). supersedes: id of the memory this replaces. Pass kind with entities or relations you know to skip extraction."""
+        return T.remember(store, text, kind=kind, about=about, supersedes=supersedes, agent=agent, project=project,
+                          entities=entities, relations=relations, max_chars=max_chars)
 
     @s.tool()
     def ask(question: str, max_chars: int = 4000) -> str:
@@ -104,11 +106,11 @@ def make_server(store, on_shutdown=None) -> MCPServer:
         return T.impact(store, entity, max_hops, max_chars)
 
     @s.tool()
-    def relate(head: str, type: str, tail: str, source: str | None = None, supersede: bool = False, agent: str | None = None,
-               max_chars: int = 4000) -> str:
+    def relate(head: str, type: str, tail: str, source: str | None = None, supersede: bool = False, end: bool = False,
+               agent: str | None = None, max_chars: int = 4000) -> str:
         """Write or correct a typed edge head -[type]-> tail (OWNS, MEMBER_OF, DEPENDS_ON, RENAMED_TO, ...). source = id or doc. supersede=True closes the
-        edge it replaces, only for single-valued types: OWNS, RENAMED_TO, REPLACED_BY (refused for DEPENDS_ON and other multi-valued types)."""
-        return T.relate(store, head, type, tail, source, supersede, agent, max_chars)
+        edge it replaces, only for single-valued types: OWNS, RENAMED_TO, REPLACED_BY (refused for DEPENDS_ON and other multi-valued types). end=True closes it with no replacement."""
+        return T.relate(store, head, type, tail, source, supersede, end, agent, max_chars)
 
     @s.tool()
     def read(id: str, max_chars: int = 4000) -> str:

@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 import numpy as np
 
@@ -60,3 +61,42 @@ def test_tenants_isolated(store):
     store.query("CREATE (:Memory {id:'b'})", tenant="t2")
     assert store.query("MATCH (m:Memory) RETURN m.id", tenant="t1") == [["a"]]
     assert store.query("MATCH (m:Memory) RETURN m.id", tenant="t2") == [["b"]]
+
+
+OPEN_AND_QUERY = "from neo_cortex.store import Store\nwith Store() as s: print(s.query('RETURN 7'))"
+
+
+def _child(code):
+    """Run `code` in a second process with the same NEO_HOME/NEO_PORT (inherited from os.environ)."""
+    return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120,
+                          env=os.environ | {"NEO_DEVICE": "cpu"})
+
+
+def test_second_process_cannot_open_held_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("NEO_HOME", str(tmp_path))
+    monkeypatch.setenv("NEO_PORT", PORT)
+    with Store():
+        out = _child(OPEN_AND_QUERY)
+        assert out.returncode != 0
+        assert "already in use" in out.stderr and str(tmp_path.resolve()) in out.stderr
+
+
+def test_same_process_can_open_home_twice(tmp_path, monkeypatch):
+    monkeypatch.setenv("NEO_HOME", str(tmp_path))
+    monkeypatch.setenv("NEO_PORT", PORT)
+    outer = Store()
+    with Store() as inner:
+        assert inner.query("RETURN 2") == [[2]]
+    # the inner close must not stop the server or drop the lock the outer Store still holds
+    assert outer.query("RETURN 1") == [[1]]
+    assert _child(OPEN_AND_QUERY).returncode != 0
+    outer.close()
+
+
+def test_other_process_can_open_after_close(tmp_path, monkeypatch):
+    monkeypatch.setenv("NEO_HOME", str(tmp_path))
+    monkeypatch.setenv("NEO_PORT", PORT)
+    Store().close()
+    out = _child(OPEN_AND_QUERY)
+    assert out.returncode == 0, out.stderr
+    assert "[[7]]" in out.stdout

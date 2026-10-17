@@ -56,7 +56,8 @@ _DROP = ["a question or request", "narration of an action in progress", "greetin
 
 # per-type entity confidence: names of people and services are crisp, the fuzzy types need more evidence
 ENTITY_CONF = {"person": 0.6, "team": 0.8, "service": 0.7, "component": 0.85, "file": 0.7, "config_setting": 0.8,
-               "ticket": 0.7, "customer": 0.8, "product": 0.85, "tool": 0.8, "incident": 0.8, "decision": 0.85}
+               "ticket": 0.7, "customer": 0.8, "product": 0.85, "tool": 0.8, "incident": 0.8, "decision": 0.85,
+               "other": 0.85}  # "other" is never a GLiNER label: it is what _sane_type demotes a mistyped name to
 REL_CONF = {"OWNS": 0.6, "MEMBER_OF": 0.6, "DEPENDS_ON": 0.6, "CAUSED_BY": 0.6, "FIXED_BY": 0.6, "APPROVED": 0.6,
             "DECIDED": 0.6, "PART_OF": 0.7, "WORKS_ON": 0.7, "REPORTED": 0.6, "REPLACED_BY": 0.6, "RENAMED_TO": 0.6}
 MAX_WORDS = 384  # GLiNER chunk size in words (inference.extract_long default); longer texts are split with overlap
@@ -67,7 +68,7 @@ _WHO = {"person", "team"}
 REL_TYPES = {
     "OWNS": (_WHO, {"service", "component", "file", "product", "tool", "other"}),
     "MEMBER_OF": ({"person"}, {"team"}),
-    "DEPENDS_ON": ({"service", "component", "tool"}, {"service", "component", "tool"}),
+    "DEPENDS_ON": ({"service", "component", "tool", "product"}, {"service", "component", "tool", "product"}),
     "CAUSED_BY": (_THING, _THING | _WHO),
     "FIXED_BY": (_THING, _THING | _WHO),
     "APPROVED": (_WHO, {"decision", "ticket", "component", "service", "other"}),
@@ -79,6 +80,11 @@ REL_TYPES = {
     "RENAMED_TO": (_THING, _THING),
 }
 
+# class nouns used generically in technical prose ("the graph", "a module"): never a named thing. "data" is left out because
+# the Data team is real; "platform" for the same reason.
+_GENERIC = set("""entity graph node edge module function class file team service tool model agent user system component
+database table index query endpoint object field type instance process server client library package project repo
+repository document script method variable value key memory result step item thing""".split())
 _JUNK = set("""i me my we us our you your he she him her his they them their it its this that these those who which
 what one someone anyone everyone user users team teams service services system systems component components file files
 ticket tickets customer customers product tool tools incident decision config setting settings cache api code issue
@@ -116,16 +122,42 @@ _GEN_TAIL = {"channel", "engineer", "engineers", "manager", "managers", "file", 
              "issue", "issues", "request", "requests", "process", "workflow", "team", "teams", "group", "layer", "side", "path"}
 
 
+def is_generic(name: str) -> bool:
+    """A single word that is a generic class noun ("Entity", "module", "Teams"), case-insensitive; never a named thing."""
+    k = normalize_key(name)
+    return " " not in k and (k in _GENERIC or (k.endswith("s") and k[:-1] in _GENERIC) or (k.endswith("es") and k[:-2] in _GENERIC))
+
+
 def _junk(name: str, etype: str = "other") -> bool:
     k = normalize_key(name)
     ws = k.split()
-    if len(k) < 2 or k in _JUNK or k == "on call" or k.isdigit() or len(ws) > 4 or (etype in _STRICT and not _proper(name)):
+    if len(k) < 2 or k in _JUNK or is_generic(name) or k == "on call" or k.isdigit() or len(ws) > 4 or (etype in _STRICT and not _proper(name)):
         return True
     if etype in ("person", "ticket", "incident", "decision", "customer"):
         return False
     if etype == "team" and name.isupper():  # "SRE" is a role
         return True
     return ws[0] in _GEN_HEAD or (len(ws) > 1 and ws[-1] in _GEN_TAIL and "." not in name and "/" not in name)
+
+
+_FILE_EXT = re.compile(r"\.(?:py|md|txt|json|jsonl|ya?ml|toml|ini|cfg|conf|env|csv|xml|html?|sql|sh|log|lock|proto|tf|rst|pdf|"
+                       r"docx?|xlsx?|pptx?|png|jpe?g|gif|svg|zip|gz|ipynb)$", re.I)
+_LOWER_SLUG = re.compile(r"[a-z0-9][a-z0-9_.-]*")
+_PERSON_WORD = r"(?:[A-Z]\.|[A-Z][A-Za-z]*(?:['’-][A-Z][A-Za-z]*)*|de|da|del|della|di|du|van|von|der|den|la|le|bin|al|el|dos|das)"
+_PERSON = re.compile(_PERSON_WORD + r"(?: " + _PERSON_WORD + r")*")
+
+
+def _sane_type(name: str, etype: str) -> str:
+    """Type sanity: a file name or path is "file"; a person is a capitalised name (no digits, no lowercase slug, no hyphenated
+    lowercase word such as "Read-only Cypher"); a customer is never a slug or contains digits. Mistyped names become "other"."""
+    if _FILE_EXT.search(name) or "/" in name or "\\" in name:
+        return "file"
+    if etype == "person" and (any(c.isdigit() for c in name) or (name.isascii() and not (
+            _PERSON.fullmatch(name) and any(w[0].isupper() for w in name.split())))):
+        return "other"
+    if etype == "customer" and (any(c.isdigit() for c in name) or _LOWER_SLUG.fullmatch(name)):
+        return "other"
+    return etype
 
 
 def _schema(m, entities: bool):
@@ -143,15 +175,17 @@ def _table_facts(text: str) -> list[tuple[str, str, str, str, str]]:
     """Markdown tables row by row: (head, relation, tail, head type, tail type). The first cell is the subject; columns are
     read by header word: owner -> OWNS, team (row about a person) -> MEMBER_OF, depends/upstream/calls/uses -> DEPENDS_ON."""
     out, hdr = [], None
-    for line in text.splitlines():
+    lines = text.splitlines()
+    for n, line in enumerate(lines):
         if not line.strip().startswith("|"):
             hdr = None
             continue
         cells = [c.strip(" `*") for c in line.strip().strip("|").split("|")]
         if set("".join(cells)) <= set("-: "):
             continue
-        if hdr is None:
-            hdr = [c.lower() for c in cells]
+        if hdr is None:  # a header is a row that the separator line (|---|---|) follows; a chunk can start mid-table
+            if n + 1 < len(lines) and re.fullmatch(r"\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*", lines[n + 1]):
+                hdr = [c.lower() for c in cells]
             continue
         first = cells[0]
         if not first:
@@ -173,7 +207,7 @@ def _table_facts(text: str) -> list[tuple[str, str, str, str, str]]:
             elif svc and re.search(r"depend|upstream|calls|uses|needs|reads", h):
                 out += [(first, "DEPENDS_ON", d, "service", "service") for d in
                         (x.strip(" `*") for x in re.split(r"[,;/]| and ", c)) if _SLUG.fullmatch(d)]
-    return out
+    return [(a, r, b, _sane_type(a, ht), _sane_type(b, tt)) for a, r, b, ht, tt in out]
 
 
 def _ctx_entity(title: str) -> dict | None:
@@ -209,15 +243,17 @@ def _entities(raw: dict, text: str, title: str = "", author: str = "", teams=())
     for mt in _SVC.findall(text):
         ents.setdefault(normalize_key(mt), {"name": mt, "type": "service", "conf": 0.9})
     for mt in team_names(text) | {t for t in teams if re.search(r"(?<![\w-])" + re.escape(t) + r"(?![\w-])", text)}:
-        ents.setdefault(normalize_key(mt), {"name": mt, "type": "team", "conf": 0.85})
+        if not _junk(mt, "team"):  # a team name the graph already holds may be a generic word ("Entity")
+            ents.setdefault(normalize_key(mt), {"name": mt, "type": "team", "conf": 0.85})
     for label, items in raw.get("entities", {}).items():
-        etype = ENTITY_LABELS[label][0]
+        label_type = ENTITY_LABELS[label][0]
         for it in items:
             name, conf = _clean(it["text"]), it["confidence"]
             k = normalize_key(name)
-            if etype == "team":
+            if label_type == "team":
                 name = _ROLE_TAIL.sub("", name)
                 k = normalize_key(name)
+            etype = _sane_type(name, label_type)
             if conf < ENTITY_CONF[etype] or _junk(name, etype) or (k in ents and ents[k]["conf"] == 0.95):
                 continue
             if k not in ents or conf > ents[k]["conf"]:
@@ -299,6 +335,7 @@ _PATTERNS = [(re.compile(p, re.I), r) for p, r in [
     (_T + r"[^§.;]{0,60}? (?:(?:that|which) )?" + _H + r" (?:consults?|calls?|uses?|reads?|needs?|depends on|relies on|queries|checks?) ", "DEPENDS_ON"),
     (_H + r"(?:'s)? (?:only |sole |single |main |direct )?(?:upstream|dependency|dependencies|backend)(?: service)? (?:is|are|:) ?" + _T, "DEPENDS_ON"),
     (_H + r" has " + _T + r" as (?:an? |its |the )?(?:upstream|dependency|backend)", "DEPENDS_ON"),
+    (_H + r" (?:is|are|gets|get) (?:also )?stored (?:in|on|under) " + _T, "DEPENDS_ON"),
     (r"(?:settings|config\w*|keys|values|overrides|limits|templates) (?:for|of) " + _H + r" (?:live|lives|are stored|are kept|are held|come|comes) (?:in|under|from) " + _T, "DEPENDS_ON"),
     # rename and replacement
     (r"(?:rename|renamed|renaming|renames) " + _H + r" (?:to|as|into) " + _T, "RENAMED_TO"),
@@ -332,6 +369,10 @@ _PATTERNS = [(re.compile(p, re.I), r) for p, r in [
     (_T + r"'s (?:member |engineer |manager |lead )" + _H, "MEMBER_OF"),
 ]]
 # the head is the document's own incident/decision (title id) or the incident named in the sentence
+# the head of the match replaces the tail: "X replaced Y" is REPLACED_BY with head Y and tail X
+_REVERSED = [(re.compile(p, re.I), r) for p, r in [
+    (_H + r" (?:has |have |had )?(?:replaced|replaces|superseded|supersedes) " + _T, "REPLACED_BY"),
+]]
 _INC = [(re.compile(p, re.I), r) for p, r in [
     (r"(?:root cause|cause|trigger)(?: of [^§]*§\d+§)?(?: was| is| were|:| =)\s*(?:an? |the )?(?:[\w'-]+ ){0,3}?" + _T, "CAUSED_BY"),
     (r"(?:because of|due to|caused by|triggered by) " + _GAP + _T, "CAUSED_BY"),
@@ -433,13 +474,18 @@ _SVCT = ("service", "component", "tool")
 _TASK_KINDS = ("ticket", "meeting", "chat")  # their "Owner:" / action-item lines name the task's owner, never a service's
 
 
+def rel_ok(rtype: str, head_type: str, tail_type: str) -> bool:
+    """REL_TYPES head/tail constraint; every relation emitter checks it."""
+    heads, tails = REL_TYPES[rtype]
+    return head_type in heads and tail_type in tails
+
+
 def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", author: str = "",
                speakers: list | None = None, main: str | None = None, kind: str = "") -> list[dict]:
     rels: dict[tuple, dict] = {}
 
     def add(hk, rtype, tk, conf, eff=None):
-        heads, tails = REL_TYPES[rtype]
-        if hk == tk or hk not in ents or tk not in ents or ents[hk]["type"] not in heads or ents[tk]["type"] not in tails:
+        if hk == tk or hk not in ents or tk not in ents or not rel_ok(rtype, ents[hk]["type"], ents[tk]["type"]):
             return
         if rtype == "DEPENDS_ON":  # a dependency endpoint is a service whatever else it was called
             ents[hk]["type"] = ents[tk]["type"] = "service"
@@ -501,13 +547,14 @@ def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", 
 
             eff = _eff_ms(sen2)
 
-            def hit(mt, rtype):
+            def hit(mt, rtype, swap=False):
                 before = sen2[:mt.start()]
                 if rtype != "MEMBER_OF" and _NEG.search(before[-40:]) and not mt.group().lower().startswith(("can", "could")):
                     return
                 if rtype in _STATE and (_FORMER if rtype == "OWNS" else _FORMER_TEAM).search(sen2[max(0, mt.start() - 40):mt.end()]):
                     return
-                add(keys2[int(mt["h"][1:-1])], rtype, keys2[int(mt["t"][1:-1])], 0.9, eff)
+                h, t = (mt["t"], mt["h"]) if swap else (mt["h"], mt["t"])
+                add(keys2[int(h[1:-1])], rtype, keys2[int(t[1:-1])], 0.9, eff)
             if ck:  # "A made the decision", "B approved it": the target is the document's own decision or ticket
                 for pat, rtype in _SELF:
                     for mt in pat.finditer(sen2):
@@ -515,6 +562,9 @@ def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", 
             for pat, rtype in _PATTERNS:
                 for mt in pat.finditer(sen2):
                     hit(mt, rtype)
+            for pat, rtype in _REVERSED:
+                for mt in pat.finditer(sen2):
+                    hit(mt, rtype, swap=True)
             inc = next((k for k in (keys2[int(j)] for j in re.findall(r"§(\d+)§", sen2)) if ents[k]["type"] == "incident"), doc_inc)
             if inc:
                 for pat, rtype in _INC:
@@ -583,8 +633,8 @@ def extract_batch(texts: list[str], titles: list[str] | None = None, authors: li
         rels = _relations(e, ws, glr[i:i + len(ws)], ti, a, sp, kind=kind)
         i += len(ws)
         seen = {(normalize_key(r["head"]), r["type"], normalize_key(r["tail"])) for r in rels}
-        for who, rt, thing, _, _ in _table_facts(t):
-            if (normalize_key(who), rt, normalize_key(thing)) not in seen:
+        for who, rt, thing, wt, tt in _table_facts(t):
+            if (normalize_key(who), rt, normalize_key(thing)) not in seen and rel_ok(rt, wt, tt):
                 rels.append({"head": who, "type": rt, "tail": thing, "conf": 0.9})
         out.append({"entities": list(e.values()), "relations": rels})
     return out

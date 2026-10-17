@@ -1,4 +1,5 @@
 """Write path: documents (markdown + YAML frontmatter, other formats via anydoc), agent memories, session transcripts."""
+import ast
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -17,6 +18,7 @@ CHUNK_MIN, CHUNK_MAX = 120, 250  # words
 MAX_CHARS = 2500                 # a code block or URL soup can be few words but many tokens
 DEDUPE, CONFLICT = 0.92, 0.75    # memory cosine similarity: at or above DEDUPE reinforce; CONFLICT..DEDUPE flag
 _TEXT_EXT = {".md", ".markdown", ".txt"}
+_CODE_EXT = {".py"}                # one chunk per top-level def/class, see _code_chunks
 _SKIP_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}  # images are not ingested (embed_images is available)
 _KINDS = {"doc", "adr", "ticket", "chat", "meeting", "session", "file"}
 _NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -101,10 +103,57 @@ def chunk_text(body: str, kind: str = "doc") -> list[str]:
     return chunks
 
 
+def _code_chunks(src: str) -> list[tuple[str, str, str | None]]:
+    """(code, prose, name) per chunk: the header (module docstring, imports, top-level statements), then one chunk per
+    top-level def/class (decorators included), long ones split. prose = docstrings and comments, the only text GLiNER reads."""
+    tree = ast.parse(src)
+    lines = src.splitlines()
+    defs = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+    taken = {i for n in defs for i in range(min([n.lineno] + [d.lineno for d in n.decorator_list]) - 1, n.end_lineno)}
+    header = "\n".join(l for i, l in enumerate(lines) if i not in taken).strip()
+    pieces = [(piece, ast.get_docstring(tree), None) for piece in _hard_split(header)] if header else []
+    for n in defs:
+        s = min([n.lineno] + [d.lineno for d in n.decorator_list]) - 1
+        for j, piece in enumerate(_hard_split("\n".join(lines[s:n.end_lineno]))):
+            pieces.append((piece, ast.get_docstring(n) if j == 0 else None, n.name if j == 0 else None))
+    out = []
+    for piece, doc, name in pieces:
+        comments = [l.strip().lstrip("#").strip() for l in piece.splitlines() if l.strip().startswith("#")]
+        out.append((piece, "\n".join(([doc] if doc else []) + comments), name))
+    return out
+
+
+def _module_title(path: Path) -> str:
+    """Module path from the top of the package: src/neo_cortex/tools.py -> neo_cortex/tools.py (a loose file: its name)."""
+    p = path.resolve()
+    rel, d = [p.name], p.parent
+    while d != d.parent and (d / "__init__.py").exists():
+        rel.insert(0, d.name)
+        d = d.parent
+    return "/".join(rel)
+
+
+def _title(path: Path, fm: dict, body: str) -> str:
+    """Frontmatter title, else the first Markdown heading outside code fences, else "<parent dir>/<stem>"."""
+    if fm.get("title"):
+        return str(fm["title"])
+    m = re.search(r"^#[ \t]+(\S.*?)\s*$", re.sub(r"(?s)```.*?```", "", body), re.M)
+    return m.group(1) if m else f"{path.parent.name}/{path.stem}"
+
+
+def _strs(v) -> list[str]:
+    if isinstance(v, str):
+        return [x.strip() for x in v.split(",") if x.strip()]
+    return [str(x) for x in (v or [])]
+
+
 # ---------------------------------------------------------------- documents
 
 def _load(path: Path) -> tuple[dict, str, str]:
     """(frontmatter, body, raw text) for a file; non-text formats go through anydoc."""
+    if path.suffix.lower() in _CODE_EXT:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+        return {}, raw, raw
     if path.suffix.lower() in _TEXT_EXT:
         raw = path.read_text(encoding="utf-8", errors="replace")
         fm, body = split_frontmatter(raw)
@@ -160,7 +209,8 @@ def _supersede(store, eids: list[str], tenant) -> None:
 
 def _ingest_doc(store, path: Path, tenant) -> dict:
     fm, body, raw = _load(path)
-    kind = fm.get("kind") if fm.get("kind") in _KINDS else ("doc" if path.suffix.lower() in _TEXT_EXT else "file")
+    code = path.suffix.lower() in _CODE_EXT
+    kind = "code" if code else (fm.get("kind") if fm.get("kind") in _KINDS else ("doc" if path.suffix.lower() in _TEXT_EXT else "file"))
     doc_id = str(fm.get("id") or "doc_" + content_hash(str(path.resolve())))
     h = content_hash(raw)
     old = store.query("MATCH (d:Document {id:$d}) RETURN d.hash, d.path", {"d": doc_id}, tenant)
@@ -171,14 +221,26 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
     try:
         stale = _replace_old(store, doc_id, tenant) if old else []
         date_ms = _ms(fm.get("date")) or int(path.stat().st_mtime * 1000)
-        title = str(fm.get("title") or path.stem)
+        title = _module_title(path) if code else _title(path, fm, body)
         labels = [str(x) for x in (fm.get("labels") or [])]
         people = [str(p) for p in (fm.get("participants") or [])]
         author = str(fm["author"]) if fm.get("author") else None
+        desc = str(fm.get("description") or "").strip() or None
+        tags = _strs(fm.get("tags"))
 
-        chunks = chunk_text(body, kind) or [body.strip() or title]
+        if code:
+            parts = _code_chunks(raw) or [(title, "", None)]
+            chunks, prose, names = [c for c, _, _ in parts], [p for _, p, _ in parts], [n for _, _, n in parts]
+        else:
+            chunks = chunk_text(body, kind) or [body.strip() or title]
+            if desc:  # searchable: the description rides in the first chunk (vector and BM25 both read chunk text)
+                chunks[0] = desc + "\n\n" + chunks[0]
+            prose, names = chunks, [None] * len(chunks)
         teams = [r[0] for r in store.query("MATCH (e:Entity {type:'team'}) RETURN e.name", tenant=tenant)]
-        ex = X.extract_batch(chunks, [title] * len(chunks), [author or ""] * len(chunks), teams, kind=kind)
+        ex = X.extract_batch(prose, [title] * len(chunks), [author or ""] * len(chunks), teams, kind=kind)
+        for e, n in zip(ex, names):  # a def/class name is a component entity in its own chunk
+            if n:
+                e["entities"].append({"name": n, "type": "component", "conf": 1.0})
         embs = embed_docs(chunks, [title] * len(chunks))
 
         # one (name -> type, conf) map for the document, then a single resolution pass
@@ -199,9 +261,10 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
 
         cid = [f"{doc_id}#{i}" for i in range(len(chunks))]
         store.query("CREATE (:Document {id:$id, kind:$kind, title:$title, uri:$uri, path:$path, author:$author, "
-                    "date_ms:$date, status:$status, labels:$labels})",
+                    "date_ms:$date, status:$status, labels:$labels, doc_type:$dt, description:$desc, tags:$tags})",
                     {"id": doc_id, "kind": kind, "title": title, "uri": fm.get("uri"), "path": str(path),
-                     "author": author, "date": date_ms, "status": fm.get("status"), "labels": labels}, tenant)
+                     "author": author, "date": date_ms, "status": fm.get("status"), "labels": labels,
+                     "dt": str(fm["type"]) if fm.get("type") else None, "desc": desc, "tags": tags}, tenant)
         store.query("UNWIND $rows AS r CREATE (c:Chunk {id:r.id, doc_id:$d, pos:r.pos, text:r.text, kind:$k, date_ms:$t, "
                     "emb:vecf32(r.emb)}) WITH c MATCH (d:Document {id:$d}) CREATE (d)-[:HAS_CHUNK]->(c)",
                     {"d": doc_id, "k": kind, "t": date_ms,
@@ -249,7 +312,7 @@ def ingest_path(store, path, tenant=None) -> dict:
     """Ingest a file or a directory tree. Unchanged documents (same hash) are skipped; changed ones are replaced."""
     p = Path(path)
     files = sorted(f for f in ([p] if p.is_file() else p.rglob("*")) if f.is_file() and f.suffix.lower() not in _SKIP_EXT
-                   and not any(part.startswith(".") for part in f.relative_to(p if p.is_dir() else p.parent).parts))
+                   and not any(part.startswith(".") or part == "__pycache__" for part in f.relative_to(p if p.is_dir() else p.parent).parts))
     before = store.query("MATCH (e:Entity) RETURN count(e)", tenant=tenant)[0][0]
     tot = {"documents": 0, "skipped": 0, "chunks": 0, "mentions": 0, "rels": 0, "errors": 0, "unsupported": 0}
     for f in files:
@@ -273,22 +336,33 @@ def _agent_edge(store, agent: str, mid: str, tenant):
 
 def remember(store, text: str, kind: str | None = None, about=None, supersedes: str | None = None,
              agent: str | None = None, project: str | None = None, source_id: str | None = None, tenant=None,
-             confidence: float | None = None, valid_from_ms: int | None = None) -> dict:
+             confidence: float | None = None, valid_from_ms: int | None = None, entities=None, relations=None) -> dict:
     """Write a memory. Near-duplicates (cosine >= 0.92) reinforce the existing one; similar memories that share an
-    entity come back as `conflicts` (0.75..0.92); `supersedes` retires an older memory and links SUPERSEDES."""
+    entity come back as `conflicts` (0.75..0.92); `supersedes` retires an older memory and links SUPERSEDES.
+    `entities` ([{name, type}]; unknown types become other) and `relations` ([head, TYPE, tail], only their names are
+    linked here; tools.remember writes the edges) are what the caller knows: with `kind` and any of about/entities/
+    relations, GLiNER does not run."""
     with store.write_lock:  # dedupe check and create must not interleave
         q = lambda c, p=None: store.query(c, p or {}, tenant)  # noqa: E731
         text = text.strip()
         emb = embed_docs([text])[0]
+        structured = kind is not None and bool(about or entities or relations)
         if kind is None:
             kind, kconf = X.classify_memory(text)
         else:
             kconf = 1.0 if confidence is None else confidence
-        ex = X.extract(text)["entities"]
-        names = {normalize_key(x["name"]): (x["name"], x["type"]) for x in ex}
+        names = {} if structured else {normalize_key(x["name"]): (x["name"], x["type"]) for x in X.extract(text)["entities"]}
+        etypes = {t for t, _ in X.ENTITY_LABELS.values()}
+        for e in entities or []:
+            names[normalize_key(e["name"])] = (e["name"], e["type"] if e.get("type") in etypes else "other")
         for a in ([about] if isinstance(about, str) else about or []):
             names.setdefault(normalize_key(a), (a, "other"))
-        eids = [i for i in resolve_many(store, list(names.values()), tenant) if i]
+        for h, _, tl in relations or []:
+            for n in (h, tl):
+                names.setdefault(normalize_key(n), (n, "other"))
+        resolved = resolve_many(store, list(names.values()), tenant)
+        eids = [i for i in resolved if i]
+        ids = {n: i for (n, _), i in zip(names.values(), resolved) if i}
 
         cands = [(r[0], r[1], 1 - r[2], r[3]) for r in q(
             "CALL db.idx.vector.queryNodes('Memory','emb',8,vecf32($e)) YIELD node, score "
@@ -300,7 +374,7 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
             same_src = source_id and q("MATCH (m:Memory {id:$m})-[:DERIVED_FROM]->(s {id:$s}) RETURN 1", {"m": mid, "s": source_id})
             if not same_src:  # re-ingesting the same session must not count as another use
                 q("MATCH (m:Memory {id:$m}) SET m.uses = m.uses + 1, m.last_used_ms = $t", {"m": mid, "t": now_ms()})
-            return {"id": mid, "status": "reinforced", "kind": kind, "entities": [n for n, _ in names.values()], "conflicts": []}
+            return {"id": mid, "status": "reinforced", "kind": kind, "entities": [n for n, _ in names.values()], "entity_ids": ids, "conflicts": []}
         shared = {r[0] for r in q("MATCH (m:Memory)-[:MENTIONS]->(e:Entity) WHERE e.id IN $e AND m.status='active' "
                                   "RETURN DISTINCT m.id", {"e": eids})} if eids else set()
         # a near-duplicate that differs in a number or negation ("24 hours" vs "48 hours") is a conflict, shared entity or not
@@ -322,7 +396,7 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
               "WITH m, coalesce(s, c) AS src WHERE src IS NOT NULL CREATE (m)-[:DERIVED_FROM]->(src)", {"m": mid, "s": source_id})
         if agent:
             _agent_edge(store, agent, mid, tenant)
-        return {"id": mid, "status": "created", "kind": kind, "entities": [n for n, _ in names.values()], "conflicts": conflicts}
+        return {"id": mid, "status": "created", "kind": kind, "entities": [n for n, _ in names.values()], "entity_ids": ids, "conflicts": conflicts}
 
 
 # ---------------------------------------------------------------- sessions

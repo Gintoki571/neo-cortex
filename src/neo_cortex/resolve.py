@@ -32,6 +32,33 @@ def judge(store, question: str, text: str, labels: list[str], tenant=None) -> di
     return res
 
 
+_SIZE = re.compile(r"[\W_]+(?:base|large|small|tiny|medium|hf)$")  # "GLiNER2.5 base", "gliner-2.5-hf"
+_VER = re.compile(r"[\W_]+v[01]$")                                 # "gliner2.5-base-v1"; "api v2" is a different version, kept apart
+
+
+# code identifiers: snake_case, a call, a dotted attribute (not a version such as 2.5), camelCase
+_CODE = re.compile(r"_|\(|[A-Za-z]\.[A-Za-z]|^[a-z]+[A-Z]")
+
+
+def is_code(name: str) -> bool:
+    """A code identifier ("_sentences", "parse_tree()", "os.path", "parseTree"). It merges only on the exact key or an alias:
+    "_sentences" is not "_sentence", and "_hard_split" is not "_split"."""
+    return bool(_CODE.search(name.strip()))
+
+
+def variant_key(key: str) -> str:
+    """Spelling variant of a normalised key: spacing, case and punctuation dropped, letters and digits as separate tokens
+    ("GLiNER 2.5" = "gliner2.5" = "gliner-2.5"), and a trailing size or version word dropped ("base", "large", "hf", "v1").
+    Different products stay apart: "gliner 2 5" is not "gliner 2" nor "gliner 25" nor "gliner 2 5 decide"."""
+    s = key
+    while True:  # shortcut: only trailing size/version words are dropped; "auth-gateway" keeps its tail
+        t = _SIZE.sub("", s) if _SIZE.search(s) else _VER.sub("", s)
+        if t == s:
+            break
+        s = t
+    return " ".join(re.findall(r"[^\W\d_]+|\d+", s))
+
+
 def _stem(key: str) -> list[str]:
     return [t[:-1] if len(t) > 3 and t.endswith("s") else t for t in key.split()]
 
@@ -79,7 +106,8 @@ def resolve_entity(store, name: str, type: str, emb=None, tenant=None) -> str | 
     if r:
         _upgrade(store, r[0][0], r[0][1], type, tenant)
         return r[0][0]
-    if " " not in key and type in ("person", "team", "other"):  # a lone first or last name: the unique matching person
+    code = is_code(name)
+    if " " not in key and type in ("person", "team", "other") and not code:  # a lone first or last name: the unique matching person
         r = q("MATCH (e:Entity {type:'person'}) WHERE e.key STARTS WITH $p OR e.key ENDS WITH $s RETURN e.id",
               {"p": key + " ", "s": " " + key})
         if len(r) == 1:
@@ -87,10 +115,17 @@ def resolve_entity(store, name: str, type: str, emb=None, tenant=None) -> str | 
             return r[0][0]
         if len(r) > 1 and type == "person":  # "Haddad" with two Haddads: ambiguous, so no entity at all
             return None
+    vk = variant_key(key)
+    if vk and vk[0].isalpha() and not code:  # spelling variant of an existing entity: same letters-first prefix, same variant key
+        for cid, ckey, ctype in q("MATCH (e:Entity) WHERE e.key STARTS WITH $p RETURN e.id, e.key, e.type", {"p": vk.split()[0]}):
+            if variant_key(ckey) == vk:
+                _add_alias(store, cid, key, tenant)
+                _upgrade(store, cid, ctype, type, tenant)
+                return cid
     if emb is None:
         emb = embed_docs([name])[0]
-    cand = q("CALL db.idx.vector.queryNodes('Entity','emb',4,vecf32($e)) YIELD node, score "
-             "RETURN node.id, node.key, node.type, 1 - score ORDER BY score", {"e": np.asarray(emb).tolist()})
+    cand = [] if code else q("CALL db.idx.vector.queryNodes('Entity','emb',4,vecf32($e)) YIELD node, score "
+                             "RETURN node.id, node.key, node.type, 1 - score ORDER BY score", {"e": np.asarray(emb).tolist()})
     for cid, ckey, ctype, sim in cand:
         if sim < SOFT or not _guard(key, ckey, type, ctype):
             continue

@@ -273,3 +273,39 @@ def test_invalid_calendar_dates_skipped():
     assert parse_time("December 9999") == (None, None)  # the month after December 9999 is out of range
     assert parse_time("since December 9999") == (None, None)
     assert parse_time("between 2026-03-01 and 2026-03-02")[0] is not None  # valid ranges still work
+
+
+def test_graph_off_without_a_strong_seed(g):
+    """Anchors alone (what the top text hits mention) never start the walk; a hub seed walks too little to count."""
+    info = {}
+    assert ch.graph(g, [], "pizza friday", ch.Filt(), anchors=["c_pizza"], info=info) == []
+    assert all("graph" not in r["channels"] for r in recall(g, "pizza friday", k=5))
+    g.query("MATCH (e:Entity {id:'e_ck'}) SET e.mentions = 500")  # named in hundreds of nodes: little to say about one
+    info = {}
+    assert ch.graph(g, [{"name": "Checkout", "type": "service", "conf": 0.9}], "checkout", ch.Filt(), info=info) == []
+    assert info["strength"] < ch.SEED_FLOOR
+
+
+def test_decision_cue_routes_to_decision_records(g):
+    """A "why" question boosts decision memories (soft: through the fused score, never a filter)."""
+    text = "We dropped the queue for checkout because of latency"
+    g.query("CREATE (:Memory {id:'m_dec', text:$t, kind:'decision', status:'active', created_ms:$d, source_id:'sess_1', "
+            "agent:'claude-code', emb:vecf32($v)})", {"t": text, "d": ms("2026-02-10"), "v": vec(text).tolist()})
+    assert recall(g, "why did we drop the checkout queue?", k=3)[0]["id"] == "m_dec"
+    assert "m_dec" in ids(recall(g, "checkout queue latency", k=8))  # no cue: still found, not boosted by kind
+
+
+def test_decision_cue_and_kind_factor():
+    from neo_cortex.retrieve import parse_query as pqy
+    from neo_cortex.retrieve.fuse import kind_factor
+    assert pqy("why was graphrag-sdk dropped?", nlp=False)["intent"] == {"decision": 0.6}
+    assert pqy("what port does the daemon use?", nlp=False)["intent"] == {}
+    assert kind_factor({"decision": 0.5}, "decision") == 1.5 and kind_factor({"decision": 0.5}, "adr") == 1.5
+    assert kind_factor({"decision": 0.5}, "semantic") == 1.0 and kind_factor({}, "decision") == 1.0
+
+
+def test_bm25_keeps_numbers_and_flags(g):
+    """Numbers and --flags are tokens: "port 8765" finds the chunk that says `neo serve --port 8765`."""
+    g.query("CREATE (:Chunk {id:'c_port', text:'Start the daemon with neo serve --port 8765 --warm', kind:'doc', date_ms:1})")
+    assert ch.bm25(g, "port 8765", ch.Filt())[0][0] == "c_port"
+    assert ch.bm25(g, "daemon port", ch.Filt())[0][0] == "c_port"

@@ -198,3 +198,127 @@ def test_status_label_and_empty_graph(monkeypatch, capsys):
     assert cli.status() == 0
     out = capsys.readouterr().out
     assert "jobs: pending 0, done 1, errors 0" in out and "graph is empty" in out and "ingest-session" not in out
+
+
+UNSUP = "ingested /x: documents 0, skipped 0, chunks 0, mentions 0, rels 0, errors 0, unsupported 3, new_entities 0"
+
+
+def test_ingest_report_exits_2_when_nothing_was_stored(capsys):
+    assert cli._ingest_report(UNSUP) == 2
+    err = capsys.readouterr().err
+    assert "3 file(s) unsupported" in err and "nothing ingested: 3 unsupported" in err
+    assert cli._ingest_report(UNSUP.replace("documents 0", "documents 2")) == 0  # something stored: exit 0 with a warning
+    assert cli._ingest_report(UNSUP.replace("unsupported 3", "unsupported 0").replace("skipped 0", "skipped 4")) == 0  # unchanged, not failed
+    assert cli._ingest_report(UNSUP.replace("unsupported 3", "errors 2")) == 2
+
+
+class _Clock:
+    """Stands in for the time module in the poll loop: sleep advances the clock."""
+    def __init__(self):
+        self.t = 0.0
+
+    def monotonic(self):
+        return self.t
+
+    def time(self):
+        return self.t
+
+    def sleep(self, s):
+        self.t += s
+
+
+def _job_post(monkeypatch):
+    monkeypatch.setattr(cli, "_post", lambda *a, **k: json.dumps({"job": "job_1"}))
+
+
+def test_wait_survives_transient_poll_timeouts(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "time", _Clock())
+    _job_post(monkeypatch)
+    n = {"k": 0}
+
+    def get(path, timeout=10):
+        n["k"] += 1
+        if n["k"] <= 2:
+            raise TimeoutError("timed out")
+        return [{"id": "job_1", "status": "done", "result": "ingested /x: documents 1, skipped 0, chunks 2, mentions 0, rels 0, errors 0, unsupported 0, new_entities 0"}]
+    monkeypatch.setattr(cli, "_get", get)
+    assert cli.ingest(str(tmp_path), None, None, True) == 0
+    assert n["k"] == 3 and "documents 1" in capsys.readouterr().out
+
+
+def test_wait_gives_up_only_after_two_minutes_of_silence(tmp_path, monkeypatch, capsys):
+    clock = _Clock()
+    monkeypatch.setattr(cli, "time", clock)
+    _job_post(monkeypatch)
+    monkeypatch.setattr(cli, "_get", lambda path, timeout=10: (_ for _ in ()).throw(TimeoutError("timed out")))
+    assert cli.ingest(str(tmp_path), None, None, True) == 1
+    assert 120 < clock.t < 130 and "no answer from the daemon for 2 min" in capsys.readouterr().err
+
+
+def test_wait_prints_progress_at_most_every_30_seconds(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "time", _Clock())
+    _job_post(monkeypatch)
+    n = {"k": 0}
+
+    def get(path, timeout=10):
+        n["k"] += 1
+        if n["k"] < 70:
+            return [{"id": "job_1", "status": "running"}]
+        return [{"id": "job_1", "status": "done", "result": "ingested /x: documents 1, skipped 0, chunks 2, mentions 0, rels 0, errors 0, unsupported 0, new_entities 0"}]
+    monkeypatch.setattr(cli, "_get", get)
+    assert cli.ingest(str(tmp_path), None, None, True) == 0
+    assert capsys.readouterr().err.count("job_1 running") == 2  # ~69 s of polling
+
+
+def test_explicit_daemon_url_never_falls_back_to_the_embedded_store(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "_local", lambda *a: pytest.fail("an explicit NEO_DAEMON_URL must not open the embedded store"))
+    with pytest.raises(RuntimeError, match="not reachable"):
+        cli.call("cypher", {"query": "MATCH (n) RETURN n"})
+    assert cli.main(["recall", "x"]) == 1
+    assert "not reachable" in capsys.readouterr().err
+
+
+def test_default_daemon_url_falls_back_to_the_embedded_store(monkeypatch):
+    monkeypatch.delenv("NEO_DAEMON_URL", raising=False)
+    monkeypatch.setattr(cli, "DEFAULT_URL", f"http://127.0.0.1:{_free_port()}")
+    monkeypatch.setattr(cli, "_local", lambda tool, args: f"local {tool}")
+    assert cli.call("cypher", {"query": "x"}) == "local cypher"
+
+
+def test_store_lock_is_a_message_not_a_traceback(monkeypatch, capsys):
+    from neo_cortex import store as store_mod
+    monkeypatch.delenv("NEO_DAEMON_URL", raising=False)
+    monkeypatch.setattr(cli, "DEFAULT_URL", f"http://127.0.0.1:{_free_port()}")
+
+    def locked(*a, **k):
+        raise RuntimeError("NEO_HOME /x is already in use by another process")
+    monkeypatch.setattr(store_mod, "Store", locked)
+    assert cli.main(["cypher", "MATCH (n) RETURN n"]) == 1
+    assert "already in use" in capsys.readouterr().err
+
+
+def test_remember_defaults_project_to_cwd_basename(monkeypatch, tmp_path):
+    sent = {}
+    monkeypatch.setattr(cli, "_post", lambda path, body, timeout=300: sent.update(body) or "created")
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["remember", "use uv run"]) == 0
+    assert sent["project"] == tmp_path.name
+    assert cli.main(["remember", "use uv run", "--project", "other"]) == 0
+    assert sent["project"] == "other"
+
+
+def test_remember_and_relate_flags_reach_the_tool_arguments(monkeypatch, capsys):
+    sent = []
+    monkeypatch.setattr(cli, "_post", lambda path, body, timeout=300: sent.append((path, body)) or "ok")
+    assert cli.main(["remember", "Ann runs it", "--entity", "Auth: Service:service", "--entity", "Ops:team",
+                     "--rel", "Ann|OWNS|Auth: Service"]) == 0
+    assert sent[-1][1]["entities"] == [{"name": "Auth: Service", "type": "service"}, {"name": "Ops", "type": "team"}]
+    assert sent[-1][1]["relations"] == [["Ann", "OWNS", "Auth: Service"]]
+    assert cli.main(["remember", "plain"]) == 0
+    assert "entities" not in sent[-1][1] and "relations" not in sent[-1][1]  # None values are not sent
+    assert cli.main(["relate", "Ann", "OWNS", "Checkout", "--end"]) == 0
+    assert sent[-1] == ("/api/relate", {"head": "Ann", "type": "OWNS", "tail": "Checkout",
+                                        "supersede": False, "end": True, "agent": sent[-1][1]["agent"]})
+    n = len(sent)
+    assert cli.main(["remember", "x", "--entity", "no-colon"]) == 2 and cli.main(["remember", "x", "--rel", "a|b"]) == 2
+    assert len(sent) == n and "name:type" in capsys.readouterr().err

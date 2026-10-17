@@ -10,6 +10,15 @@ BOOST = {
 }
 
 
+# intent -> (node kinds it prefers, boost): a node of such a kind scores x (1 + conf x boost). Memory.kind "decision",
+# Chunk.kind "adr" (a decision-record document). Soft like BOOST, so a misrouted intent only nudges the order.
+KIND_ROUTE = {"decision": ({"decision", "adr"}, 1.0)}
+
+
+def kind_factor(intent: dict, kind) -> float:
+    return 1 + sum(conf * KIND_ROUTE[i][1] for i, conf in intent.items() if i in KIND_ROUTE and kind in KIND_ROUTE[i][0])
+
+
 def channel_weights(intent: dict) -> dict:
     return {c: w * (1 + sum(conf * BOOST.get(i, {}).get(c, 0) for i, conf in intent.items())) for c, w in BASE.items()}
 

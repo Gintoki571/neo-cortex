@@ -18,6 +18,7 @@ INTENT_LABELS = {
     "connection": "asks how two or more things are connected or related",
     "temporal": "asks what changed over time, or when something happened",
     "owner": "asks who is responsible, owns, approved or knows most about something",
+    "decision": "asks why something was decided, or what decision or reason was recorded",
     "howto": "asks how to do a task or follow a procedure",
 }
 
@@ -29,6 +30,8 @@ _EXPR = re.compile(
     rf"|(?P<rel>yesterday|last\s+(?:week|month|year)|(?:last|past)\s+\d+\s+(?:day|week|month|year)s?)"
     rf"|(?P<mon>{_MON})(?:\s+(?P<yr>\d{{4}}))?)\b", re.I)
 _BETWEEN = re.compile(r"\bbetween\s+(\d{4}-\d{2}-\d{2})\s+and\s+(\d{4}-\d{2}-\d{2})\b", re.I)
+# A "why"/decision cue is a sure signal even when the classifier is unsure (its confidences are low on short questions)
+DECISION_RE = re.compile(r"\b(why|decid\w*|decision\w*|reasons?|chose|chosen)\b", re.I)
 _DAY = 86_400_000
 _UNIT = {"day": 1, "week": 7, "month": 30, "year": 365}
 
@@ -120,4 +123,6 @@ def parse_query(q: str, now_ms: int | None = None, nlp: bool = True) -> dict:
                             include_confidence=True)["intent"]
         for it in (r if isinstance(r, list) else [r]):
             intent[back[it["label"]]] = float(it["confidence"])
+    if DECISION_RE.search(q):
+        intent["decision"] = max(intent.get("decision", 0.0), 0.6)
     return {"entities": ents, "intent": intent, "since_ms": since, "until_ms": until}

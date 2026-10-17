@@ -1,7 +1,7 @@
 """Hybrid retrieval: vector + BM25 + graph + temporal channels fused with weighted RRF."""
 from ..util import now_ms as _now
 from . import channels as ch
-from .fuse import BASE, channel_weights, rrf
+from .fuse import BASE, channel_weights, kind_factor, rrf
 from .query import parse_query, parse_time
 
 __all__ = ["recall", "rrf", "parse_query", "parse_time"]
@@ -39,7 +39,7 @@ def recall(store, query, k=8, since_ms=None, until_ms=None, kinds=None, weights=
     bad = set(chans) - set(CHANNELS)
     if bad:
         raise ValueError(f"unknown channels {sorted(bad)}")
-    lists, paths = {}, {}
+    lists, paths, gi = {}, {}, {}  # gi: the graph channel's own report (strength), copied to info
     if "vector" in chans:
         lists["vector"] = ch.vector(store, query, f, tenant)
     if "bm25" in chans:
@@ -47,15 +47,21 @@ def recall(store, query, k=8, since_ms=None, until_ms=None, kinds=None, weights=
     if "graph" in chans:
         anchors = [i for i, _, _ in rrf({c: lists[c] for c in ("vector", "bm25") if c in lists})[:ANCHORS]]
         lists["graph"] = ch.graph(store, pq["entities"], query, f, tenant, paths=paths, anchors=anchors, now=now,
-                                  current=not temporal_q, info=info)
+                                  current=not temporal_q, info=gi)
+        if info is not None:
+            info.update(gi)
     if "temporal" in chans:
         pool = {i for l in lists.values() for i, _ in l[:POOL]} or None
         asc = temporal_q and bool(ch.CHANGE_RE.search(query))
         lists["temporal"] = ch.temporal(store, f, tenant, pool, asc) if pool is not None or not lists else []
     w = channel_weights(intent) if weights is None else {**BASE, **weights}
+    if "graph" in lists:  # a weak or hub seed scales the graph's rank contribution down
+        w = {**w, "graph": w["graph"] * gi.get("strength", 1.0)}
     if _relax:
         w = {**w, "temporal": 2.0}  # recency boost: the user's time words found nothing
-    fused = rrf(lists, w)[:k]
+    fused = rrf(lists, w)
+    kind = {i: m[1] for i, m in ch.meta(store, [i for i, _, _ in fused], tenant).items()}  # kind routing: decision nodes
+    fused = sorted(((i, s * kind_factor(intent, kind.get(i)), r) for i, s, r in fused), key=lambda x: -x[1])[:k]
     if not fused:
         if parsed_window:  # the time words matched nothing: search everything, newest first
             return recall(store, query, k, None, None, kinds, weights, chans if "temporal" in chans else chans + ["temporal"],

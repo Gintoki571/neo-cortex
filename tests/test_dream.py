@@ -84,8 +84,8 @@ def _conflict_world(store):
     mem(store, "cB", "The session TTL is 3600 seconds for auth-service", kind="semantic", deg=30, g=4)
     mem(store, "cC", "The session TTL is 900 seconds for auth-service", kind="semantic", deg=-30, g=4)
     mem(store, "cD", "Auth-service never caches sessions", kind="decision", deg=60, g=4)
-    mem(store, "cE", "The session TTL is 3600 seconds for auth-service", deg=30, g=4)  # episodic: excluded
-    mem(store, "cF", "The session TTL is 3600 seconds", kind="semantic", deg=60, g=4)  # no shared entity
+    mem(store, "cE", "The session TTL is 3600 seconds for auth-service", deg=30, g=4)  # episodic: same rule as remember
+    mem(store, "cF", "The session TTL is 3600 seconds", kind="semantic", deg=60, g=4)  # no entity: a near-duplicate still conflicts
     for m in ("cA", "cB", "cC", "cD", "cE"):
         link(store, m, "e2", "MENTIONS", "{conf:1.0}")
 
@@ -143,9 +143,11 @@ def test_decay_unused_memories(store):
 def test_conflicts_surface_but_do_not_resolve(store):
     _conflict_world(store)
     r = D.dream(store, now_ms=NOW)
-    assert r["conflicts"] == 2
+    assert r["conflicts"] == 5
     pairs = {tuple(sorted(x)) for x in _q(store, "MATCH (a:Memory)-[:CONFLICTS_WITH]->(b:Memory) RETURN a.id, b.id")}
-    assert pairs == {("cA", "cB"), ("cB", "cD")}                                      # number, negation; not episodic/no entity
+    # number or negation differs, cosine >= 0.75 with a shared entity (cA-cB, cA-cE, cB-cD, cD-cE) or >= 0.92 (cD-cF);
+    # cB-cF is 0.87 with no shared entity, and cA-cC are identical texts
+    assert pairs == {("cA", "cB"), ("cA", "cE"), ("cB", "cD"), ("cD", "cE"), ("cD", "cF")}
     assert _q(store, "MATCH (:Memory)-[c:CONFLICTS_WITH]->(:Memory) RETURN c.found_ms LIMIT 1") == [[NOW]]
     assert _q(store, "MATCH (m:Memory) WHERE m.id IN ['cA','cB','cD'] RETURN m.status ORDER BY m.id") == \
         [["active"], ["active"], ["active"]]
@@ -154,7 +156,7 @@ def test_conflicts_surface_but_do_not_resolve(store):
 def test_idempotent_second_run_changes_nothing(store):
     _world(store)
     first = D.dream(store, now_ms=NOW)
-    assert first["merged"] == 1 and first["promoted"] == 1 and first["decayed"] == 2 and first["conflicts"] == 2
+    assert first["merged"] == 1 and first["promoted"] == 1 and first["decayed"] == 2 and first["conflicts"] == 5
     before = _state(store)
     second = D.dream(store, now_ms=NOW + 60_000)                                     # right after the first
     assert second["merged"] == second["promoted"] == second["decayed"] == second["conflicts"] == 0
@@ -194,6 +196,15 @@ def test_differing_numbers_conflict_even_when_near_duplicate(store):
     r = D.dream(store, now_ms=NOW)
     assert r["merged"] == 0 and r["conflicts"] == 1
     assert _q(store, "MATCH (:Memory {id:'n1'})-[:CONFLICTS_WITH]->(:Memory {id:'n2'}) RETURN count(*)") == [[1]]
+
+
+def test_near_duplicate_that_differs_conflicts_without_entities(store):
+    # the remember() case: "deadline is ...18" vs "...19" at cosine 0.99, no entities; remember flags it, so dream must too
+    mem(store, "dl1", "The release deadline is 2026-10-18", kind="decision", deg=0, g=7)
+    mem(store, "dl2", "The release deadline is 2026-10-19", kind="decision", deg=2, g=7, created=NOW - 2 * DAY)
+    r = D.dream(store, now_ms=NOW)
+    assert r["merged"] == 0 and r["conflicts"] == 1
+    assert _q(store, "MATCH (:Memory {id:'dl1'})-[:CONFLICTS_WITH]->(:Memory {id:'dl2'}) RETURN count(*)") == [[1]]
 
 
 def test_dream_waits_for_the_store_write_lock(store, monkeypatch):

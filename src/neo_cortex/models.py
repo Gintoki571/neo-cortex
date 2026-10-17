@@ -1,4 +1,8 @@
-"""Lazy, thread-safe model singletons. GLiNER extracts/classifies; EmbeddingGemma embeds (float32: sm_75 has no bf16)."""
+"""Lazy, thread-safe model singletons. GLiNER extracts/classifies; EmbeddingGemma embeds (float32: sm_75 has no bf16).
+Under NEO_DEVICE=auto a CUDA OOM degrades to CPU (`_load`, `_Guarded`); an explicit NEO_DEVICE=cuda raises."""
+import inspect
+import os
+import sys
 import threading
 
 import numpy as np
@@ -8,6 +12,7 @@ from .config import settings
 
 _lock = threading.RLock()
 _cache: dict = {}
+_cpu: set = set()  # keys whose model is on CPU because of a CUDA OOM
 
 
 def _once(key, build):
@@ -17,21 +22,76 @@ def _once(key, build):
         return _cache[key]
 
 
+def _auto() -> bool:
+    return os.environ.get("NEO_DEVICE", "auto") == "auto"
+
+
+def _warn(msg: str):
+    print(f"neo: warning: {msg}", file=sys.stderr)
+
+
+def _load(key, build):
+    """build(device) on the configured device; under auto an OOM while loading falls back to CPU."""
+    def load():
+        dev = settings().device
+        try:
+            return build(dev)
+        except torch.OutOfMemoryError:
+            if not _auto() or dev == "cpu":
+                raise
+            torch.cuda.empty_cache()
+            _cpu.add(key)
+            _warn(f"{key} did not fit on CUDA, loaded it on CPU")
+            return build("cpu")
+    return _once(key, load)
+
+
+class _Guarded:
+    """Model handle: each method call runs through _guard, so callers keep the model's own API."""
+
+    def __init__(self, key, m):
+        self._key, self._m = key, m
+
+    def __getattr__(self, name):
+        attr = getattr(self._m, name)
+        if not inspect.ismethod(attr):
+            return attr
+        return lambda *a, **k: _guard(self._key, self._m, lambda: attr(*a, **k))
+
+
+def _guard(key, m, fn):
+    """fn() on model m. Under auto, a CUDA OOM frees the cache and retries once, then moves m to CPU for good."""
+    try:
+        return fn()
+    except torch.OutOfMemoryError:
+        if not _auto() or key in _cpu:
+            raise
+    torch.cuda.empty_cache()
+    try:
+        return fn()
+    except torch.OutOfMemoryError:
+        m.to("cpu")
+        torch.cuda.empty_cache()
+        _cpu.add(key)
+        _warn(f"{key} ran out of CUDA memory, moved it to CPU for the rest of the process")
+        return fn()
+
+
 def gliner():
-    def build():
+    def build(device):
         from gliner2 import AutoExtractor
-        return AutoExtractor.from_pretrained(settings().gliner, map_location=settings().device)
-    return _once("gliner", build)
+        return AutoExtractor.from_pretrained(settings().gliner, map_location=device)
+    return _Guarded("gliner", _load("gliner", build))
 
 
 def _embedder():
-    def build():
+    def build(device):
         from sentence_transformers import SentenceTransformer
         # text-only: skip vision/audio encoders (pillow+torchvision still must be installed for the processor import)
-        return SentenceTransformer(settings().embed, device=settings().device,
+        return SentenceTransformer(settings().embed, device=device,
                                    config_kwargs={"vision_config": None, "audio_config": None},
                                    model_kwargs={"dtype": torch.float32})
-    return _once("embed", build)
+    return _Guarded("embed", _load("embed", build))
 
 
 def embed_docs(texts, titles=None) -> np.ndarray:
@@ -49,10 +109,10 @@ def embed_query(text: str) -> np.ndarray:
 
 
 def _full_embedder():
-    def build():
+    def build(device):
         from sentence_transformers import SentenceTransformer
-        return SentenceTransformer(settings().embed, device=settings().device, model_kwargs={"dtype": torch.float32})
-    return _once("embed_full", build)
+        return SentenceTransformer(settings().embed, device=device, model_kwargs={"dtype": torch.float32})
+    return _Guarded("embed_full", _load("embed_full", build))
 
 
 def embed_images(paths) -> np.ndarray:

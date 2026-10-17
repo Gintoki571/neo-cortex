@@ -23,7 +23,7 @@ DAY = 86400000
 MAX_HOPS = 5  # variable-length REL paths grow with the hop count; every caller's max_hops is clamped to this
 OWN_TYPES = ["OWNS", "MEMBER_OF", "WORKS_ON", "APPROVED", "DECIDED", "PART_OF"]
 KINDS = ("episodic", "semantic", "procedural", "preference", "decision")
-DOC_KINDS = ("doc", "adr", "ticket", "chat", "meeting", "session", "file")
+DOC_KINDS = ("doc", "adr", "ticket", "chat", "meeting", "session", "file", "code")
 
 
 # ---------------------------------------------------------------- formatting helpers
@@ -170,6 +170,7 @@ def brief(store, project=None, agent=None, max_chars=MAX, tenant=None) -> str:
             "MATCH (m:Memory {kind:$k}) WHERE m.status='active' AND ($p IS NULL OR m.project IS NULL OR m.project=$p) "
             "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.agent, m.project, m.confidence, m.text, m.uses, m.status "
             f"ORDER BY {order} LIMIT {n}", {**p, "k": kind}, tenant)
+        rows = [r for r in rows if len(r[6] or "") <= 300 and not (r[6] or "").lstrip().startswith(('"', "'", "“", "‘"))]
         if rows:
             lines.append(f"## {title}")
             lines.extend(_mem_line(r) for r in rows)
@@ -186,7 +187,6 @@ def brief(store, project=None, agent=None, max_chars=MAX, tenant=None) -> str:
     mems("Active decisions", "decision", 8)
     mems("Lessons (procedural)", "procedural", 6)
     mems("Facts", "semantic", 5)
-    mems("Recent episodes", "episodic", 5)
     docs = store.query("MATCH (d:Document) WHERE d.date_ms IS NOT NULL RETURN d.id, d.kind, d.date_ms, d.title ORDER BY d.date_ms DESC LIMIT 5",
                        None, tenant)
     if docs:
@@ -211,7 +211,10 @@ def recall(store, query, k=8, since=None, until=None, kinds=None, max_chars=MAX,
 
 
 @_guarded
-def remember(store, text, kind=None, about=None, supersedes=None, agent=None, project=None, max_chars=MAX, tenant=None) -> str:
+def remember(store, text, kind=None, about=None, supersedes=None, agent=None, project=None, entities=None, relations=None,
+             max_chars=MAX, tenant=None) -> str:
+    """entities: [{name, type}] and relations: [[head, TYPE, tail]] that the caller already knows. Relations become REL edges sourced by
+    this memory. With kind plus any of about/entities/relations, GLiNER does not run."""
     if kind is not None and kind not in KINDS:
         return f"kind must be one of {', '.join(KINDS)}"
     old = None
@@ -219,12 +222,29 @@ def remember(store, text, kind=None, about=None, supersedes=None, agent=None, pr
         old = store.query("MATCH (m:Memory {id:$i}) RETURN m.text", {"i": supersedes}, tenant)
         if not old:
             return f"supersedes id {supersedes} not found; use recall to find the memory id"
-    r = write.remember(store, text, kind=kind, about=about, supersedes=supersedes, agent=agent, project=project, tenant=tenant)
-    out = [f"{r['status']} [{r['id']}] {r['kind']}" + (f" about: {', '.join(r['entities'][:8])}" if r["entities"] else "")]
+    bad, ents, rels = [], [], []
+    for e in entities or []:
+        if isinstance(e, dict) and isinstance(e.get("name"), str) and e["name"].strip():
+            ents.append(e)
+        else:
+            bad.append(f"entity {e!r} needs a name")
+    for x in relations or []:
+        if isinstance(x, (list, tuple)) and len(x) == 3 and all(isinstance(s, str) for s in x):
+            rels.append(tuple(x))
+        else:
+            bad.append(f"relation {x!r} is not [head, TYPE, tail]")
+    with getattr(store, "write_lock", contextlib.nullcontext()):  # the memory and its edges are one write section
+        r = write.remember(store, text, kind=kind, about=about, supersedes=supersedes, agent=agent, project=project,
+                           entities=ents, relations=rels, tenant=tenant)
+        edges = [f"edge {h} -[{t}]-> {tl}: {x}" for h, t, tl in rels for x in _edge(store, h, t, tl, source=r["id"], agent=agent, tenant=tenant)]
+    ids = r.get("entity_ids", {})
+    names = [f"{n} [{ids[n]}]" if n in ids else n for n in r["entities"][:8]]
+    out = [f"{r['status']} [{r['id']}] {r['kind']}" + (f" about: {', '.join(names)}" if names else "")]
     if r["status"] == "reinforced":
         out.append("an equivalent memory already existed; its use count went up (nothing new written)")
     if old:
         out.append(f"superseded {supersedes}: {_t(old[0][0], 120)}")
+    out += edges + [f"skipped {b}" for b in bad]
     if r["conflicts"]:
         out.append("conflicts: similar active memories that may be stale; call remember again with supersedes=<id> to replace one:")
         out += [f"- [{c['id']}] sim {c['sim']:.2f} {_t(c['text'], 160)}" for c in r["conflicts"]]
@@ -238,7 +258,8 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
     """Multi-hop evidence pack. It does not answer: the caller reasons over seeds, paths, facts and cited evidence."""
     pq = parse_query(question)
     ginfo = {}
-    rs = _recall(store, question, k=8, weights={"graph": 2.0}, info=ginfo, tenant=tenant)
+    k = max(8, min(50, int(max_chars) // 300))
+    rs = _recall(store, question, k=k, weights={"graph": 2.0}, info=ginfo, tenant=tenant)
     seeds = ginfo["seeds"] if "seeds" in ginfo else ch.link_entities(store, pq["entities"], question, tenant)  # seeds the walk actually used
     out = ["# ask: evidence pack"]
     if seeds:
@@ -423,22 +444,17 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
     if none:
         out.append("- no current owner recorded: " + ", ".join(none))
     near = {}
-    for kid, kn, kt, an, cnt, cids in store.query(
-            "MATCH (c:Chunk)-[:MENTIONS]->(a:Entity), (c)-[:MENTIONS]->(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND k.id <> a.id "
-            "RETURN k.id, k.name, k.type, a.name, count(DISTINCT c), collect(DISTINCT c.id)", {"a": list(comps) + list(same)}, tenant):
-        k = near.setdefault(kid, [kn, kt, 0, []])
-        k[2] += cnt
-        k[3].append(f"{an} {cnt}x [{cids[0]}]")
-    for kid, kn, kt, an, how in store.query(
-            "MATCH (a:Entity)-[r:REL]-(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND r.valid_to_ms IS NULL RETURN k.id, k.name, k.type, a.name, r.type",
+    for kid, kn, kt, an, rel_type in store.query(
+            "MATCH (a:Entity)-[r:REL]-(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND r.valid_to_ms IS NULL "
+            "RETURN k.id, k.name, k.type, a.name, r.type",
             {"a": list(comps) + list(same)}, tenant):
-        k = near.setdefault(kid, [kn, kt, 0, []])
-        k[2] += 2
-        k[3].append(f"{an} {how}")
+        entry = near.setdefault(kid, [kn, kt, 0, []])
+        entry[2] += 2
+        entry[3].append(f"{an} {rel_type}")
     for kind in ("customer", "incident"):
         top = sorted((v for v in near.values() if v[1] == kind), key=lambda v: -v[2])[:6]
         if top:
-            out.append(f"## {kind.capitalize()}s linked to these components (co-mentioned in a chunk, or a REL edge)")
+            out.append(f"## {kind.capitalize()}s linked to these components (typed REL edges)")
             out += [f"- {v[0]}: " + "; ".join(v[3][:3]) for v in top]
     return _cap(out, max_chars, "a smaller max_hops")
 
@@ -450,33 +466,49 @@ _ENDS = {"OWNS": ("person", "service"), "MEMBER_OF": ("person", "team"), "DEPEND
          "WORKS_ON": ("person", "ticket"), "REPORTED": ("person", "incident"), "REPLACED_BY": ("service", "service"), "RENAMED_TO": ("service", "service")}
 
 
-@_guarded
-def relate(store, head, type, tail, source=None, supersede=False, agent=None, max_chars=MAX, tenant=None) -> str:
-    """Write (or correct) one typed edge head -[type]-> tail from now on. Names or ids; unknown names become new entities. supersede=True first
-    closes the current edge it replaces: OWNS (other owners of `tail`), RENAMED_TO and REPLACED_BY (other edges from `head`). Other types
-    are multi-valued, so supersede is refused for them."""
+def _lookup(store, name, tenant):
+    """Entity id by id, key or alias, without creating anything (the first step of resolve_entity)."""
+    r = store.query("MATCH (e:Entity) WHERE e.id=$n OR e.key=$k OR $k IN e.aliases RETURN e.id ORDER BY e.mentions DESC LIMIT 1",
+                    {"n": name, "k": normalize_key(name)}, tenant)
+    return r[0][0] if r else None
+
+
+def _edge(store, head, type, tail, source=None, supersede=False, end=False, agent=None, tenant=None) -> list[str]:
+    """relate's body, shared with remember: one typed REL edge head -[type]-> tail, or with end the current ones closed.
+    Returns report lines; a refusal is a single line."""
     t = re.sub(r"\W+", "_", type.strip()).upper()
     if t not in REL_NAMES:
-        return f"type must be one of {', '.join(REL_NAMES)}"
+        return [f"type must be one of {', '.join(REL_NAMES)}"]
+    if end and supersede:
+        return ["end closes an edge with no replacement; drop supersede (supersede replaces the edge it names)"]
     if supersede and t not in SUPERSEDABLE:
-        return f"supersede only applies to single-valued types ({', '.join(SUPERSEDABLE)}); {t} edges accumulate, so add it without supersede"
+        return [f"supersede only applies to single-valued types ({', '.join(SUPERSEDABLE)}); {t} edges accumulate, so add it without supersede"]
     from .resolve import resolve_entity
     ids = []
     for n, ty in zip((head, tail), _ENDS.get(t, ("other", "other"))):
-        i = store.query("MATCH (e:Entity {id:$i}) RETURN e.id", {"i": n}, tenant)
-        i = i[0][0] if i else resolve_entity(store, n, ty, tenant=tenant)
+        i = _lookup(store, n, tenant)  # id, key or alias; never creates
+        if not i and end:  # ending an edge must not create entities
+            return [f'no current edge {head} -[{t}]-> {tail} (unknown entity "{n}"; nothing written)']
+        i = i or resolve_entity(store, n, ty, tenant=tenant)
         if not i:
-            return f'"{n}" is ambiguous (a lone surname matching several people); use the entity id from explore/who'
+            return [f'"{n}" is ambiguous (a lone surname matching several people); use the entity id from explore/who']
         ids.append(i)
     a, b = ids
     if a == b:
-        return "head and tail are the same entity"
+        return ["head and tail are the same entity"]
     names = {r[0]: r[1] for r in store.query("MATCH (e:Entity) WHERE e.id IN $i RETURN e.id, e.name", {"i": ids}, tenant)}
+    line = f"[{a}] {names[a]} -[{t}]-> [{b}] {names[b]}"
     with getattr(store, "write_lock", contextlib.nullcontext()):  # check and create must not interleave with another writer
+        if end:
+            now = now_ms()
+            closed = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL "
+                                 "SET r.valid_to_ms=$n RETURN r.valid_from_ms", {"a": a, "b": b, "t": t, "n": now}, tenant)
+            if not closed:
+                return [f"no current edge {line} to end (nothing written)"]
+            return [f"ended {len(closed)} current edge(s) {line}, valid until {_d(now)} (kept as history)"]
         cur = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL RETURN r.valid_from_ms, r.source_id", {"a": a, "b": b, "t": t}, tenant)
-        line = f"[{a}] {names[a]} -[{t}]-> [{b}] {names[b]}"
         if cur:
-            return f"already current since {_d(cur[0][0])}: {line} (nothing written)"
+            return [f"already current since {_d(cur[0][0])}: {line} (nothing written)"]
         now, closed = now_ms(), []
         if supersede:
             pat = ("(x:Entity)-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE x.id <> $a" if t == "OWNS" else "(x:Entity {id:$a})-[r:REL {type:$t}]->(y:Entity) WHERE y.id <> $b")
@@ -486,7 +518,15 @@ def relate(store, head, type, tail, source=None, supersede=False, agent=None, ma
         store.query("MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CREATE (a)-[:REL {type:$t, conf:1.0, source_id:$s, valid_from_ms:$n, agent:$g, created_ms:$n}]->(b)",
                     {"a": a, "b": b, "t": t, "s": source, "n": now, "g": agent}, tenant)
     src = _src_names(store, [source], tenant).get(source, source) if source else "none given"
-    return _cap([f"created {line} valid from {_d(now)} by {agent or 'unknown agent'}, src {src}", *closed], max_chars, "a smaller max_chars")
+    return [f"created {line} valid from {_d(now)} by {agent or 'unknown agent'}, src {src}", *closed]
+
+
+@_guarded
+def relate(store, head, type, tail, source=None, supersede=False, end=False, agent=None, max_chars=MAX, tenant=None) -> str:
+    """Write (or correct) one typed edge head -[type]-> tail from now on. Names or ids; unknown names become new entities. supersede=True first
+    closes the current edge it replaces: OWNS (other owners of `tail`), RENAMED_TO and REPLACED_BY (other edges from `head`). Other types
+    are multi-valued, so supersede is refused for them. end=True only closes the current head -[type]-> tail edge(s), with no replacement."""
+    return _cap(_edge(store, head, type, tail, source, supersede, end, agent, tenant), max_chars, "a smaller max_chars")
 
 
 @_guarded
@@ -671,12 +711,16 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
                 if i + 1 < len(g) and g[i + 1][1] != o:
                     note += f" REPLACED on {_d(g[i + 1][0])} by {g[i + 1][2]}"
                 ev.append((d, f"{_d(d)} REL {line}{note} (effective {_d(d)}{', ended ' + _d(vt) if vt else ''}) src {src.get(s, s or '?')}", 3, 1))
-        for mid, kind, d, text, st, by, bd in store.query(
+        for mid, kind, d, text, st, by, bd, conflicts in store.query(
                 "MATCH (m:Memory)-[:MENTIONS]->(e:Entity {id:$i}) WHERE m.status <> 'merged' "
+                "OPTIONAL MATCH (m)-[:CONFLICTS_WITH]-(c:Memory) "
+                "WITH m, collect(DISTINCT c.id) AS conflicts "
                 "OPTIONAL MATCH (n:Memory)-[:SUPERSEDES]->(m) WHERE n.status <> 'merged' "
-                "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms) "
+                "RETURN m.id, m.kind, coalesce(m.valid_from_ms, m.created_ms), m.text, m.status, n.id, "
+                "coalesce(m.valid_to_ms, n.valid_from_ms, n.created_ms), conflicts "
                 "ORDER BY coalesce(m.valid_from_ms, m.created_ms) DESC LIMIT 200", {"i": eid}, tenant):
-            tag = f" SUPERSEDED on {_d(bd)} by [{by}]" if st == "superseded" else ""
+            tag = f" CONFLICT with {', '.join(f'[{i}]' for i in conflicts if i)}" if conflicts else ""
+            tag += f" SUPERSEDED on {_d(bd)} by [{by}]" if st == "superseded" else ""
             ev.append((d or 0, f"{_d(d)} memory [{mid}] {kind}{tag}: {_t(text, 200)}", 2, 1))
         terms = {normalize_key(x) for x in (name, *[a for a in (store.query("MATCH (e:Entity {id:$i}) RETURN e.aliases", {"i": eid}, tenant)[0][0] or [])])} | tterms
     else:

@@ -104,6 +104,48 @@ def test_brief_sections(g):
     assert "[m_old]" not in out  # superseded stays hidden
 
 
+def test_brief_excludes_noise_and_raw_quotes(g):
+    g.query(
+        "CREATE (:Memory {id:'m_sentiment', kind:'episodic', text:'The user felt frustrated about the failed demo.', "
+        "status:'active', confidence:0.9, created_ms:$d, uses:1})",
+        {"d": ms("2026-10-01T00:00:00")},
+    )
+    g.query(
+        "CREATE (:Memory {id:'m_quote', kind:'semantic', text:'\"This is a raw user quote that should not enter the brief.\"', "
+        "status:'active', confidence:0.9, created_ms:$d, uses:1})",
+        {"d": ms("2026-10-02T00:00:00")},
+    )
+    out = tools.brief(g)
+    assert "[m_sentiment]" not in out
+    assert "[m_quote]" not in out
+
+
+def test_ask_expands_evidence_budget(g, monkeypatch):
+    def result(i):
+        return {
+            "id": f"m_ask_{i}",
+            "label": "Memory",
+            "kind": "semantic",
+            "date_ms": NOW,
+            "status": "active",
+            "text": f"Evidence item {i} records the hackathon submission requirements and deadline.",
+            "source": {"agent": "codex", "project": "neo-cortex", "source_id": None},
+            "channels": {"dense": i + 1},
+            "paths": [],
+        }
+
+    seen = []
+
+    def recall(*args, **kwargs):
+        seen.append(kwargs["k"])
+        return [result(i) for i in range(kwargs["k"])]
+
+    monkeypatch.setattr(tools, "_recall", recall)
+    out = tools.ask(g, "hackathon submission requirements", max_chars=12000)
+    assert seen[0] > 8
+    assert 4200 < len(out) <= 12000
+
+
 def test_max_chars_respected(g):
     for fn, args in [(tools.brief, ()), (tools.timeline, ("Auth Service",)), (tools.recall, ("auth service",)), (tools.ask, ("who owns Auth Service",)),
                      (tools.explore, ("Auth Service",)), (tools.cypher, ("MATCH (e:Entity) RETURN e",))]:
@@ -165,6 +207,10 @@ def _chain(g):
       "CREATE (a)-[:REL {type:'DEPENDS_ON', conf:0.9, source_id:'d1#1', valid_from_ms:$d}]->(b), (z)-[:REL {type:'OWNS', conf:0.9, source_id:'d1#1', valid_from_ms:$d}]->(a)", {"d": ms("2026-04-01T00:00:00")})
     q("MATCH (c:Chunk {id:'d1#0'}), (k:Entity {id:'e_ck'}), (a:Entity {id:'e_acme'}), (i:Entity {id:'e_inc'}) "
       "CREATE (c)-[:MENTIONS {conf:1.0}]->(k), (c)-[:MENTIONS {conf:1.0}]->(a), (c)-[:MENTIONS {conf:1.0}]->(i)")
+    q("MATCH (a:Entity {id:'e_acme'}), (i:Entity {id:'e_inc'}), (c:Entity {id:'e_ck'}) "
+      "CREATE (a)-[:REL {type:'RELATED_TO', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(c), "
+      "(i)-[:REL {type:'REPORTED', conf:0.9, source_id:'d1#0', valid_from_ms:$d}]->(c)",
+      {"d": ms("2026-04-01T00:00:00")})
 
 
 def test_impact_blast_radius(g):
@@ -181,6 +227,43 @@ def test_impact_blast_radius(g):
     out = tools.impact(g, "Auth Service")
     assert "nothing depends on it" in out and "Checkout ->" not in out
     assert "No entity" in tools.impact(g, "zzqx unknown")
+
+
+def test_impact_ignores_co_mentioned_customers(g):
+    _chain(g)
+    q = g.query
+    q("CREATE (:Entity {id:'e_noise_customer', name:'Noise Customer', key:'noise customer', type:'customer', mentions:1})")
+    q("MATCH (c:Chunk {id:'d1#0'}), (n:Entity {id:'e_noise_customer'}) CREATE (c)-[:MENTIONS {conf:1.0}]->(n)")
+    out = tools.impact(g, "Auth Service")
+    assert "Acme Corp" in out
+    assert "Noise Customer" not in out
+
+
+def test_timeline_marks_conflicting_memories(g):
+    q = g.query
+    for i, text, d in [
+        ("m_deadline_a", "Hackathon deadline is 2026-10-18", "2026-10-10"),
+        ("m_deadline_b", "Hackathon deadline is 2026-10-19", "2026-10-11"),
+    ]:
+        q(
+            "CREATE (:Memory {id:$i, kind:'decision', text:$t, status:'active', confidence:0.9, "
+            "created_ms:$d, valid_from_ms:$d, uses:1, emb:vecf32($v)})",
+            {"i": i, "t": text, "d": ms(d + "T00:00:00"), "v": vec(text).tolist()},
+        )
+        q(
+            "MATCH (m:Memory {id:$i}), (e:Entity {id:'e_auth'}) "
+            "CREATE (m)-[:MENTIONS {conf:1.0}]->(e)",
+            {"i": i},
+        )
+    q(
+        "MATCH (a:Memory {id:'m_deadline_a'}), (b:Memory {id:'m_deadline_b'}) "
+        "CREATE (a)-[:CONFLICTS_WITH {found_ms:$d}]->(b)",
+        {"d": NOW},
+    )
+    out = tools.timeline(g, "Auth Service")
+    lines = [line for line in out.splitlines() if "m_deadline_" in line]
+    assert len(lines) == 2
+    assert all("CONFLICT" in line for line in lines)
 
 
 def test_relate_creates_supersedes_and_validates(g):

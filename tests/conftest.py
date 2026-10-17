@@ -1,11 +1,27 @@
 import re
 import os
+import socket
+
 import pytest
 
 from neo_cortex.store import Store
 
 # parallel test runs (several agents) pick distinct ports via NEO_TEST_PORT
 PORT = os.environ.get("NEO_TEST_PORT", "6391")
+
+
+@pytest.fixture(autouse=True)
+def _isolated_defaults(monkeypatch, tmp_path_factory):
+    """Every test runs against a throwaway NEO_HOME and an unused daemon URL, never the user's
+    default ~/.neo-cortex (DB port 6390) or the dogfood daemon on DEFAULT_URL 8765. A test that
+    needs other values sets the env itself (its monkeypatch runs after this one)."""
+    monkeypatch.setenv("NEO_HOME", str(tmp_path_factory.mktemp("neo-home")))
+    monkeypatch.setenv("NEO_PORT", PORT)
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        free = s.getsockname()[1]
+    monkeypatch.setenv("NEO_DAEMON_URL", f"http://127.0.0.1:{free}")
+    monkeypatch.delenv("NEO_FALKORDB_URL", raising=False)  # would redirect every Store away from NEO_HOME
 
 
 @pytest.fixture

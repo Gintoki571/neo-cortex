@@ -28,9 +28,12 @@ def _ts(v) -> int | None:
 
 def read_transcript(path: Path) -> tuple[dict, list[dict]]:
     """(meta, events). Event kinds: user, assistant (text blocks), tool (tool_use), error (failed tool_result), ok (tool_result).
-    Meta, sidechain, thinking, hook/command noise and sub-agent hand-backs are dropped. A line with bad JSON or a field of
-    an unexpected type is skipped whole."""
-    meta, ev, calls = {}, [], {}
+    Meta, thinking, hook/command noise and sub-agent hand-backs are dropped. Sidechain lines are dropped too, unless the
+    file has no main-thread line at all (a sub-agent transcript): then they are the conversation, its first user line is
+    the parent's brief (not the user's words) and the session id is the file stem, since sub-agents share their parent's
+    sessionId. A line with bad JSON or a field of an unexpected type is skipped whole."""
+    meta, ev, side, calls = {}, [], [], {}
+    main = brief = False
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         new = []  # committed only when the whole line parses
         try:
@@ -41,8 +44,13 @@ def read_transcript(path: Path) -> tuple[dict, list[dict]]:
             if d.get("timestamp") and "started" not in meta:
                 meta["started"] = d["timestamp"]
             m, t = d.get("message"), d.get("type")
-            if t not in ("user", "assistant") or d.get("isMeta") or d.get("isSidechain") or not isinstance(m, dict):
+            if t not in ("user", "assistant") or d.get("isMeta") or not isinstance(m, dict):
                 continue
+            side_line = bool(d.get("isSidechain"))
+            if side_line and t == "user" and not brief:  # the parent's brief, the first line of a sub-agent file
+                brief = True
+                continue
+            main = main or not side_line
             c, ts = m.get("content"), _ts(d.get("timestamp"))
             for b in [{"type": "text", "text": c}] if isinstance(c, str) else [b for b in c or [] if isinstance(b, dict)]:
                 bt = b.get("type")
@@ -61,8 +69,11 @@ def read_transcript(path: Path) -> tuple[dict, list[dict]]:
                                 "cmd": calls.get(b.get("tool_use_id"), "")})
         except (ValueError, TypeError, AttributeError):  # bad JSON, or a field of an unexpected type
             continue
-        ev += new
-    return meta, ev
+        (side if side_line else ev).extend(new)
+    if main:
+        return meta, ev
+    meta["session_id"] = path.stem
+    return meta, side
 
 
 # ---------------------------------------------------------------- text -> sentence units
@@ -341,6 +352,32 @@ def outcome_candidates(ev: list[dict]) -> list[dict]:
 
 # ---------------------------------------------------------------- selection
 
+_PLAN = re.compile(r"^(?:(?:next|then|now|finally|afterwards|later|also|so)\b,?\s+)?(?:the agent |we |i )?(?:will|'ll|is going to|are going to|plans? to)\b"
+                   r"|^let(?:'s|s| me)\b", re.I)  # narration of what comes next: not a memory
+_STATUS = re.compile(r"\b(?:(?:is|are|was|were|has been|have been)\s+(?:now\s+|already\s+|just\s+)?(?:committed|pushed|merged|deployed|shipped|done|"
+                     r"finished|completed|landed|passing|failing|blocked|in progress|pending|released|rerun)|today|yesterday|tonight|"
+                     r"this (?:morning|afternoon|week|session)|currently|as of|right now|at the moment)\b", re.I)  # ages out: episodic
+
+
+def _fragment(u: str) -> bool:
+    """A candidate that does not read alone: a lowercase or dangling start, a subordinate opener ('With `--stealth`, ...'),
+    a bare label (4 words or fewer, no verb) before a colon, a trailing ', which ...' clause, or under MIN_WORDS."""
+    k = u.rfind(", ")
+    tail = u[k + 2:] if k > 0 else ""
+    label = re.match(r"([^:]{1,60}):\s", u)
+    return (u[:1].islower() or bool(_DANGLING.match(u)) or bool(label and _words(label[1]) <= 4 and not _VERB.search(label[1]))
+            or bool(re.match(r"(?:with|without|using|during|under|after|before|once)\b[^,]{0,80},", u, re.I))
+            or bool(tail) and _words(tail) <= 4 and re.match(r"(?:which|this|that|it)\b", tail, re.I) is not None
+            or _words(u) < MIN_WORDS)
+
+
+def _keep(c: dict) -> bool:
+    """Preferences are the user's own words and always kept. Plans are kept only as decisions ('We will use X')."""
+    if c["kind"] == "preference":
+        return True
+    return not _fragment(c["text"]) and (c["kind"] == "decision" or not _PLAN.match(c["text"]))
+
+
 def _tok(s: str) -> set[str]:
     return {w for w in re.findall(r"[a-z0-9]+", s.lower()) if len(w) > 2}
 
@@ -352,7 +389,7 @@ def _same(a: set[str], b: set[str]) -> bool:
 def select(ev: list[dict]) -> list[dict]:
     """Best candidates: user preferences first (up to 5), then the highest-scored decisions, lessons and outcomes (15 in total).
     Near-duplicates keep the higher-ranked one; each candidate gets `score` and, for outcomes, a GLiNER-typed `kind`."""
-    cands = user_candidates(ev) + pattern_candidates(ev) + outcome_candidates(ev)
+    cands = [c for c in user_candidates(ev) + pattern_candidates(ev) + outcome_candidates(ev) if _keep(c)]
     if not cands:
         return []
     texts = [c["text"] for c in cands]
@@ -372,5 +409,6 @@ def select(ev: list[dict]) -> list[dict]:
     typed = [c for c in out if c["rank"] == 2]
     for c, (k, conf) in zip(typed, X.classify_memory_batch([c["text"] for c in typed])):
         # an event needs a past-tense marker; a present-tense statement is a fact whatever GLiNER says
-        c["kind"], c["conf"] = (k, conf) if k in ("semantic", "procedural") else ("episodic" if _PAST_EVENT.search(c["text"]) else "semantic", conf)
+        kind = k if k in ("semantic", "procedural") else "episodic" if _PAST_EVENT.search(c["text"]) else "semantic"
+        c["kind"], c["conf"] = ("episodic" if _STATUS.search(c["text"]) else kind), conf  # a time-bound status is an event
     return out

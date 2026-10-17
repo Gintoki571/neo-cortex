@@ -130,6 +130,14 @@ def _spec(m):
     return (1 / math.log(1 + max(m or 1, 1))) ** SPEC_POW
 
 
+SEED_FLOOR = 0.2  # the graph channel stays off when its best linked seed scores below this (conf x idf)
+
+
+def _idf(m, n):
+    """Corpus-relative rarity in (0, 1]: 1 for an entity named in one node of n, about 0.4 for one in 40 of 370."""
+    return math.log(1 + n / max(m or 1, 1)) / math.log(1 + n)
+
+
 def link_entities(store, ents, q, tenant=None, cap=SEEDS) -> dict:
     """Query entities -> {entity_id: (name, conf)}, at most `cap`. Exact key (GLiNER entity 1.0, query n-gram 0.7), fuzzy
     full-text on Entity.name (0.8 x similarity), a rare content word shared with an entity name (0.35-0.5), else the nearest
@@ -311,7 +319,14 @@ def graph(store, ents, q: str, f: Filt, tenant=None, n=N, paths: dict | None = N
                                   {"ids": list(anchors)}, tenant) if anchors else []:
         a[e] = max(a.get(e, 0), mc / (1 + rank[nid]))
     seeds = {e: v for e, v in seeds.items() if v[1] >= 0.65 or e in a or not anchors}  # weak links need support from the retrieved hits
-    if not seeds and not a:
+    if not seeds:  # anchors alone never start the walk: their entities are whatever the top hits happen to mention
+        return []
+    men = dict(store.query("MATCH (e:Entity) WHERE e.id IN $i RETURN e.id, e.mentions", {"i": list(seeds)}, tenant))
+    nodes = store.query("MATCH (n) WHERE n:Chunk OR n:Memory RETURN count(n)", None, tenant)[0][0]
+    strength = max(c * _idf(men.get(e), nodes) for e, (_, c) in seeds.items())  # hub or weakly linked seeds walk little
+    if info is not None:
+        info["strength"] = strength
+    if strength < SEED_FLOOR:
         return []
     mass, names, trail = ppr(store, {e: c for e, (_, c) in seeds.items()}, a, tenant, now, current)
     m = meta(store, [k for k in mass if k not in names], tenant)

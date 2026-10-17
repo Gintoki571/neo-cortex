@@ -180,14 +180,14 @@ The daemon exposes 15 MCP tools (`neo serve`, streamable HTTP at `/mcp`). Each t
 | --- | --- |
 | `brief(project?, agent?, max_chars?)` | Session-start context: preferences, active decisions, lessons, facts, recent episodes, open handoffs |
 | `recall(query, k?, since?, until?, kinds?)` | Hybrid search (vector, BM25, graph, temporal) with "why it matched" |
-| `remember(text, kind?, about?, supersedes?)` | Store a memory; dedupes, flags conflicts, links the memory it supersedes |
+| `remember(text, kind?, about?, supersedes?, entities?, relations?)` | Store a memory; dedupes, flags conflicts, links the memory it supersedes. With `kind` plus entities or relations you already know, nothing is extracted |
 | `ask(question)` | Multi-hop evidence pack: seeds, bridging paths, cited chunks and facts |
 | `explore(entity, hops?, since?)` | Compact neighbourhood of an entity (up to 3 hops) |
 | `connect(a, b, max_hops?)` | Shortest relation paths between two entities |
 | `who(topic)` | Owners and experts for a topic, from ownership paths and authorship |
 | `timeline(topic, since?, until?)` | Dated events about a topic, with the values stated in each source and supersession |
 | `impact(entity, max_hops?)` | Blast radius: what depends on it (current `DEPENDS_ON`, both ways), the owners to tell, linked customers and incidents |
-| `relate(head, type, tail, source?, supersede?)` | Write or correct a typed edge (`OWNS`, `DEPENDS_ON`, ...); `supersede` closes the edge it replaces |
+| `relate(head, type, tail, source?, supersede?, end?)` | Write or correct a typed edge (`OWNS`, `DEPENDS_ON`, ...); `supersede` closes the edge it replaces, `end` closes it with no replacement |
 | `read(id, max_chars?)` | Full text of a chunk, memory or document by id, with metadata and neighbour ids |
 | `ingest(path_or_text, kind?)` | Ingest a file, a directory or text (a directory can be queued with `background`) |
 | `handoff(to?, summary?, tasks?, done?)` | Leave work for another agent (shown in its `brief`), or mark a handoff done |
