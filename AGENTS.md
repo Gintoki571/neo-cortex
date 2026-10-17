@@ -94,7 +94,7 @@ When the user requests a durable behavior change, record it here or in the relev
 - `src/neo_cortex/AGENTS.md` - Python package: FalkorDB store, schema, graph data model contract, local models, write/retrieval/MCP modules. Owns `src/neo_cortex/`; `tests/`, `scripts/bench_models.py` and `pyproject.toml` follow it.
 - `data/` - eval and demo corpora: `data/synthetic/` (fictional Pellucid Pay company, AI-generated from `WORLD.md`, format contract in its section 0), `data/public/` (public FalkorDB GitHub data, fetched by `scripts/fetch_public.py`). No local AGENTS.md.
 - `eval/` - 40-question gold set (`gold.jsonl`) and `check_dataset.py`; see `eval/README.md`. No local AGENTS.md.
-- `docs/` - architecture, Cypher catalogue, blog draft, `lineage.md` (ideas the project builds on, with code locations and results). No local AGENTS.md.
+- `docs/` - architecture, Cypher catalogue, blog draft, `lineage.md` (ideas the project builds on, with code locations and results), `judges-guide.md` (plain explanation and likely judge questions). No local AGENTS.md.
 - `demo/AGENTS.md` - demo kit for the video: setup/teardown scripts, shot list (`SCRIPT.md`) with verified outputs, prompts, transcripts, CLI fallback demo.
 - `integrations/` - client integrations; `integrations/claude-code/` holds the hooks JSON and the 4-step setup README. No local AGENTS.md.
 - `.claude/skills/` - third-party agent skills (obscura-web, web-search, opensrc, repomix, codegraph, quality-and-security); tooling, not project code, no local AGENTS.md.

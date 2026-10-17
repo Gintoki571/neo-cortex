@@ -12,6 +12,8 @@ Neo-Cortex enters all three tracks with one system.
 - **02 Agent Memory and Coordination:** episodic, semantic, procedural and preference memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` memory consolidation (run on demand with `neo dream`).
 - **03 Company Brain:** docs, tickets, ADRs and chats in one graph; `who` finds owners and experts; `timeline` traces decisions to sources and shows what superseded what.
 
+**Explaining it:** [docs/judges-guide.md](docs/judges-guide.md) answers the questions a judge is likely to ask, with the numbers and where they come from.
+
 **Ideas it builds on** ([docs/lineage.md](docs/lineage.md)): GLiNER2.5 as a no-LLM "System 1" model, HippoRAG-style personalized PageRank, pg-jev-style cached decisions stored as graph nodes (now fully built: cached decisions + assertion gating), an RRSI-style acceptance rule for self-tuning (the tuner rejected its own weights), Dream-RSI-style offline memory consolidation (`neo dream`), bm25s with reciprocal rank fusion, anydoc for Office/PDF conversion, and an OKF knowledge bundle for the project's own research. The page says what was taken, where it lives in the code, what was measured and what was not built.
 
 ## Why the graph does real work
