@@ -134,10 +134,12 @@ def _module_title(path: Path) -> str:
 
 
 def _title(path: Path, fm: dict, body: str) -> str:
-    """Frontmatter title, else the first Markdown heading outside code fences, else "<parent dir>/<stem>"."""
+    """Frontmatter title, else the first `#` (then `##`) heading outside code fences, else "<parent dir>/<stem>"."""
     if fm.get("title"):
         return str(fm["title"])
-    m = re.search(r"^#[ \t]+(\S.*?)\s*$", re.sub(r"(?s)```.*?```", "", body), re.M)
+    body = re.sub(r"(?s)```.*?```", "", body)
+    # a level-1 heading wins; converted slides and sheets (anydoc) often start at level 2
+    m = re.search(r"^#[ \t]+(\S.*?)\s*$", body, re.M) or re.search(r"^##[ \t]+(\S.*?)\s*$", body, re.M)
     return m.group(1) if m else f"{path.parent.name}/{path.stem}"
 
 
