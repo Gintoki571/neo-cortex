@@ -17,7 +17,7 @@ Verified research for the Graph Hacks (FalkorDB) project. Every fact links to sa
 * [falkordb/](falkordb/) - core FalkorDB docs: Cypher, vector and fulltext indexes, algorithms, limits, Python client
 * [graphrag-sdk/](graphrag-sdk/) - GraphRAG-SDK 1.4.0: architecture, pluggability, falkordblite connectivity, retrieval
 * [models/](models/) - GLiNER2.5, EmbeddingGemma, the Jev (TypeSafe) claim check, System 1 classifier candidates
-* [extraction/](extraction/) - LangExtract pipeline and anydoc (document to Markdown) with test results
+* [extraction/](extraction/) - LangExtract pipeline and anydoc (document to Markdown) with test results; System 1 models (GLiNER-style encoders) in graph pipelines and what Neo-Cortex adopts
 * [okf/](okf/) - Open Knowledge Format overview, cheat sheet, tooling, mapping to a graph
 
 # Reference
