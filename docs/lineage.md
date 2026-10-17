@@ -4,7 +4,7 @@ For each outside idea: the source, what we took, where it lives in the code, wha
 
 | # | Idea | Source | What we built | Status |
 |---|---|---|---|---|
-| 1 | Cached typed judgments | [realZachi/pg-jev](https://github.com/realZachi/pg-jev) | Judgment cache for entity merges | Built. Assertion gating **not built** |
+| 1 | Cached typed judgments | [realZachi/pg-jev](https://github.com/realZachi/pg-jev) | Judgment cache + assertion gate on every extracted relation (fact / possibility / denial / plan; `modality` and `p_fact` stored on the edge) | Built: cached decisions + assertion gating |
 | 2 | Held-out acceptance for tuning | [google-research/rrsi](https://github.com/google-research/rrsi) | `eval/tune.py`, odd/even split | Built. Its weights were **rejected** |
 | 3 | Offline consolidation | [zhengkid/Dream-RSI](https://github.com/zhengkid/Dream-RSI) | Deterministic `neo dream` | Built, adapted |
 | 4 | Personalized PageRank | HippoRAG, HippoRAG 2 (arXiv 2405.14831, 2502.14802) | Graph channel `ppr()` | Built, in numpy |
@@ -18,11 +18,11 @@ HippoRAG arXiv IDs, the bm25s link and the RRF reference are from memory and wer
 
 ## 1. pg-jev
 
-- **Took:** judgments stored as data, with probabilities, cached by content.
-- **Code:** `resolve.py` `judge()` caches the GLiNER choice distribution as a `Judgment` node, keyed by a hash of question, text and labels. `resolve_entity()` calls it only for borderline matches (similarity 0.85 to 0.92).
-- **Not taken:** the Postgres extension. **Assertion gating is not built.** `extract.py` uses regex negation and former-state cues only.
+- **Took:** judgments stored as data, with probabilities, cached by content; plus assertion gating on every extracted relation (fact / possibility / denial / plan on its source sentence; `modality` and `p_fact` stored on the edge; current-state tools and the graph walk read facts only; agent-written edges are facts).
+- **Code:** `resolve.py` `judge()` caches the GLiNER choice distribution as a `Judgment` node, keyed by a hash of question, text and labels. `resolve_entity()` calls it only for borderline matches (similarity 0.85 to 0.92). `extract.py` `_gate` classifies each relation on its sentence: default gate = base GLiNER2.5 + a negation-cue rule.
+- **Not taken:** the Postgres extension. GLiNER2.5-Decide (`fastino/GLiNER2.5-Decide`, Apache-2.0) scores 20/25 on the trap probe too — same as model + rule — but is a second ~1.9 GB model about 6x slower, so it was not adopted.
 - **Known gap:** `resolve.py` line 148 lets a judge answer of "same" (>= 0.5) create a merge. The docstring and `src/neo_cortex/AGENTS.md` say the judge may only veto.
-- **Result:** none measured.
+- **Result:** trap probe of 25 hand-labelled sentences: model only 17/25, model + rule 20/25. Synthetic fact-only relations: precision 0.880 -> 0.903, recall 0.825 -> 0.812 (neutral F1 0.852 -> 0.855). The published gain (edge F1 0.330 -> 0.396 on one author's 10-doc corpus with Decide) did not reproduce here.
 
 ## 2. RRSI
 
@@ -47,10 +47,10 @@ HippoRAG arXiv IDs, the bm25s link and the RRF reference are from memory and wer
 
 ## 5. GLiNER2.5 as System 1
 
-- **Took:** a small non-generative encoder as extractor, typer, classifier and judge. No LLM SDK is imported under `src/neo_cortex/`.
-- **Code:** `extract.py` `extract_batch()` (entities, then per-sentence relations plus patterns) and `_softmax_batch()` (labelled distributions for `worth_keeping_batch` and `classify_memory_batch`). `session_mem.py` scores and types candidates. `resolve.py` `judge()`. `retrieve/query.py` `parse_query()`. `models.py` `gliner()` loads the checkpoint.
-- **Not built:** the GLiNER2.5-Decide checkpoint, and the edge-verification gate from lyonwj (F1 0.330 to 0.396 on a 10-document corpus). Both are research findings in `knowledge/extraction/system1-models-in-graphs.md` and `system1-adoption.md`, not reproduced here.
-- **Result:** `eval/graph_quality.md` gives relation precision 0.880 (66/75) and recall 0.825. CAUSED_BY recall is 0 of 5. On the repo's own 69 docs GLiNER produced only 12 relation edges (`eval/real_check.md`), so agents also write relations directly.
+- **Took:** a small non-generative encoder as extractor, typer, classifier and judge. No LLM SDK is imported under `src/neo_cortex/`. fp16 loading is opt-in (`NEO_GLINER_FP16=1`): on the GTX 1660 Ti it halves peak GPU memory (1098 -> 589 MB) but is ~2.4x slower per call.
+- **Code:** `extract.py` `extract_batch()` (entities, then per-sentence relations plus patterns) and `_softmax_batch()` (labelled distributions for `worth_keeping_batch` and `classify_memory_batch`). `_gate` classifies each relation on its source sentence (fact / possibility / denial / plan; `modality` and `p_fact` stored on the edge). `session_mem.py` scores and types candidates. `resolve.py` `judge()`. `retrieve/query.py` `parse_query()`. `models.py` `gliner()` loads the checkpoint. `joint.py` implements `NEO_EXTRACT` paths `split` (default), `combined` and `joint` (JointIE greedy decoding).
+- **Compared and not adopted:** GLiNER2.5-Decide (`fastino/GLiNER2.5-Decide`, Apache-2.0) matches model + rule at 20/25 on the trap probe but is a second ~1.9 GB model ~6x slower. JointIE (`joint`) and the combined schema (`combined`) were measured behind `NEO_EXTRACT`: precision 0.719 and 0.774 vs 0.880 for split, and slower on real documents (222 s and 140 s vs 92 s synthetic ingest), so the default stays split. The edge-verification gate from lyonwj (F1 0.330 to 0.396 on a 10-document corpus) did not reproduce here.
+- **Result:** `eval/graph_quality.md` gives relation precision 0.880 (66/75) and recall 0.825. CAUSED_BY recall is 0 of 5. With the fact-only gate, synthetic relations are precision 0.903, recall 0.812 (neutral F1 0.855). On the repo's own 69 docs GLiNER produced only 12 relation edges (`eval/real_check.md`), so agents also write relations directly.
 
 ## 6. EmbeddingGemma, text-only
 
@@ -70,7 +70,7 @@ HippoRAG arXiv IDs, the bm25s link and the RRF reference are from memory and wer
 - **Took:** anydoc for any file that is not Markdown, text or Python.
 - **Code:** `write.py` `_load()` reads `.md`, `.markdown` and `.txt` directly and chunks `.py` by definition. Everything else goes to `anydoc.to_markdown()`. `ingest_path()` counts `UnsupportedError` as unsupported, other failures as errors, and continues. Dependency: `firecrawl-anydoc` in `pyproject.toml`, unpinned.
 - **Not taken:** anydoc's hosted OCR. A scanned PDF exits 3 and is counted as an error.
-- **Result:** no retrieval number. `knowledge/extraction/anydoc-test-results.md` (anydoc 0.2.4) shows that text PDF, docx and xlsx convert, and a scanned PDF is refused. `tests/test_anydoc_ingest.py` runs the real write path: docx, xlsx, pptx, pdf, rtf and csv become one document each; html, json and eml count as unsupported; scanned and encrypted PDFs count as errors; a directory batch survives every bad file. HTML is not supported by anydoc.
+- **Result:** no retrieval number. `knowledge/extraction/anydoc-test-results.md` (anydoc 0.2.4) shows that text PDF, docx and xlsx convert, and a scanned PDF is refused. `tests/test_anydoc_ingest.py` runs the real write path: docx, xlsx, pptx, pdf, rtf and csv become one document each; html, json and eml count as unsupported; scanned and encrypted PDFs count as errors; a directory batch survives every bad file. HTML is converted by a built-in standard-library converter because anydoc has no HTML reader.
 
 ## 9. OKF and DOX
 

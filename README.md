@@ -12,7 +12,7 @@ Neo-Cortex enters all three tracks with one system.
 - **02 Agent Memory and Coordination:** episodic, semantic, procedural and preference memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` memory consolidation (run on demand with `neo dream`).
 - **03 Company Brain:** docs, tickets, ADRs and chats in one graph; `who` finds owners and experts; `timeline` traces decisions to sources and shows what superseded what.
 
-**Ideas it builds on** ([docs/lineage.md](docs/lineage.md)): GLiNER2.5 as a no-LLM "System 1" model, HippoRAG-style personalized PageRank, pg-jev-style cached decisions stored as graph nodes, an RRSI-style acceptance rule for self-tuning (the tuner rejected its own weights), Dream-RSI-style offline memory consolidation (`neo dream`), bm25s with reciprocal rank fusion, anydoc for Office/PDF conversion, and an OKF knowledge bundle for the project's own research. The page says what was taken, where it lives in the code, what was measured and what was not built.
+**Ideas it builds on** ([docs/lineage.md](docs/lineage.md)): GLiNER2.5 as a no-LLM "System 1" model, HippoRAG-style personalized PageRank, pg-jev-style cached decisions stored as graph nodes (now fully built: cached decisions + assertion gating), an RRSI-style acceptance rule for self-tuning (the tuner rejected its own weights), Dream-RSI-style offline memory consolidation (`neo dream`), bm25s with reciprocal rank fusion, anydoc for Office/PDF conversion, and an OKF knowledge bundle for the project's own research. The page says what was taken, where it lives in the code, what was measured and what was not built.
 
 ## Why the graph does real work
 
@@ -48,6 +48,18 @@ Keys (partial) scores, tool vs baseline: impact 0.80 vs 0.34, current owner 1.00
 Graph routing ties text retrieval on finding documents; the CIs include 0. Full vs vector+bm25: Recall@10 +0.006 [-0.029, +0.040], FullCover@10 +0.013 [-0.062, +0.087]. Since 2026-10-17 the graph channel only runs when a query entity links strongly (seed-strength gate), which fixed real-docs rankings (below) at a cost of 1-2 synthetic questions on `auto`.
 
 **Extraction** (`eval/graph_quality.py`, graded relation types on the ingested graph): relation precision 0.88, recall 0.83.
+
+### System 1 decisions, measured
+
+| Decision | How | Measured result | Kept |
+|---|---|---|---|
+| Edge assertion gate: every extracted relation is classified on its source sentence as fact / possibility / denial / plan; `modality` and `p_fact` are stored on the edge; current-state tools and the graph walk read facts only | Default gate = base GLiNER2.5 + a negation-cue rule; agent-written edges are facts | Trap probe of 25 hand-labelled sentences: model only 17/25, model + rule 20/25; synthetic fact-only relations P 0.880 -> 0.903, R 0.825 -> 0.812 (neutral F1 0.852 -> 0.855) | Yes — default |
+| GLiNER2.5-Decide (`fastino/GLiNER2.5-Decide`) as the gate | best wording on the same trap probe | 20/25, but a second ~1.9 GB model about 6x slower | No |
+| JointIE + one combined schema behind `NEO_EXTRACT` | typed entity-relation decoding vs the default split extractor | P 0.719 and 0.774 vs 0.880 for split; slower on real documents (222 s and 140 s vs 92 s synthetic ingest) | No — default stays split |
+| fp16 GLiNER on the GTX 1660 Ti | `NEO_GLINER_FP16=1` | Peak GPU memory halved (1098 -> 589 MB), ~2.4x slower per call | Opt-in, not default |
+| HTML ingestion | built-in standard-library converter (anydoc has no HTML reader) | HTML now converts to Markdown | Yes |
+
+The published gain this idea came from (edge F1 0.330 -> 0.396, one author's 10-doc corpus with Decide) did not reproduce here.
 
 **Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.39); the answer string is in the top-5 documents' chunks for 0.73 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 370 ms, `ask` about 650 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
 
