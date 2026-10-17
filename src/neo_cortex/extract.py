@@ -148,6 +148,8 @@ _LOWER_SLUG = re.compile(r"[a-z0-9][a-z0-9_.-]*")
 # (.txt .json .csv .log .rdb, bare format words such as "xlsx") are not entities: their text stays searchable in the chunk
 _REPO_FILE = re.compile(r"\.(?:py|ts|tsx|js|jsx|go|rs|java|rb|sh|sql|proto|tf|md|rst|ya?ml|toml|cfg|ini|conf|env|lock|ipynb)$", re.I)
 _REPO_BARE = {"Makefile", "Dockerfile", "package.json", "tsconfig.json"}
+_DATA_FILE = re.compile(r"\.(?:txt|json|jsonl|csv|tsv|xml|html?|log|rdb|pdf|xlsx?|docx?|pptx?|zip|gz|png|jpe?g)$", re.I)
+_DOTTED = re.compile(r"[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)+")
 _PERSON_WORD = r"(?:[A-Z]\.|[A-Z][A-Za-z]*(?:['’-][A-Z][A-Za-z]*)*|de|da|del|della|di|du|van|von|der|den|la|le|bin|al|el|dos|das)"
 _PERSON = re.compile(_PERSON_WORD + r"(?: " + _PERSON_WORD + r")*")
 
@@ -267,7 +269,10 @@ def _entities(raw: dict, text: str, title: str = "", author: str = "", teams=())
             if conf < ENTITY_CONF[etype] or _junk(name, etype) or (k in ents and ents[k]["conf"] == 0.95):
                 continue
             if etype == "file" and not _repo_file(name):
-                continue
+                if _DATA_FILE.search(name) or not _DOTTED.fullmatch(name):
+                    continue  # a data/evidence dump, not a repository file
+                # GLiNER types dotted names as files: snake_case keys (session.ttl_seconds) are settings, others (algo.SPpaths) components
+                etype = "config_setting" if name == name.lower() else "component"
             if k not in ents or conf > ents[k]["conf"]:
                 ents[k] = {"name": name, "type": etype, "conf": round(conf, 4)}
     if ctx:

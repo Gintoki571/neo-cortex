@@ -517,13 +517,13 @@ def _edge(store, head, type, tail, source=None, supersede=False, end=False, agen
         return ["end closes an edge with no replacement; drop supersede (supersede replaces the edge it names)"]
     if supersede and t not in SUPERSEDABLE:
         return [f"supersede only applies to single-valued types ({', '.join(SUPERSEDABLE)}); {t} edges accumulate, so add it without supersede"]
-    from .resolve import resolve_entity
+    from .resolve import PIN_EXPLICIT, resolve_entity
     ids = []
     for n, ty in zip((head, tail), _ENDS.get(t, ("other", "other"))):
         i = _lookup(store, n, tenant)  # id, key or alias; never creates
         if not i and end:  # ending an edge must not create entities
             return [f'no current edge {head} -[{t}]-> {tail} (unknown entity "{n}"; nothing written)']
-        i = i or resolve_entity(store, n, ty, tenant=tenant)
+        i = i or resolve_entity(store, n, ty, tenant=tenant, pin=PIN_EXPLICIT)  # a caller-named endpoint: exact key or alias, else new
         if not i:
             return [f'"{n}" is ambiguous (a lone surname matching several people); use the entity id from explore/who']
         ids.append(i)

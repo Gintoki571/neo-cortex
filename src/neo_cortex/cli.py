@@ -261,7 +261,7 @@ def parser():
     p.add_argument("--supersedes", help="id of the memory this one replaces")
     p.add_argument("--agent", default=_agent())
     p.add_argument("--project")
-    p.add_argument("--entity", action="append", help="name:type this memory is about, repeatable (split on the last colon)")
+    p.add_argument("--entity", dest="entities", action="append", help="name:type this memory is about, repeatable (split on the last colon)")
     p.add_argument("--rel", action="append", help="head|TYPE|tail edge the memory states, repeatable")
     p = add("ingest", "ingest a file or directory (a directory runs as a daemon job)", "path")
     p.add_argument("--wait", action="store_true", help="follow a directory job until it finishes")
@@ -307,7 +307,7 @@ def main(argv=None):
         mcp_server.main(["--transport", "http", "--port", str(a.port)] + ["--warm"] * a.warm)
         return 0
     try:  # flag syntax is checked before any network call
-        ents = [_entity(x) for x in getattr(a, "entity", None) or []]
+        ents = [_entity(x) for x in getattr(a, "entities", None) or []]  # dest "entities": explore/impact own the positional "entity"
         rels = [_relation(x) for x in getattr(a, "rel", None) or []]
     except ValueError as e:
         print(f"neo {a.cmd}: {e}", file=sys.stderr)

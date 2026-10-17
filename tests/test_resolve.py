@@ -1,4 +1,6 @@
 """Entity resolution: spelling variants merge into one entity with aliases; different products never merge."""
+import pytest
+
 from neo_cortex import resolve
 
 
@@ -90,3 +92,57 @@ def test_resolve_many_accepts_weighted_items(store, fake_models):
     ids = resolve.resolve_many(store, [("session cache", "service", 0.9, resolve.PIN_VOTE),
                                        ("session cache", "tool", 0.2, resolve.PIN_VOTE), ("Session Cache", "tool")])
     assert len(set(ids)) == 1 and _types(store, ids[0]) == "tool"           # 0.9 service vs 0.2 + 1.0 tool
+
+
+@pytest.fixture
+def same_vec(monkeypatch):
+    """Every text gets one identical embedding: the vector path would merge any pair the lexical guard lets through."""
+    import numpy as np
+
+    from neo_cortex import write
+    v = np.ones(768, dtype=np.float32) / np.sqrt(768)
+    f = lambda texts, titles=None: np.stack([v] * len(texts))  # noqa: E731
+    monkeypatch.setattr(resolve, "embed_docs", f)
+    monkeypatch.setattr(write, "embed_docs", f)
+
+
+def test_plural_s_after_a_digit_is_not_a_plural():
+    assert resolve._stem("bm25s") == ["bm25s"] and resolve._stem("k8s") == ["k8s"]
+    assert resolve._stem("services") == ["service"] and resolve._stem("auth services") == ["auth", "service"]
+    assert not resolve._guard("bm25s", "bm25", "tool", "tool") and not resolve._guard("k8s", "k8", "tool", "tool")
+    assert resolve._guard("services", "service", "service", "service")
+
+
+def test_explicit_remember_entity_does_not_merge_into_a_similar_name(store, fake_models, same_vec):
+    from neo_cortex import tools
+    bm25 = resolve.resolve_entity(store, "BM25", "tool")
+    out = tools.remember(store, "The agent indexes chunks with bm25s", kind="semantic", entities=[{"name": "bm25s", "type": "tool"}])
+    assert out.startswith("created"), out
+    assert _count(store) == 2
+    assert store.query("MATCH (m:Memory)-[:MENTIONS]->(e:Entity) RETURN e.key") == [["bm25s"]]
+    assert store.query("MATCH (e:Entity {id:$i}) RETURN e.aliases", {"i": bm25})[0][0] == []
+
+
+def test_explicit_relation_endpoint_does_not_merge_into_a_similar_name(store, fake_models, same_vec):
+    from neo_cortex import tools
+    resolve.resolve_entity(store, "BM25", "tool")
+    tools.remember(store, "The agent depends on bm25s", kind="semantic", relations=[["bm25s", "DEPENDS_ON", "checkout"]])
+    assert store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) RETURN a.key, r.type, b.key") == [["bm25s", "DEPENDS_ON", "checkout"]]
+    assert _count(store) == 3
+    tools.relate(store, "bm25s", "DEPENDS_ON", "checkout")  # relate resolves the same way: exact key or alias, else new
+    assert _count(store) == 3
+
+
+def test_plural_still_merges_through_ingest_resolution(store, fake_models, same_vec):
+    # default pin (a GLiNER or document vote): "services" merges with "service" by the plural rule
+    a, b = resolve.resolve_many(store, [("auth service", "service"), ("auth services", "service")])
+    assert a == b and _count(store) == 1
+
+
+def test_caller_named_lone_surname_stays_ambiguous_and_never_merges(store, fake_models):
+    resolve.resolve_entity(store, "Noor Haddad", "person")
+    resolve.resolve_entity(store, "Samir Haddad", "person")
+    assert resolve.resolve_entity(store, "Haddad", "person", pin=resolve.PIN_EXPLICIT) is None  # refuse, never guess
+    assert resolve.resolve_entity(store, "Haddad", "person") is None
+    assert resolve.resolve_entity(store, "Noor", "person", pin=resolve.PIN_EXPLICIT) not in (None, store.query(
+        "MATCH (e:Entity {key:'noor haddad'}) RETURN e.id")[0][0])  # a caller-named "Noor" is its own entity, not Noor Haddad

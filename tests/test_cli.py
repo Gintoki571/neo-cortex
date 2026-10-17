@@ -322,3 +322,13 @@ def test_remember_and_relate_flags_reach_the_tool_arguments(monkeypatch, capsys)
     n = len(sent)
     assert cli.main(["remember", "x", "--entity", "no-colon"]) == 2 and cli.main(["remember", "x", "--rel", "a|b"]) == 2
     assert len(sent) == n and "name:type" in capsys.readouterr().err
+
+
+def test_plain_names_on_explore_impact_who_are_not_checked_as_name_type(monkeypatch, capsys):
+    # explore's positional `entity` is a string; only remember's --entity (name:type) is validated
+    sent = []
+    monkeypatch.setattr(cli, "_post", lambda path, body, timeout=300: sent.append((path, body)) or "ok")
+    assert cli.main(["explore", "bm25s"]) == 0 and sent[-1][1]["entity"] == "bm25s"
+    assert cli.main(["impact", "bm25s"]) == 0 and sent[-1][1]["entity"] == "bm25s"
+    assert cli.main(["who", "bm25s"]) == 0 and sent[-1][1]["topic"] == "bm25s"
+    assert "must look like" not in capsys.readouterr().err

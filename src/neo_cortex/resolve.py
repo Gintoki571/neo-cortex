@@ -62,7 +62,8 @@ def variant_key(key: str) -> str:
 
 
 def _stem(key: str) -> list[str]:
-    return [t[:-1] if len(t) > 3 and t.endswith("s") else t for t in key.split()]
+    """Words with a plural "s" dropped; not after a digit ("bm25s", "k8s" are names, not plurals)."""
+    return [t[:-1] if len(t) > 3 and t.endswith("s") and not t[-2].isdigit() else t for t in key.split()]
 
 
 def _guard(a: str, b: str, ta: str, tb: str) -> bool:
@@ -121,16 +122,17 @@ def resolve_entity(store, name: str, type: str, emb=None, tenant=None, weight=1.
         _vote(store, r[0][0], type, weight, pin, tenant)
         return r[0][0]
     code = is_code(name)
+    fuzzy = not code and pin != PIN_EXPLICIT  # caller-given names (remember entities/relations, relate) merge by exact key or alias only
     if " " not in key and type in ("person", "team", "other") and not code:  # a lone first or last name: the unique matching person
         r = q("MATCH (e:Entity {type:'person'}) WHERE e.key STARTS WITH $p OR e.key ENDS WITH $s RETURN e.id",
               {"p": key + " ", "s": " " + key})
-        if len(r) == 1:
+        if len(r) == 1 and fuzzy:
             _add_alias(store, r[0][0], key, tenant)
             return r[0][0]
         if len(r) > 1 and type == "person":  # "Haddad" with two Haddads: ambiguous, so no entity at all
             return None
     vk = variant_key(key)
-    if vk and vk[0].isalpha() and not code:  # spelling variant of an existing entity: same letters-first prefix, same variant key
+    if vk and vk[0].isalpha() and fuzzy:  # spelling variant of an existing entity: same letters-first prefix, same variant key
         for cid, ckey in q("MATCH (e:Entity) WHERE e.key STARTS WITH $p RETURN e.id, e.key", {"p": vk.split()[0]}):
             if variant_key(ckey) == vk:
                 _add_alias(store, cid, key, tenant)
@@ -138,7 +140,7 @@ def resolve_entity(store, name: str, type: str, emb=None, tenant=None, weight=1.
                 return cid
     if emb is None:
         emb = embed_docs([name])[0]
-    cand = [] if code else q("CALL db.idx.vector.queryNodes('Entity','emb',4,vecf32($e)) YIELD node, score "
+    cand = [] if not fuzzy else q("CALL db.idx.vector.queryNodes('Entity','emb',4,vecf32($e)) YIELD node, score "
                              "RETURN node.id, node.key, node.type, 1 - score ORDER BY score", {"e": np.asarray(emb).tolist()})
     for cid, ckey, ctype, sim in cand:
         if sim < SOFT or not _guard(key, ckey, type, ctype):

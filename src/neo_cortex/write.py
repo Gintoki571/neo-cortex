@@ -362,9 +362,10 @@ def remember(store, text: str, kind: str | None = None, about=None, supersedes: 
             names[normalize_key(e["name"])] = (e["name"], e["type"] if e.get("type") in etypes else "other", 1.0, PIN_EXPLICIT)
         for a in ([about] if isinstance(about, str) else about or []):
             names.setdefault(normalize_key(a), (a, "other", 1.0, 0))
-        for h, _, tl in relations or []:
+        for h, _, tl in relations or []:  # caller-named endpoints resolve by exact key or alias only
             for n in (h, tl):
-                names.setdefault(normalize_key(n), (n, "other", 1.0, 0))
+                nm, t, w, _ = names.get(normalize_key(n), (n, "other", 1.0, PIN_EXPLICIT))
+                names[normalize_key(n)] = (nm, t, w, PIN_EXPLICIT)
         resolved = resolve_many(store, list(names.values()), tenant)
         eids = [i for i in resolved if i]
         ids = {n: i for (n, *_), i in zip(names.values(), resolved) if i}

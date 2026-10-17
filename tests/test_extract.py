@@ -99,7 +99,7 @@ def test_known_team_names_skip_generic_words():
 def test_file_entities_are_repo_paths_not_data_dumps():
     keep = ["eval/results.md", "retrieve/channels.py", "pyproject.toml", "docker-compose.yml", "README.md", "Makefile"]
     drop = ["wemakedevs-falkordb-hackathon.txt", "gh repo json", "okf-commits-all.json", "NEO_HOME/neo.rdb", "xlsx", "md",
-            "GoogleCloudPlatform/knowledge-catalog repo", "algo.SPpaths", "/tmp/falkordb.db", "LICENSE.txt"]
+            "GoogleCloudPlatform/knowledge-catalog repo", "/tmp/falkordb.db", "LICENSE.txt"]
     assert all(X._repo_file(n) for n in keep) and not any(X._repo_file(n) for n in drop)
     raw = {"entities": {"file": [{"text": n, "confidence": 0.95} for n in keep + drop]}}
     got = {v["name"] for v in X._entities(raw, "").values()}
@@ -111,3 +111,12 @@ def test_regex_ids_keep_their_type_over_gliner():
     ents = X._entities(raw, "We follow ADR-006 and IDN-212.")
     assert ents["adr 006"]["type"] == "decision" and ents["adr 006"]["pin"] == PIN_REGEX
     assert ents["idn 212"]["type"] == "ticket"
+
+
+def test_dotted_config_key_typed_as_file_becomes_config_setting():
+    from neo_cortex import extract as X
+    raw = {"entities": {"file": [{"text": "session.ttl_seconds", "confidence": 0.85},
+                                 {"text": "gh-repo.json", "confidence": 0.9}]}}
+    raw["entities"]["file"].append({"text": "algo.SPpaths", "confidence": 0.9})
+    got = {v["name"]: v["type"] for v in X._entities(raw, "Set session.ttl_seconds to 300; see gh-repo.json; algo.SPpaths.").values()}
+    assert got == {"session.ttl_seconds": "config_setting", "algo.SPpaths": "component"}
