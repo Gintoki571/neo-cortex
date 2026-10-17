@@ -174,10 +174,10 @@ def _paths(store, a, b, max_hops, tenant, count=3):
     rows = store.query(
         "MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'], "
         f"maxLen:{min(max(int(max_hops), 1), MAX_HOPS)}, relDirection:'both', pathCount:{int(count) * 4}}}) YIELD path "
-        "RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf, r.valid_to_ms]]",
+        "RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf, r.valid_to_ms, coalesce(r.modality,'fact')]]",
         {"a": a, "b": b}, tenant)
-    # shortcut: SPpaths cannot filter ended edges, so over-fetch and drop paths through them; a current path longer than the over-fetch is missed
-    return [p for p in rows if all(r[5] is None for r in p[1])][:count]
+    # shortcut: SPpaths cannot filter ended or non-fact edges, so over-fetch and drop paths through them; a current path longer than the over-fetch is missed
+    return [p for p in rows if all(r[5] is None and r[6] == "fact" for r in p[1])][:count]
 
 
 def _path_lines(store, paths, tenant, lead="") -> list[str]:
@@ -312,7 +312,7 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
     ids = list({*ids, *rel_ents})
     if ids:
         facts = store.query(
-            "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE (a.id IN $i AND b.id IN $i) OR ((a.id IN $r OR b.id IN $r) AND r.type IN $ty) "
+            "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE coalesce(r.modality,'fact')='fact' AND ((a.id IN $i AND b.id IN $i) OR ((a.id IN $r OR b.id IN $r) AND r.type IN $ty)) "
             "RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms "
             "ORDER BY r.valid_to_ms IS NULL DESC, r.conf DESC LIMIT 15", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them; current first
         if facts:
@@ -353,21 +353,22 @@ def explore(store, entity, hops=1, since=None, max_chars=MAX, tenant=None) -> st
     for h in range(1, max(1, min(int(hops), 3)) + 1):
         got = store.query(
             "MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $f RETURN a.name, b.id, b.name, b.type, r.type, startNode(r).id = a.id, "
-            "r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms", {"f": front}, tenant)
+            "r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms, coalesce(r.modality,'fact')", {"f": front}, tenant)
         front = []
-        for an, bid, bn, bt, rt, fwd, c, d, s, vt in got:
+        for an, bid, bn, bt, rt, fwd, c, d, s, vt, md in got:
             if (t0 and (d or 0) < t0) or bid in seen:
                 continue
             front.append(bid)
-            rows.append((h, an, bid, bn, bt, rt, fwd, c, d, s, vt))
+            rows.append((h, an, bid, bn, bt, rt, fwd, c, d, s, vt, md))
         seen |= set(front)
     src = _src_names(store, [r[9] for r in rows], tenant)
     out = [f"# [{eid}] {name} ({typ})"]
     if rows:
         out.append("## Neighbours")
-        for h, an, bid, bn, bt, rt, fwd, c, d, s, vt in rows:
+        for h, an, bid, bn, bt, rt, fwd, c, d, s, vt, md in rows:
             arrow = f"-[{rt}]->" if fwd else f"<-[{rt}]-"
-            out.append(f"- {'  ' * (h - 1)}{an} {arrow} [{bid}] {bn} ({bt}) {_d(d)}{', ended ' + _d(vt) if vt else ''} conf {c or 0:.2f} src {src.get(s, s or '?')}")
+            tag = f" ({md}, not a current fact)" if md != "fact" else ""  # non-fact edges (possibility, plan, denial) are never current
+            out.append(f"- {'  ' * (h - 1)}{an} {arrow} [{bid}] {bn} ({bt}){tag} {_d(d)}{', ended ' + _d(vt) if vt else ''} conf {c or 0:.2f} src {src.get(s, s or '?')}")
     docs = store.query("MATCH (d:Document)-[:HAS_CHUNK]->(c)-[:MENTIONS]->(e:Entity {id:$i}) RETURN d.id, d.kind, d.date_ms, d.title, count(c) "
                        "ORDER BY count(c) DESC, d.date_ms DESC LIMIT 6", {"i": eid}, tenant)
     if docs:
@@ -405,10 +406,10 @@ def _depends(store, ids, n, up, tenant) -> tuple[dict, bool]:
         if not front:
             break
         if up:
-            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE a.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL "
+            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE a.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' "
                               "RETURN b.id, b.name, a.id, r.source_id", {"f": list(front)}, tenant)
         else:
-            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE b.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL "
+            got = store.query("MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE b.id IN $f AND r.type='DEPENDS_ON' AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' "
                               "RETURN a.id, a.name, b.id, r.source_id", {"f": list(front)}, tenant)
         nxt = {}
         for x, xn, y, src in got:
@@ -455,14 +456,14 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
     comps = {**{eid: name}, **{a: v[1][0][1] for a, v in down.items()}}
     owners = {}
     for cid, oid, on, ot, d, s in store.query(
-            "MATCH (o:Entity)-[r:REL {type:'OWNS'}]->(c:Entity) WHERE c.id IN $c AND r.valid_to_ms IS NULL RETURN c.id, o.id, o.name, o.type, r.valid_from_ms, r.source_id",
+            "MATCH (o:Entity)-[r:REL {type:'OWNS'}]->(c:Entity) WHERE c.id IN $c AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' RETURN c.id, o.id, o.name, o.type, r.valid_from_ms, r.source_id",
             {"c": list(comps) + list(same)}, tenant):
         if oid not in [o[0] for o in owners.get(cid, [])]:  # one line per owner, however many OWNS edges say so
             owners.setdefault(cid, []).append((oid, on, ot, d, s))
     teams = [o[0] for os_ in owners.values() for o in os_ if o[2] == "team"]
     members = {}
     if teams:
-        for tid, pn in store.query("MATCH (p:Entity)-[r:REL {type:'MEMBER_OF'}]->(t:Entity) WHERE t.id IN $t AND r.valid_to_ms IS NULL RETURN t.id, p.name", {"t": teams}, tenant):
+        for tid, pn in store.query("MATCH (p:Entity)-[r:REL {type:'MEMBER_OF'}]->(t:Entity) WHERE t.id IN $t AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' RETURN t.id, p.name", {"t": teams}, tenant):
             members.setdefault(tid, []).append(pn)
     osrc = _src_names(store, [o[4] for os_ in owners.values() for o in os_], tenant)
     by_owner, none = {}, []  # one line per owner, with every affected component they own
@@ -479,7 +480,7 @@ def impact(store, entity, max_hops=3, max_chars=MAX, tenant=None) -> str:
         out.append("- no current owner recorded: " + ", ".join(none))
     near = {}
     for kid, kn, kt, an, rel_type in store.query(
-            "MATCH (a:Entity)-[r:REL]-(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND r.valid_to_ms IS NULL "
+            "MATCH (a:Entity)-[r:REL]-(k:Entity) WHERE a.id IN $a AND k.type IN ['customer','incident'] AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' "
             "RETURN k.id, k.name, k.type, a.name, r.type",
             {"a": list(comps) + list(same)}, tenant):
         entry = near.setdefault(kid, [kn, kt, 0, []])
@@ -535,21 +536,21 @@ def _edge(store, head, type, tail, source=None, supersede=False, end=False, agen
     with getattr(store, "write_lock", contextlib.nullcontext()):  # check and create must not interleave with another writer
         if end:
             now = now_ms()
-            closed = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL "
+            closed = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' "
                                  "SET r.valid_to_ms=$n RETURN r.valid_from_ms", {"a": a, "b": b, "t": t, "n": now}, tenant)
             if not closed:
                 return [f"no current edge {line} to end (nothing written)"]
             return [f"ended {len(closed)} current edge(s) {line}, valid until {_d(now)} (kept as history)"]
-        cur = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL RETURN r.valid_from_ms, r.source_id", {"a": a, "b": b, "t": t}, tenant)
+        cur = store.query("MATCH (a:Entity {id:$a})-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' RETURN r.valid_from_ms, r.source_id", {"a": a, "b": b, "t": t}, tenant)
         if cur:
             return [f"already current since {_d(cur[0][0])}: {line} (nothing written)"]
         now, closed = now_ms(), []
         if supersede:
             pat = ("(x:Entity)-[r:REL {type:$t}]->(b:Entity {id:$b}) WHERE x.id <> $a" if t == "OWNS" else "(x:Entity {id:$a})-[r:REL {type:$t}]->(y:Entity) WHERE y.id <> $b")
-            for xn, yn, vf in store.query(f"MATCH {pat} AND r.valid_to_ms IS NULL SET r.valid_to_ms=$n RETURN {'x.name, b.name' if t == 'OWNS' else 'x.name, y.name'}, r.valid_from_ms",
+            for xn, yn, vf in store.query(f"MATCH {pat} AND r.valid_to_ms IS NULL AND coalesce(r.modality,'fact')='fact' SET r.valid_to_ms=$n RETURN {'x.name, b.name' if t == 'OWNS' else 'x.name, y.name'}, r.valid_from_ms",
                                           {"a": a, "b": b, "t": t, "n": now}, tenant):
                 closed.append(f"closed {xn} -[{t}]-> {yn} (valid since {_d(vf)}, ended {_d(now)})")
-        store.query("MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CREATE (a)-[:REL {type:$t, conf:1.0, source_id:$s, valid_from_ms:$n, agent:$g, created_ms:$n}]->(b)",
+        store.query("MATCH (a:Entity {id:$a}), (b:Entity {id:$b}) CREATE (a)-[:REL {type:$t, conf:1.0, source_id:$s, valid_from_ms:$n, agent:$g, created_ms:$n, modality:'fact', p_fact:1.0}]->(b)",
                     {"a": a, "b": b, "t": t, "s": source, "n": now, "g": agent}, tenant)
     src = _src_names(store, [source], tenant).get(source, source) if source else "none given"
     return [f"created {line} valid from {_d(now)} by {agent or 'unknown agent'}, src {src}", *closed]
@@ -572,8 +573,8 @@ def read(store, id, max_chars=MAX, tenant=None) -> str:
     if r:
         text, pos, kind, dt, did, title, uri, author, status = r[0]
         n = store.query("MATCH (:Document {id:$d})-[:HAS_CHUNK]->(c) RETURN count(c)", {"d": did}, tenant)[0][0]
-        rels = [f"{a} -[{ty}]-> {b} ({_d(vf)}{', ended ' + _d(vt) if vt else ''})" for a, ty, b, vf, vt in q(
-            "MATCH (a:Entity)-[r:REL {source_id:$i}]->(b:Entity) RETURN a.name, r.type, b.name, r.valid_from_ms, r.valid_to_ms LIMIT 12")]
+        rels = [f"{a} -[{ty}]-> {b} ({_d(vf)}{', ended ' + _d(vt) if vt else ''}{'' if md == 'fact' else ', ' + md + ', not a current fact'})" for a, ty, b, vf, vt, md in q(
+            "MATCH (a:Entity)-[r:REL {source_id:$i}]->(b:Entity) RETURN a.name, r.type, b.name, r.valid_from_ms, r.valid_to_ms, coalesce(r.modality,'fact') LIMIT 12")]
         meta = [f'# chunk [{id}] {kind} {_d(dt)} | doc "{_t(title, 80)}" [{did}]' + (f" by {author}" if author else "") + (f" status {status}" if status else "") + f" | chunk {pos + 1} of {n}" + (f" | {uri}" if uri else ""),
                 f"prev: {'[' + did + '#' + str(pos - 1) + ']' if pos else 'none'}  next: {'[' + did + '#' + str(pos + 1) + ']' if pos + 1 < n else 'none'}"]
         if ents("Chunk"):
@@ -622,7 +623,7 @@ def who(store, topic, max_chars=MAX, tenant=None) -> str:
 
     if tids:
         rows = store.query(
-            "MATCH p=(x:Entity {type:'person'})-[:REL*1..2]->(t:Entity) WHERE t.id IN $t AND all(r IN relationships(p) WHERE r.type IN $ty) "
+            "MATCH p=(x:Entity {type:'person'})-[:REL*1..2]->(t:Entity) WHERE t.id IN $t AND all(r IN relationships(p) WHERE r.type IN $ty AND coalesce(r.modality,'fact')='fact') "
             "RETURN x.id, x.name, [n IN nodes(p) | [n.id, n.name]], [r IN relationships(p) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf, r.valid_to_ms]]",
             {"t": tids, "ty": OWN_TYPES}, tenant)
         src = _src_names(store, [r[2] for *_, rels in rows for r in rels], tenant)
@@ -728,8 +729,9 @@ def timeline(store, topic, since=None, until=None, max_chars=MAX, tenant=None) -
     if e:
         eid, name, typ = e
         head = f"# timeline [{eid}] {name} ({typ})"
-        edges = store.query("MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf, r.valid_to_ms "
-                            "ORDER BY coalesce(r.valid_from_ms, 0) DESC LIMIT 200", {"i": eid}, tenant)  # shortcut: the newest 200 per query bound the render
+        edges = store.query("MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) WHERE coalesce(r.modality,'fact')='fact' "
+                            "RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf, r.valid_to_ms "
+                            "ORDER BY coalesce(r.valid_from_ms, 0) DESC LIMIT 200", {"i": eid}, tenant)  # shortcut: the newest 200 per query bound the render; non-fact edges are not events
         # same relation type from the same side: a change of the other end is a change of value, not a new fact
         groups = {}
         for o, on, t, fwd, d, s, c, vt in edges:

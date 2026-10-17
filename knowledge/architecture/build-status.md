@@ -34,7 +34,7 @@ The plan is [/architecture/unified-plan.md](/architecture/unified-plan.md). Prod
 
 1. **Graph channel became Personalized PageRank.** The planned `algo.pageRank` has no personalization, so the built channel (`retrieve/channels.py`) runs numpy PPR over a local subgraph (max 3 hops, 500 nodes): reset mass is 50% linked query entities + 50% entities from the top dense/BM25 hits, chunk-to-entity mass weighted by confidence x specificity, so hub entities carry little. `algo.SPpaths` survives only in `connect`/`ask` bridging.
 2. **The eval showed document retrieval ties text, so the product pivoted to graph-native answer tools.** Graph-routed retrieval adds nothing measurable over vector+BM25 on document finding (see numbers below), so the graph's value was moved into `impact`/`who`/`timeline`/`relate`, which answer from edges (ownership, dependency, supersession) rather than from retrieved text. Impact/blast radius is the one category where the graph significantly beats text search.
-3. **Relation recall 0.41 -> 0.83.** Extraction moved from per-chunk GLiNER relations to per-sentence GLiNER plus deterministic patterns (owns/depends-on/rename/replaced/decided/caused-by), OWNS supersession from later-dated documents, and former-state cues blocked. Final graded quality (`eval/graph_quality.md`): precision 0.880, recall 0.825.
+3. **Relation recall roughly doubled after the extraction rework.** The 0.41 baseline is from an earlier pre-fix extraction run that appears in no `eval/` file; it is recorded only in the commit message of `65bd4c7` ("Extraction recall: relation recall 0.41 -> 0.83 at precision 0.87", 2026-10-17). The graded numbers that exist today (`eval/graph_quality.md`, fresh ingest vs `data/synthetic/WORLD.md`): precision 0.880 (66/75), recall 0.825. Extraction moved from per-chunk GLiNER relations to per-sentence GLiNER plus deterministic patterns (owns/depends-on/rename/replaced/decided/caused-by), OWNS supersession from later-dated documents, and former-state cues blocked.
 4. **Session memory extraction is deterministic-first.** The plan said GLiNER auto-extracts session text; built (`session_mem.py`), deterministic patterns pick self-contained candidates (preferences, decisions, lessons, outcomes) and GLiNER only scores and types them, with up to 15 memories stored per session.
 5. **REL edges are one relationship type with a `type` property**, so Cypher never builds relationship types from strings (the plan listed a fixed whitelist of edge types).
 6. **Tenants are separate graphs** (`neo_<tenant>`), so nodes carry no tenant property (the plan had a `tenant` property on every node).
@@ -49,12 +49,12 @@ Copied exactly from the eval files (repo paths; they are outside this bundle).
 | config | recall@10 | fullcover@10 |
 |---|---|---|
 | vector | 0.73 | 0.53 |
-| bm25 | 0.71 | 0.55 |
+| bm25 | 0.71 | 0.54 |
 | vector+bm25 | 0.75 | 0.59 |
-| auto (graph-routed, product default) | 0.75 | 0.59 |
-| full (all four channels, intent weights) | 0.75 | 0.60 |
+| auto (graph-routed, product default) | 0.74 | 0.56 |
+| full (all four channels, intent weights) | 0.76 | 0.60 |
 
-Paired bootstrap (1000 resamples, seed 0), all questions recall@10, `full` vs `vector+bm25+temporal`: delta -0.002 [-0.031, +0.031] (n=80, inside noise); `auto`: -0.006 [-0.048, +0.033]. Document retrieval ties text.
+Paired bootstrap (1000 resamples, seed 0), all questions vs `vector+bm25` (`eval/results.md`, "Paired bootstrap"): recall@10 `full` +0.006 [-0.029, +0.040] (n=80, inside noise), `auto` -0.010 [-0.044, +0.023]; fullcover@10 `full` +0.013 [-0.062, +0.087], `auto` -0.025 [-0.087, +0.037]. Document retrieval ties text.
 
 **Graph-native answers** (`eval/answers.md`, run `final`; 30 questions, 4000-char budget on both sides; baseline = top-8 vector chunks; "all keys" = every expected key present):
 
@@ -65,14 +65,36 @@ Paired bootstrap (1000 resamples, seed 0), all questions recall@10, `full` vs `v
 | Value changes (10) | 0.80 | 1.00 | -0.20 [-0.50, +0.00], inside noise, tool lower |
 | Overall (30) | 0.87 | 0.73 | +0.13 [-0.03, +0.33], inside noise |
 
-**Tool checks** (`eval/results.md`, "Tools vs vector-only baselines"): `ask` gold answer keys multi 0.77 / ownership 0.82 vs baseline 0.85 / 0.82, mean output 3778 vs 9950 chars, ask 207 ms; `who` with the gold non-person entity as topic: gold person in top 3 (any) 0.94 vs baseline 0.71; `timeline`: both old+new values listed 1.00 vs baseline 0.75.
+**Tool checks** (`eval/results.md`, "Tools vs vector-only baselines"): `ask` gold answer keys multi 0.65 / ownership 0.76 (n=26/17) vs baseline 0.85 / 0.82, mean output 3810 vs 9932 chars, ask 205 ms; `who` with the gold non-person entity as topic: gold person in top 3 (any) 0.94 vs baseline 0.71; `timeline`: both old+new values listed 1.00 vs baseline 0.75.
 
 **Extraction** (`eval/graph_quality.md`, fresh ingest vs `data/synthetic/WORLD.md`): REL edges 97 (79 distinct); overall graded precision 0.880 (66/75), recall 0.825; OWNS 0.93/1.00, DECIDED 1.00/1.00, CAUSED_BY recall 0/5.
 
 **Concurrency** (`eval/stress.md`, 2026-10-17 run): 16 clients, 13.1 ops/s, 0 errors, 0 lost writes; daemon shut down cleanly on SIGTERM with no orphan server.
 
+# Built on 2026-10-17 (final day)
+
+One line each; the source is the named commit or eval file.
+
+- Agent-direct graph writes: `remember(kind, entities, relations)` writes without GLiNER extraction; `relate(end=True)` retires an edge as history (commit `bc62cc8`).
+- Code ingestion: `.py` files are chunked via `ast` and yield component entities (commit `bc62cc8`).
+- OKF frontmatter fields: `doc_type`/`description`/`tags` from bundle frontmatter are stored on Document nodes (commit `bc62cc8`).
+- Single-owner store lock: exclusive `flock` per `NEO_HOME`; the CLI never falls back to a local store for an explicit `NEO_DAEMON_URL` (commit `bc62cc8`).
+- CUDA OOM fallback to CPU under `NEO_DEVICE=auto` (commit `bc62cc8`).
+- Entity type by weighted vote across mentions (commit `6898afb`).
+- File-entity rule: file entities are created only for repo paths (commit `6898afb`).
+- Seed-strength gate for the graph channel: no graph channel without a strong seed, channel weight scaled by seed strength (commit `bc62cc8`).
+- Decision routing (commit `bc62cc8`).
+- Query-matching snippets in `recall`/`ask` output (commit `6898afb`).
+- Real-docs check (`eval/real_check.py` + `eval/real_gold.jsonl`, commit `e4e196d`; numbers in `eval/real_check.md`): the repository's own 69 docs, 30 questions - Hit@5 0.53, MRR 0.39, AnswerIn chunk5 0.73; entity checks 4/5 PASS; targeted relation checks 0/5 found; only 12 REL edges in the whole corpus.
+- MCP smoke test (`scripts/mcp_smoke.py`, commit `e4e196d`; numbers in `eval/mcp_smoke.md`): 15 of 15 tools OK on commit `bc62cc8`, tool descriptions plus schemas cost about 2077 tokens of agent context per session.
+- anydoc ingestion verified for docx, xlsx, pptx, pdf, rtf, csv - converts with tables, entities and relations; unsupported/scanned/encrypted files are counted, never abort a batch (commit `2637587`).
+- `docs/lineage.md`: source, what we took, code location and measured result per outside idea (commit `504c816`).
+- Third-party evidence no longer redistributed: 410 files deleted from `knowledge/`, each source now recorded in frontmatter as `url` + `sha256` + `retrieved_at` + `redistributed: false` (commit `dd6f36f`; `knowledge/log.md`, 2026-10-17).
+
 # Open risks
 
+- GLiNER finds few relations in real prose (`eval/real_check.md`: 12 REL edges in 69 docs, most from command text in demo scripts), so on real data agents should write relations directly (`remember(entities=, relations=)`, `relate`). JointIE and a combined schema were measured and did not beat the split extractor (2026-10-17: P 0.719 / 0.774 vs 0.880).
+- The edge gate (pg-jev-style assertion gating) is built on the base model and neutral on synthetic F1 (0.852 -> 0.855, fact-only view); the base model misses most negations. A GLiNER2.5-Decide comparison is in progress; no result is claimed here.
 - Small evaluation: one synthetic corpus, 110 questions written by the team that built the tools; numbers show the design works on this corpus, not general accuracy.
 - Value-change answers did not beat the text baseline (0.80 vs 1.00 all keys) and `timeline`'s win is inside noise (n=8).
 - CAUSED_BY relations are never extracted (recall 0/5); some other relations are absent from the graph, and answers then depend on the text channels.

@@ -15,3 +15,4 @@ __pycache__/
 
 # third-party public data: regenerate with scripts/fetch_public.py (not redistributed)
 /data/public/
+/gliner2.5-decide/

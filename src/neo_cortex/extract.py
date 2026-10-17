@@ -2,6 +2,7 @@
 
 `extract` returns entities typed per the data-model contract and relations from its whitelist. Nothing here calls an LLM.
 """
+import os
 import re
 from datetime import datetime, timezone
 
@@ -507,8 +508,8 @@ def _relations(ents: dict, windows: list[str], gl: list[dict], title: str = "", 
         if rtype == "DEPENDS_ON":  # a dependency endpoint is a service whatever else it was called
             ents[hk]["type"] = ents[tk]["type"] = "service"
         key = (hk, rtype, tk)
-        if key not in rels or conf > rels[key]["conf"]:
-            rels[key] = {"head": ents[hk]["name"], "type": rtype, "tail": ents[tk]["name"], "conf": round(conf, 4)}
+        if key not in rels or conf > rels[key]["conf"]:  # `win`: the window being read (the sentence the edge came from), for _gate
+            rels[key] = {"head": ents[hk]["name"], "type": rtype, "tail": ents[tk]["name"], "conf": round(conf, 4), "win": win}
             if eff and rtype in _EFFECTIVE:
                 rels[key]["valid_from_ms"] = eff
 
@@ -619,6 +620,9 @@ def extract_batch(texts: list[str], titles: list[str] | None = None, authors: li
     `authors` give each text's document context (`teams`: team names already known): "Decided by" targets the title's ADR id, "I own X" names the author."""
     if not texts:
         return []
+    from .joint import extract_alt, mode  # NEO_EXTRACT: split (below) | combined | joint (joint.py)
+    if mode() != "split":
+        return extract_alt(texts, titles, authors, teams, kind, mode())
     m = gliner()
 
     def run(ts, schema, bs, **kw):
@@ -653,12 +657,60 @@ def extract_batch(texts: list[str], titles: list[str] | None = None, authors: li
         for who, rt, thing, wt, tt in _table_facts(t):
             if (normalize_key(who), rt, normalize_key(thing)) not in seen and rel_ok(rt, wt, tt):
                 rels.append({"head": who, "type": rt, "tail": thing, "conf": 0.9})
-        out.append({"entities": list(e.values()), "relations": rels})
+        out.append({"entities": list(e.values()), "relations": _gate(rels)})
     return out
 
 
 def extract(text: str) -> dict:
     return extract_batch([text])[0]
+
+
+# pg-jev assertion gate: how the sentence an edge came from asserts it. Short labels; the full distribution is read (see _softmax_batch)
+_MODALITY = {"fact": "fact", "possibility": "possibility", "denial": "denial", "plan or forecast": "plan"}
+DENIAL_MAX = 0.5  # a denial at or above this probability is not written as an edge
+
+
+def _edge_sentence(win: str, head: str, tail: str) -> str:
+    """The sentence of a window that names the edge's ends: a window can hold a denial in another sentence."""
+    best, score = win, 0
+    for s in _SENT.split(win):
+        n = (head.lower() in s.lower()) + (tail.lower() in s.lower())
+        if n > score:
+            best, score = s, n
+    return best
+
+
+def _negated(s: str, head: str, tail: str) -> bool:
+    """A `_NEG` cue right before the later of the edge's two names: 'does not depend on the X', 'no longer calls the X'."""
+    pos = [i for i in (s.lower().find(e.lower()) for e in (head, tail)) if i >= 0]
+    return bool(pos) and bool(_NEG.search(s[:max(pos)][-40:]))
+
+
+def _gate(rels: list[dict]) -> list[dict]:
+    """One modality call per document over the sentences its edges came from. A denial (p >= DENIAL_MAX) drops the edge; a
+    possibility or plan keeps it at conf x p_fact with `modality` set; a fact keeps its conf. Edges with no window (table
+    facts) are facts. Default NEO_GATE_MODEL=rule: a negation cue (`_negated`) drops the edge instead, and the model's denial
+    mass counts as fact (the base model misses negations and calls conditionals denials: 20/25 vs 17/25 on the trap probe,
+    the same as GLiNER2.5-Decide's 20/25 with no second model). NEO_GATE_MODEL=model trusts the model's denial."""
+    rule = os.environ.get("NEO_GATE_MODEL", "rule") != "model"
+    wins = [r.pop("win", None) for r in rels]
+    sents = [_edge_sentence(w, r["head"], r["tail"]) if w else None for r, w in zip(rels, wins)]
+    todo = sorted({s for s in sents if s})
+    probs = dict(zip(todo, _softmax_batch(todo, "modality", list(_MODALITY)))) if todo else {}
+    out = []
+    for r, s in zip(rels, sents):
+        p = probs.get(s)
+        if p is None:
+            out.append({**r, "modality": "fact", "p_fact": 1.0})
+            continue
+        if rule:
+            if _negated(s, r["head"], r["tail"]):
+                continue
+            p = {**p, "fact": p["fact"] + p["denial"], "denial": 0.0}
+        if p["denial"] < DENIAL_MAX:
+            mod, pf = _MODALITY[max(p, key=p.get)], round(p["fact"], 4)
+            out.append({**r, "conf": round(r["conf"] * pf, 4) if mod != "fact" else r["conf"], "modality": mod, "p_fact": pf})
+    return out
 
 
 def _softmax_batch(texts: list[str], task: str, labels: list[str]) -> list[dict[str, float]]:

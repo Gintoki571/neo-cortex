@@ -15,8 +15,9 @@ CONVERTED = {
     "sample.pdf": (False, "Session cache ownership"),
     "sample.rtf": (True, None),
     "sample.csv": (True, None),
+    "sample.html": (True, "Session cache ownership"),
 }
-UNSUPPORTED = ["sample.html", "sample.json", "sample.eml"]  # anydoc has no reader for these
+UNSUPPORTED = ["sample.json", "sample.eml"]  # anydoc has no reader for these
 FAILS = ["scanned.pdf", "encrypted.pdf"]                   # anydoc raises NeedsOcr / Encrypted
 
 
@@ -44,6 +45,20 @@ def test_reingest_unchanged_docx_is_skipped(store, fake_models):
     write.ingest_path(store, FIX / "sample.docx")
     r = write.ingest_path(store, FIX / "sample.docx")
     assert r["skipped"] == 1 and r["documents"] == 0
+
+
+def test_html_strips_script_and_style_content(store, fake_models, tmp_path):
+    path = tmp_path / "stripped.html"
+    path.write_text(
+        "<html><head><title>Visible title</title><style>.secret { color: red; }</style></head>"
+        "<body><script>secret_token = 'do not ingest'</script><p>Visible content</p>"
+        "<nav>Navigation only</nav><footer>Footer only</footer></body></html>"
+    )
+    r = write.ingest_path(store, path)
+    assert r["documents"] == 1 and r["unsupported"] == 0
+    text = _text(store)
+    assert "Visible content" in text
+    assert all(value not in text for value in ("secret_token", "color: red", "Navigation only", "Footer only"))
 
 
 @pytest.mark.parametrize("name", UNSUPPORTED)

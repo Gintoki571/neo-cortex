@@ -80,7 +80,9 @@ def _guard(key, m, fn):
 def gliner():
     def build(device):
         from gliner2 import AutoExtractor
-        return AutoExtractor.from_pretrained(settings().gliner, map_location=device)
+        # fp16 on CUDA is opt-in (NEO_GLINER_FP16=1): half the memory but 2.4x slower per call on a GTX 1660 Ti (sm_75, no bf16); CPU and the OOM fallback stay fp32
+        fp16 = device == "cuda" and os.environ.get("NEO_GLINER_FP16", "0") == "1"
+        return AutoExtractor.from_pretrained(settings().gliner, map_location=device, quantize=fp16)
     return _Guarded("gliner", _load("gliner", build))
 
 

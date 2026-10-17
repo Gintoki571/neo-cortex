@@ -201,7 +201,7 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
     """HippoRAG-style Personalized PageRank over the local Entity/Chunk/Memory graph around the seeds.
     qseeds/aseeds: {entity_id: weight} (query-linked; mentioned by the top dense/BM25 hits), scaled by specificity.
     Walk: entity -> REL neighbours (conf, undirected; BETA of its mass) or the chunks mentioning it (the rest, uniform);
-    chunk -> its entities (conf x specificity). `current` skips REL edges already ended. Returns (mass {node_id: float},
+    chunk -> its entities (conf x specificity). `current` skips REL edges already ended; every mode skips non-fact edges. Returns (mass {node_id: float},
     names {entity_id: name}, trail(node_id) -> [name, (rel, forward, name), ...] along a shortest hop path from a seed).
     numpy, not algo.pageRank: FalkorDB's PageRank has no personalization vector, and the subgraph is capped at MAX_NODES."""
     seeds = {**aseeds, **qseeds}
@@ -210,7 +210,7 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
     seeds = {e: w for e, w in seeds.items() if e in ents}
     nb, ch_of, ent_of = {}, {}, {}  # entity -> {entity: [w, type, fwd]}, entity -> {chunk: conf}, chunk -> {entity: conf}
     front, done = set(ents), set()
-    cond = "AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)" if current else ""
+    cond = "AND coalesce(r.modality,'fact')='fact' " + ("AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)" if current else "")  # non-fact edges never walk
     new_c = set()  # chunks admitted this hop, counted before their entities are added
     room = lambda: MAX_NODES - len(ents) - len(ent_of) - len(new_c)  # noqa: E731  nodes still allowed; the matrix is this size squared
     for _ in range(HOPS):

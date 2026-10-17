@@ -1,5 +1,6 @@
 """Write path: documents (markdown + YAML frontmatter, other formats via anydoc), agent memories, session transcripts."""
 import ast
+from html.parser import HTMLParser
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -151,8 +152,81 @@ def _strs(v) -> list[str]:
 
 # ---------------------------------------------------------------- documents
 
+class _HTMLMarkdown(HTMLParser):
+    _DROP = {"script", "style", "nav", "footer"}
+    _BLOCKS = {"p", "li", "h1", "h2", "h3", "h4", "h5", "h6"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.lines, self.buffer, self.title, self.rows = [], [], None, []
+        self.row, self.cell = None, None
+        self.heading = False
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._DROP:
+            self.skip += 1
+        elif not self.skip and tag == "title":
+            self.title = []
+        elif not self.skip and tag == "tr":
+            self.row = []
+        elif not self.skip and tag in {"th", "td"}:
+            self.cell = []
+
+    def handle_endtag(self, tag):
+        if tag in self._DROP:
+            self.skip -= 1
+        elif self.skip:
+            return
+        elif tag == "title":
+            self.title = "".join(self.title).strip()
+        elif tag in {"th", "td"} and self.cell is not None:
+            self.row.append(" ".join("".join(self.cell).split()))
+            self.cell = None
+        elif tag == "tr" and self.row is not None:
+            if self.row:
+                self.rows.append(self.row)
+            self.row = None
+        elif tag in self._BLOCKS:
+            text = " ".join("".join(self.buffer).split())
+            if text:
+                prefix = "#" * int(tag[1:]) + " " if tag.startswith("h") else "- " if tag == "li" else ""
+                self.lines.append(prefix + text)
+                self.heading |= tag == "h1"
+            self.buffer = []
+
+    def handle_data(self, data):
+        if self.skip:
+            return
+        if self.cell is not None:
+            self.cell.append(data)
+        elif isinstance(self.title, list):
+            self.title.append(data)
+        else:
+            self.buffer.append(data)
+
+    def markdown(self):
+        if self.rows:
+            table = ["| " + " | ".join(self.rows[0]) + " |",
+                     "| " + " | ".join("---" for _ in self.rows[0]) + " |"]
+            table += ["| " + " | ".join(row) + " |" for row in self.rows[1:]]
+            self.lines.extend(table)
+        return "\n\n".join(self.lines).strip(), (self.title if not self.heading else None)
+
+
+def _html_to_markdown(path: Path) -> tuple[dict, str]:
+    parser = _HTMLMarkdown()
+    parser.feed(path.read_text(encoding="utf-8", errors="replace"))
+    body, title = parser.markdown()
+    return ({"title": title} if title else {}), body
+
+
 def _load(path: Path) -> tuple[dict, str, str]:
     """(frontmatter, body, raw text) for a file; non-text formats go through anydoc."""
+    if path.suffix.lower() in {".html", ".htm"}:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+        fm, body = _html_to_markdown(path)
+        return fm, body, raw
     if path.suffix.lower() in _CODE_EXT:
         raw = path.read_text(encoding="utf-8", errors="replace")
         return {}, raw, raw
@@ -192,7 +266,7 @@ def _supersede(store, eids: list[str], tenant) -> None:
     """Close the validity of single-valued relations: an edge ends when a later document names a different counterpart."""
     for rtype, side in _SINGLE:
         key, other = ("b", "a") if side == "tail" else ("a", "b")
-        rows = store.query(f"MATCH (a:Entity)-[r:REL {{type:$t}}]->(b:Entity) WHERE {key}.id IN $e "
+        rows = store.query(f"MATCH (a:Entity)-[r:REL {{type:$t}}]->(b:Entity) WHERE {key}.id IN $e AND coalesce(r.modality,'fact')='fact' "
                            f"RETURN id(r), {key}.id, {other}.id, r.valid_from_ms, r.valid_to_ms, a.type = 'person'",
                            {"t": rtype, "e": eids}, tenant)
         groups: dict[tuple, list] = {}
@@ -286,7 +360,7 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
                 hk, tk = normalize_key(r["head"]), normalize_key(r["tail"])
                 if hk in ids and tk in ids:
                     rels.append({"h": ids[hk], "t": ids[tk], "type": r["type"], "conf": r["conf"], "src": cid[i],
-                                 "vf": r.get("valid_from_ms") or date_ms})
+                                 "vf": r.get("valid_from_ms") or date_ms, "mod": r.get("modality", "fact"), "pf": r.get("p_fact", 1.0)})
         lab = {normalize_key(x) for x in labels}  # frontmatter labels that name known entities (auth-service, identity)
         if lab:
             known = store.query("MATCH (e:Entity) WHERE e.key IN $k RETURN e.id", {"k": list(lab)}, tenant)
@@ -298,7 +372,7 @@ def _ingest_doc(store, path: Path, tenant) -> dict:
                         "CREATE (c)-[:MENTIONS {conf:r.conf}]->(e)", {"rows": men}, tenant)
         if rels:
             store.query("UNWIND $rows AS r MATCH (a:Entity {id:r.h}), (b:Entity {id:r.t}) CREATE (a)-[:REL {type:r.type, "
-                        "conf:r.conf, source_id:r.src, valid_from_ms:r.vf}]->(b)", {"rows": rels}, tenant)
+                        "conf:r.conf, source_id:r.src, valid_from_ms:r.vf, modality:r.mod, p_fact:r.pf}]->(b)", {"rows": rels}, tenant)
         for who, edge in ([(author, "AUTHORED")] if author else []) + [(p, "PARTICIPATED") for p in people if p != author]:
             if normalize_key(who) in ids:
                 store.query(f"MATCH (e:Entity {{id:$e}}), (d:Document {{id:$d}}) MERGE (e)-[:{edge}]->(d)",
