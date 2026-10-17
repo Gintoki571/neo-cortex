@@ -12,6 +12,8 @@ Neo-Cortex enters all three tracks with one system.
 - **02 Agent Memory and Coordination:** episodic, semantic, procedural and preference memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` memory consolidation (run on demand with `neo dream`).
 - **03 Company Brain:** docs, tickets, ADRs and chats in one graph; `who` finds owners and experts; `timeline` traces decisions to sources and shows what superseded what.
 
+**Ideas it builds on** ([docs/lineage.md](docs/lineage.md)): GLiNER2.5 as a no-LLM "System 1" model, HippoRAG-style personalized PageRank, pg-jev-style cached decisions stored as graph nodes, an RRSI-style acceptance rule for self-tuning (the tuner rejected its own weights), Dream-RSI-style offline memory consolidation (`neo dream`), bm25s with reciprocal rank fusion, anydoc for Office/PDF conversion, and an OKF knowledge bundle for the project's own research. The page says what was taken, where it lives in the code, what was measured and what was not built.
+
 ## Why the graph does real work
 
 The graph is the only store. Memories, documents, entities and relations all live in FalkorDB, and the retrieval channels read from it:
@@ -38,7 +40,7 @@ Keys (partial) scores, tool vs baseline: impact 0.80 vs 0.34, current owner 1.00
 | Config | Recall@10 | FullCover@10 |
 |---|---|---|
 | vector | 0.73 | 0.53 |
-| bm25 | 0.71 | 0.55 |
+| bm25 | 0.71 | 0.54 |
 | vector+bm25 | 0.75 | 0.59 |
 | auto (graph-routed, product default) | 0.74 | 0.56 |
 | full (all four channels, intent weights) | 0.76 | 0.60 |
@@ -47,7 +49,7 @@ Graph routing ties text retrieval on finding documents; the CIs include 0. Full 
 
 **Extraction** (`eval/graph_quality.py`, graded relation types on the ingested graph): relation precision 0.88, recall 0.83.
 
-**Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.39); the answer string is in the top-5 documents' chunks for 0.73 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 150 ms, `ask` about 200 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
+**Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.39); the answer string is in the top-5 documents' chunks for 0.73 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 370 ms, `ask` about 650 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
 
 Reproduce: measurement details in [eval/README.md](eval/README.md); numbers in [eval/results.md](eval/results.md) and [eval/answers.md](eval/answers.md).
 
@@ -120,7 +122,7 @@ neo brief                                                                       
 paths, cited chunks and facts, then have the calling agent write the answer.
 Ingest only the six kind folders: `data/synthetic/WORLD.md` is the answer key the corpus was written from, so it must never be in the graph. See [eval/README.md](eval/README.md).
 
-Without the daemon running, `neo` commands open the embedded database themselves, but only when no daemon answers. Run one owner at a time.
+Without the daemon running, `neo` commands open the embedded database themselves, but only when no daemon answers. The graph is single-owner by design: the embedded database takes an exclusive file lock, so exactly one process (normally the daemon) has it open and a second writer gets an error naming that lock. Data is partitioned by **tenant**: each tenant is its own graph (`neo_<tenant>`, chosen with `--tenant`, default `default`), so a company brain and a personal agent memory can share one server without seeing each other's data.
 
 ### FalkorDB modes
 
@@ -158,6 +160,10 @@ flowchart LR
 
 Every node has `id` (string). Times are `*_ms` epoch-millisecond integers. Each tenant is its own graph (`neo_<tenant>`), so there is no tenant property.
 
+In plain words: a **Document** is one source file (its `kind` says what it is); a **Chunk** is a slice of it that carries the embedding and the citation; an **Entity** is every named thing the text mentions (person, service, file, ticket...), deduplicated across name variants; a **Memory** is one fact an agent or a session chose to keep, with a `kind` — episodic (what happened), semantic (what is true), procedural (how to do it), preference (how the user wants it), decision (what was decided); a **Session** is an ingested agent conversation, an **Agent** is who acted, and a **Handoff** is work one agent leaves for another.
+
+Data enters the graph two ways. Ingested documents and session transcripts go through **GLiNER2.5**, which extracts entities and typed relations, classifies memory kinds, routes queries by intent and judges borderline entity merges (it can only veto a merge, never create one). When the agent already knows the facts, it writes them directly: `remember(text, kind=..., entities=..., relations=...)` skips GLiNER entirely, and `relate(head, TYPE, tail)` writes or corrects one typed edge (`supersede` closes the edge it replaces, `end` closes it with no replacement). Names the agent passes explicitly match by exact key or alias only, never fuzzily. Extracted names go through **entity resolution**: exact normalised key, then alias, then a variant key that ignores spacing, case, punctuation and version suffixes (`GLiNER 2.5 base` = `gliner2.5-base-v1`), then vector neighbours that pass a lexical guard; borderline pairs go to the cached GLiNER judge.
+
 | Node | Key properties |
 | --- | --- |
 | `Document` | `id, kind (doc, adr, ticket, chat, meeting, session, file), title, uri, path, author, date_ms, status, labels, hash` |
@@ -173,6 +179,8 @@ Every node has `id` (string). Times are `*_ms` epoch-millisecond integers. Each 
 Entity types: person, team, service, component, file, config_setting, ticket, customer, product, tool, incident, decision, other.
 
 REL types (one relationship type with a `type` property, so Cypher never builds types from strings): OWNS, MEMBER_OF, DEPENDS_ON, CAUSED_BY, FIXED_BY, APPROVED, DECIDED, PART_OF, WORKS_ON, REPORTED, REPLACED_BY, RENAMED_TO, RELATED_TO.
+
+Each REL edge carries `conf` (confidence 0-1), `source_id` (the chunk, memory or `relate` call that justified it) and `valid_from_ms`/`valid_to_ms` — an edge with an end date is closed history, skipped by queries about "now". Between memories, `SUPERSEDES` retires a replaced fact, `CONFLICTS_WITH` flags two facts that disagree, and `MERGED_INTO` marks a duplicate folded into another.
 
 ## MCP tools and CLI
 
@@ -208,9 +216,9 @@ CLI (`neo`, every command except `serve`, `status`, `hook` and `install-claude` 
 | `neo who "<topic>"` / `neo timeline "<topic>"` | Owners and experts / dated events |
 | `neo explore "<entity>"` / `neo connect "<a>" "<b>"` | Neighbourhood / relation paths |
 | `neo impact "<entity>" [--max-hops]` | Blast radius: dependents, owners to tell, customers and incidents |
-| `neo relate "<head>" <TYPE> "<tail>" [--source] [--supersede]` | Write or correct a typed edge |
+| `neo relate "<head>" <TYPE> "<tail>" [--source] [--supersede] [--end]` | Write or correct a typed edge |
 | `neo read <id>` | Full text of a chunk, memory or document by id |
-| `neo remember "<text>" [--kind] [--about] [--supersedes] [--agent] [--project]` | Store a memory |
+| `neo remember "<text>" [--kind] [--about] [--supersedes] [--entity Name:type]... [--rel 'head\|TYPE\|tail']... [--agent] [--project]` | Store a memory |
 | `neo ingest <path> [--wait]` | Ingest a file, or queue a directory as a daemon job (prints the job id; `--wait` follows it) |
 | `neo jobs [id]` | Status and result of the daemon's background jobs |
 | `neo ingest-session <transcript.jsonl> [--agent] [--project]` | Extract memories from a Claude Code transcript |
@@ -228,7 +236,7 @@ For stdio clients: `uv run --no-sync python -m neo_cortex.mcp_server --transport
 
 1. **Vector:** EmbeddingGemma query embedding over Chunk and Memory vector indexes (cosine).
 2. **BM25:** `bm25s` over the same texts, in process (FalkorDB full-text is only used for fuzzy entity names).
-3. **Graph:** Personalized PageRank (HippoRAG-style) over a local subgraph: at most 3 hops and 500 nodes. Seeds are the query's linked entities plus the entities of the top dense and BM25 hits.
+3. **Graph:** Personalized PageRank (HippoRAG-style) over a local subgraph: at most 3 hops and 500 nodes. Seeds are the query's linked entities plus the entities of the top dense and BM25 hits. A seed-strength gate keeps the channel out of the fusion unless a query entity links strongly to the graph, so weak or wrong entity matches cannot pull rankings off the text channels.
 4. **Temporal:** explicit windows ("since", "last 30 days", "15 July 2026") filter; "current" and "latest" only boost recency. A window that matches nothing is dropped.
 
 Fusion is weighted reciprocal rank fusion, `score = sum_c w_c / (60 + rank_c)`. Base weights are 1.0 (temporal 0.5), scaled by the GLiNER intent of the query: connection and owner questions boost the graph channel, temporal questions boost temporal, fact questions boost BM25 and vector and damp the graph. Soft intent weights mean one misroute nudges the ranking instead of breaking it. Superseded memories stay hidden unless the question is about change; merged memories never appear.
@@ -247,6 +255,7 @@ Hooks are installed by `neo install-claude`. Details: [integrations/claude-code/
 - Gold set: 80 questions (single-hop, multi-hop, temporal, ownership, procedural) in `eval/gold.jsonl`, checked by `eval/check_dataset.py`.
 - Ablation: vector, BM25, vector plus BM25, plus graph, plus temporal, full (intent weights), and the product default; with paired-bootstrap confidence intervals.
 - How to run and the full results: [eval/README.md](eval/README.md), [eval/results.md](eval/results.md), [eval/results.json](eval/results.json).
+- Real-docs check: the repository's own 69 docs and 30 questions an agent working on it asks (`eval/real_check.md`), reported above with its misses — a second evaluation on prose GLiNER was not tuned for.
 
 <!-- DEMO_VIDEO -->
 

@@ -25,6 +25,7 @@ log=$(mktemp)
 {
   for k in doc adr ticket chat meeting session; do "$NEO" ingest --wait "data/synthetic/$k"; done
   # one file per call: `neo ingest <dir>` has a 300 s client timeout, the public set takes about 15 min
+  [ "${1:-}" = "--public" ] && [ ! -d data/public/falkordb ] && uv run --no-sync python scripts/fetch_public.py
   [ "${1:-}" = "--public" ] && find data/public/falkordb -name '*.md' | sort | while read -r f; do "$NEO" ingest "$f" >/dev/null; done
   # Last week's sessions of agent-a (the live one, demo/transcripts/agent_a.jsonl, is ingested on camera).
   for t in demo/transcripts/history/*.jsonl; do "$NEO" ingest-session "$t" --agent agent-a --project reporting-service; done
