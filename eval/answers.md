@@ -2,7 +2,7 @@
 
 ## Graph-native answers
 
-Run `final`. DB: `/home/bindesh/neo-cortex/.neo/final` (port 6356, tenant `eval`). DB ingested 2026-10-17 02:40, newer than every src/neo_cortex/*.py file.
+Run `integ`. DB: `/tmp/claude-1000/integ/eval` (port 6441, tenant `eval`). DB ingested 2026-10-17 14:12, newer than every src/neo_cortex/*.py file.
 Tool: `tools.who`/`impact`/`timeline`, max_chars 4000. Baseline: top-8 vector chunks via `tools.read`, capped at 4000 chars.
 
 | category | n | keys, tool | keys, baseline | all keys, tool | all keys, baseline | correct current, tool | correct current, baseline |
@@ -36,3 +36,5 @@ Other run, `old extraction` (/home/bindesh/neo-cortex/.neo/eval-new): overall al
 Other run, `new extraction` (/home/bindesh/neo-cortex/.neo/gq): overall all keys tool 0.77 vs baseline 0.73; impact 0.80 vs 0.20; changes 0.50 vs 1.00.
 
 Other run, `gq` (/home/bindesh/neo-cortex/.neo/gq): overall all keys tool 0.87 vs baseline 0.73; impact 0.80 vs 0.20; changes 0.80 vs 1.00.
+
+Other run, `final` (/home/bindesh/neo-cortex/.neo/final): overall all keys tool 0.87 vs baseline 0.73; impact 0.80 vs 0.20; changes 0.80 vs 1.00.
