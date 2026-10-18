@@ -9,7 +9,7 @@ Neo-Cortex stores what an agent learns and what a company knows (docs, tickets, 
 Neo-Cortex enters all three tracks with one system.
 
 - **01 Agents That Act on Connected Data:** `ask` and `connect` return the multi-hop graph paths (seeds, shortest `SPpaths` between them, cited chunks) that an agent acts on.
-- **02 Agent Memory and Coordination:** episodic, semantic, procedural and preference memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` memory consolidation (run on demand with `neo dream`).
+- **02 Agent Memory and Coordination:** episodic, semantic, procedural, preference and decision memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` memory consolidation (run on demand with `neo dream`).
 - **03 Company Brain:** docs, tickets, ADRs and chats in one graph; `who` finds owners and experts; `timeline` traces decisions to sources and shows what superseded what.
 
 **Explaining it:** [docs/judges-guide.md](docs/judges-guide.md) answers the questions a judge is likely to ask, with the numbers and where they come from.
