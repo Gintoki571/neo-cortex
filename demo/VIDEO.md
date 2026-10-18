@@ -67,7 +67,14 @@ neo relate "Elif Yildiz" "OWNS" "reporting-service" --supersede --source "INC-04
 neo handoff "INC-04: Northgate totals doubled. ..." --from triage-agent --to payments-agent --task "Confirm txn_id-only key is live in ledger-service"
 ```
 
-**Point at:** `created ... Elif Yildiz -[OWNS]-> reporting-service ... by triage-agent`, then both `closed Olivia Hartmann -[OWNS]-> reporting-service` lines, then the open handoff id. Add one `neo remember` call with `--entity Name:type` and `--rel 'head|TYPE|tail'` — **needs recording** (listed as an agent call in SCRIPT.md but no output shown there).
+**Point at:** `created ... Elif Yildiz -[OWNS]-> reporting-service ... by triage-agent`, then both `closed Olivia Hartmann -[OWNS]-> reporting-service` lines, then the open handoff id. Then one `neo remember` call with `--entity Name:type` and `--rel 'head|TYPE|tail'` (output recorded 2026-10-18 on the project's own graph):
+
+```
+neo remember "Measured seven flag-gated retrieval ideas ... none beat the default" --kind decision --entity "eval/flags.md:file" --entity "NEO_RESOLVE_JW:config_setting" --rel "NEO_RESOLVE_JW|CAUSED_BY|falkordblite"
+created [mem_29ce608cee2b] decision about: eval/flags.md [ent_9b4ce652645e], NEO_RESOLVE_JW [ent_3f14d4a0ec29], ...
+edge NEO_RESOLVE_JW -[CAUSED_BY]-> falkordblite: created ... valid from 2026-10-18 by claude-code, src memory [mem_29ce608cee2b]
+```
+Point at: typed entities and an edge created in one call, about 0.2 s, no GLiNER.
 
 **Voice-over:** "The agent that just did the work writes what it knows straight into the graph: a superseded ownership edge with its source, and a handoff for the next agent. No extractor in the loop — the agent's words are the facts."
 
