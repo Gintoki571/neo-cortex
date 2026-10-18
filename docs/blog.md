@@ -51,7 +51,7 @@ The stronger signal appears when we stop asking whether the right document was r
 
 For current ownership, the tool and baseline both scored **1.00** all-keys, and both had correct current-owner accuracy **1.00**. That is a tie, not a claim that the graph improved the number. For value changes, the tool scored **0.80** versus the baseline's **1.00**, a delta of **-0.20 [-0.50, +0.00]**, inside noise and lower — we report where the graph loses too. Overall all-keys was **0.87** versus **0.73**, a delta of **+0.13 [-0.03, +0.33]**, also inside noise.
 
-The dedicated `who` check adds useful detail: with the entity as topic, a gold person appeared in the top three **0.94** of the time versus **0.71** for the vector-document baseline. On real documents — this repository's own 69 docs and 30 questions an agent working on it asks — the gold document was in the top 5 for **0.53** of questions (MRR 0.39), and the answer string appeared in the top-5 chunks for **0.73**, because facts repeat across documents.
+The dedicated `who` check adds useful detail: with the entity as topic, a gold person appeared in the top three **0.94** of the time versus **0.71** for the vector-document baseline. On real documents — this repository's own 72 docs and 30 questions an agent working on it asks — the gold document was in the top 5 for **0.50** of questions (MRR 0.41), and the answer string appeared in the top-5 chunks for **0.70**, because facts repeat across documents.
 
 ## What we measured and dropped
 

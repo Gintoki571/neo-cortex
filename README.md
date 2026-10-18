@@ -49,6 +49,8 @@ Keys (partial) scores, tool vs baseline: impact 0.80 vs 0.34, current owner 1.00
 
 Graph routing ties text retrieval on finding documents; the CIs include 0. Full vs vector+bm25: Recall@10 +0.006 [-0.029, +0.040], FullCover@10 +0.013 [-0.062, +0.087]. Since 2026-10-17 the graph channel only runs when a query entity links strongly (seed-strength gate), which fixed real-docs rankings (below) at a cost of 1-2 synthetic questions on `auto`.
 
+**`ask` at equal output size** (`eval/run_eval.py`, 2026-10-18; the baseline text is cut to the same number of characters as `ask`'s evidence pack): answer keys present in multi-hop questions +0.23 over vector top-8 [+0.04, +0.42], significant; multi-hop plus ownership +0.07 [-0.09, +0.23], inside noise; ownership alone -0.18 [-0.41, +0.06]. With the unequal default budget the pack looked worse (-0.12), because it is shorter.
+
 **Extraction** (`eval/graph_quality.py`, graded relation types on the ingested graph): relation precision 0.88, recall 0.83.
 
 ### System 1 decisions, measured

@@ -56,6 +56,7 @@ On top of `recall` sit graph-native tools: `who` (owners and experts), `impact` 
 |---|---|---|
 | Graph tools vs plain text search, 30 questions | impact (blast radius) 0.80 vs 0.20, delta +0.60 [+0.30, +0.90], significant; current owner 1.00 vs 1.00; value changes 0.80 vs 1.00; overall 0.87 vs 0.73 (inside noise) | `eval/answers.md` |
 | Document retrieval, 80 questions, synthetic company | recall@10: vector 0.73, BM25 0.71, vector+BM25 0.75, full 0.76; graph ties text on finding documents | `eval/results.md` |
+| `ask` evidence pack vs vector top-8 text cut to the same length, multi-hop questions | answer keys present +0.23 [+0.04, +0.42], significant; multi-hop + ownership +0.07, inside noise | `eval/run_eval.py` (README) |
 | `who` with the entity as topic | gold person in top 3: 0.94 vs 0.71 baseline | `eval/results.md` |
 | Relation extraction (synthetic, graded types) | precision 0.88, recall 0.83; on the facts the tools read after the edge gate: 0.903 / 0.812 | `eval/graph_quality.py`, commit eac7484 |
 | Real documents (this repo's 72 docs, 30 questions) | gold doc in top 5: 0.50, MRR 0.41; answer text in the top-5 chunks 0.70 | `eval/real_check.md` |
