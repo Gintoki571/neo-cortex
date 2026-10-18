@@ -71,8 +71,7 @@ uv run --no-sync neo ask "Who should review a change to the session cache today?
 ## 10. AI use disclosure
 
 Neo-Cortex was built with Claude Code, using Anthropic Claude models as the
-orchestrator and coding sub-agents. Some tasks were done with GitHub Copilot
-CLI, CodeBuddy (GLM-5.3-Flash) and OpenCode. The synthetic company corpus and
+orchestrator and coding sub-agents. The synthetic company corpus and
 gold questions were AI-generated from a written specification and are
 fictional. Humans directed, reviewed and verified the work, and are
 responsible for the architecture, correctness claims and submitted material.

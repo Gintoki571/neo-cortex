@@ -163,7 +163,7 @@ flowchart LR
     Document -- "HAS_CHUNK" --> Chunk
     Chunk -- "MENTIONS conf" --> Entity
     Memory -- "MENTIONS conf" --> Entity
-    Entity -- "REL type conf valid_from_ms valid_to_ms" --> Entity
+    Entity -- "REL type conf modality p_fact source_id valid_from_ms valid_to_ms" --> Entity
     Entity -- "AUTHORED / PARTICIPATED" --> Document
     Memory -- "DERIVED_FROM" --> Chunk
     Memory -- "DERIVED_FROM" --> Session
@@ -175,6 +175,20 @@ flowchart LR
     Handoff -- "FROM" --> Agent
     Handoff -- "TO" --> Agent
 ```
+
+A concrete slice of the demo graph (fictional company Pellucid Pay), to read the model by example:
+
+```mermaid
+flowchart LR
+    D14["Document doc-14: Engineering handbook, teams and ownership"] -- HAS_CHUNK --> C["Chunk"]
+    C -- MENTIONS --> SC(["Entity: session-cache"])
+    Mateo(["Entity: Mateo Alvarez (person)"]) -- "REL OWNS, source doc-14, no valid_to_ms = current" --> SC
+    Lukas(["Entity: Lukas Brandt (person)"]) -- "REL OWNS, source doc-02, valid_to_ms 2026-08-11 = history" --> SC
+    RS(["Entity: reporting-service"]) -- "REL DEPENDS_ON" --> LS(["Entity: ledger-service"])
+    Elif(["Entity: Elif Yildiz (person)"]) -- "REL OWNS" --> LS
+```
+
+`neo who "session cache"` is the first path (Mateo current, Lukas former); `neo impact ledger-service` walks `DEPENDS_ON` edges backwards from `ledger-service`. Both are in [demo/SCRIPT.md](demo/SCRIPT.md) with their real output.
 
 Every node has `id` (string). Times are `*_ms` epoch-millisecond integers. Each tenant is its own graph (`neo_<tenant>`), so there is no tenant property.
 
