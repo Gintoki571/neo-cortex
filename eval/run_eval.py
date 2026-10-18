@@ -136,8 +136,10 @@ def tool_eval(store, gold):
             items = recall(store, q["question"], k=8, channels=["vector"], tenant=TENANT, now_ms=NOW_MS)  # baseline: top-8 vector chunks
             full = dict(store.query("MATCH (c:Chunk) WHERE c.id IN $i RETURN c.id, c.text", {"i": [it["id"] for it in items]}, TENANT))
             vtext = " ".join(full.get(it["id"], it["text"]) for it in items)
+            # equal-budget baseline: the same top-8 text cut to the characters ask used (the cut keeps the ranking order)
+            vtext_eq = vtext[:len(out)]
             ask_rows.append({"id": q["id"], "type": q["type"], "answer_in_ask": M.hit_answer(out, q), "answer_in_vec": M.hit_answer(vtext, q),
-                             "chars_ask": len(out), "chars_vec": len(vtext), "ms": ms})
+                             "answer_in_vec_eq": M.hit_answer(vtext_eq, q), "chars_ask": len(out), "chars_vec": len(vtext), "chars_vec_eq": len(vtext_eq), "ms": ms})
         if q["type"] == "ownership":
             gold_people = M.people(q["answer"])
             row = {"id": q["id"], "gold": gold_people}
@@ -192,6 +194,8 @@ def tool_boots(ask_rows, who_rows):
             rs = [r for r in ask_rows if ok(r)]
             boots.append({"subset": sub, "metric": "answer-in-output", "a": "tools.ask", "b": "vector top-8 text",
                           **M.paired_bootstrap([r["answer_in_ask"] for r in rs], [r["answer_in_vec"] for r in rs])})
+            boots.append({"subset": sub, "metric": "answer-in-output", "a": "tools.ask", "b": "vector top-8 text, equal chars",
+                          **M.paired_bootstrap([r["answer_in_ask"] for r in rs], [r["answer_in_vec_eq"] for r in rs])})
     for tag in ("question", "entity"):
         for m in ("any", "all"):
             if who_rows:
@@ -229,6 +233,8 @@ def render(res):
         L.append(f"- `ask` evidence pack vs top-8 vector chunk text, gold answer keys present: tools.ask multi {a['multi']:.2f} / ownership {a['ownership']:.2f} "
                  f"(n={a['n_multi']}/{a['n_ownership']}); baseline multi {a['vec_multi']:.2f} / ownership {a['vec_ownership']:.2f}; "
                  f"mean size {a['chars_ask']:.0f} vs {a['chars_vec']:.0f} chars; ask {a['ms']:.0f} ms")
+        L.append(f"- `ask` vs vector top-8 text cut to the same chars as ask (equal budget): multi {a['multi']:.2f} / ownership {a['ownership']:.2f} "
+                 f"vs {a['vec_eq_multi']:.2f} / {a['vec_eq_ownership']:.2f}; mean size {a['chars_ask']:.0f} vs {a['chars_vec_eq']:.0f} chars")
         for tag, desc in (("question", "topic = whole question"), ("entity", "topic = gold non-person entity")):
             L.append(f"- `who` ({desc}): gold person in top 3 (any) {w[tag]['any']:.2f}, all gold people {w[tag]['all']:.2f} (n={w['n']})")
         t = res["tools"].get("timeline")
@@ -332,6 +338,8 @@ def main():
             tools_res = {"ask": {"multi": mean(sub("multi")), "ownership": mean(sub("ownership")), "n_multi": len(sub("multi")),
                                  "n_ownership": len(sub("ownership")), "vec_multi": mean(sub("multi", "answer_in_vec")),
                                  "vec_ownership": mean(sub("ownership", "answer_in_vec")), "chars_ask": mean([r["chars_ask"] for r in ask_rows]),
+                                 "vec_eq_multi": mean(sub("multi", "answer_in_vec_eq")), "vec_eq_ownership": mean(sub("ownership", "answer_in_vec_eq")),
+                                 "chars_vec_eq": mean([r["chars_vec_eq"] for r in ask_rows]),
                                  "chars_vec": mean([r["chars_vec"] for r in ask_rows]), "ms": mean([r["ms"] for r in ask_rows]), "rows": ask_rows},
                          "who": {tag: {"any": mean([r[tag]["any"] for r in who_rows]), "all": mean([r[tag]["all"] for r in who_rows])}
                                  for tag in ("question", "entity", "vector")} | {"n": len(who_rows), "rows": who_rows},

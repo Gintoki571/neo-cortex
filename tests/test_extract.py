@@ -120,3 +120,55 @@ def test_dotted_config_key_typed_as_file_becomes_config_setting():
     raw["entities"]["file"].append({"text": "algo.SPpaths", "confidence": 0.9})
     got = {v["name"]: v["type"] for v in X._entities(raw, "Set session.ttl_seconds to 300; see gh-repo.json; algo.SPpaths.").values()}
     assert got == {"session.ttl_seconds": "config_setting", "algo.SPpaths": "component"}
+
+
+def _rels_text(spec, text):
+    """Relations from the pattern rules over the windows of `text` (what extract_batch feeds _relations)."""
+    return _rels(spec, X._windows(text)[0])
+
+
+_OWNS_SPEC = [("Alice", "person"), ("auth-service", "service")]
+
+
+def test_fenced_code_block_yields_no_relation_but_prose_does():
+    fenced = "Setup:\n\n```bash\nAlice owns auth-service\n```\n\nDone."
+    assert _rels_text(_OWNS_SPEC, fenced) == set()
+    assert ("Alice", "OWNS", "auth-service") in _rels_text(_OWNS_SPEC, "Alice owns auth-service.")
+    assert _rels_text(_OWNS_SPEC, "~~~\nAlice owns auth-service\n~~~") == set()
+
+
+def test_unclosed_fence_runs_to_the_end_and_a_closer_only_chunk_is_code():
+    # a chunk that starts inside a block: its leading ``` closes the block that the previous chunk opened
+    prev, cur = X._prose_texts(["```bash\nneo output", "Alice owns auth-service\n```\n\nBob owns billing."])
+    assert "Alice" not in cur and "Bob owns billing." in cur
+    assert X._windows(prev)[0] == []
+
+
+def test_shell_prompt_and_cli_lines_yield_no_relation():
+    for line in ["$ neo relate \"Alice\" \"OWNS\" auth-service", "neo impact auth-service", "- `neo ask` Alice owns auth-service",
+                 "git log Alice owns auth-service", "uv run neo ingest Alice owns auth-service", "curl x Alice owns auth-service"]:
+        assert X._windows(line)[0] == [], line
+    assert X._windows("Alice owns auth-service.")[0] != []
+
+
+def test_indented_code_block_after_blank_line_is_code_but_list_continuation_is_not():
+    code = "Intro.\n\n    Alice owns auth-service\n\nAfter."
+    assert _rels_text(_OWNS_SPEC, code) == set()
+    cont = "- Step one:\n\n    Alice owns auth-service, see the doc.\n"
+    assert ("Alice", "OWNS", "auth-service") in _rels_text(_OWNS_SPEC, cont)
+    # an indented line that continues a paragraph is prose
+    assert ("Alice", "OWNS", "auth-service") in _rels_text(_OWNS_SPEC, "Intro line\n    Alice owns auth-service.")
+
+
+def test_data_table_with_owner_column_still_yields_owns_outside_code():
+    table = "| Service | Owner |\n|---|---|\n| auth-service | Noor Haddad |"
+    assert X._table_facts(table) == [("Noor Haddad", "OWNS", "auth-service", "person", "service")]
+    assert X._table_facts("```\n" + table + "\n```") == []
+    assert X._table_facts("Intro.\n\n" + table) == [("Noor Haddad", "OWNS", "auth-service", "person", "service")]
+
+
+def test_code_is_blanked_but_line_count_and_windows_of_prose_are_kept():
+    text = "Alice owns auth-service.\n```\nBob owns billing.\n```\nCarol owns billing."
+    assert X._prose_texts([text])[0].count("\n") == text.count("\n")
+    wins = X._windows(text)[0]
+    assert wins == ["Alice owns auth-service.", "Carol owns billing."]

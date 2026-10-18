@@ -1,6 +1,7 @@
 """Retrieval channels. Each returns [(node_id, score)] over Chunk/Memory nodes, best first (higher is better)."""
 import difflib
 import math
+import os
 import re
 import threading
 from dataclasses import dataclass
@@ -102,7 +103,114 @@ def bm25(store, q: str, f: Filt, tenant=None, n=N):
         return []
     docs, scores = r.retrieve(_tok([q]), k=min(len(ids), 4 * n), show_progress=False)
     ranked = [(ids[d], float(s)) for d, s in zip(docs[0], scores[0]) if s > 0]
-    return keep(store, ranked, f, tenant)[:n]
+    ranked = keep(store, ranked, f, tenant)[:n]
+    if os.environ.get("NEO_BM25_COVER") == "1":  # graphify idea #2: squared term-coverage rescore
+        ranked = _coverage_rescore(store, ranked, q, tenant)
+    return ranked
+
+
+# --- BM25 coverage rescoring (graphify serve.py _score_query, idea #2) ---------
+# Tier weights mirror graphify's exact/prefix gap (exact 10x prefix); the phrase
+# tier tops everything. The squared coverage factor (matched/n_terms)^2 means a
+# chunk that only carries one common query term cannot dominate a multi-term query.
+_COVER_PHRASE = 100.0  # the whole query phrase appears in the text
+_COVER_EXACT = 10.0  # a query term equals a stemmed text token
+_COVER_PREFIX = 1.0  # a text token starts with a query term
+
+
+def _qtokens(text):
+    """Stemmed tokens of a text, the same transform as the BM25 index."""
+    return set(_tok([text or ""])[0])
+
+
+def _qterms(q):
+    """Deduped, stemmed query terms, order-preserving."""
+    return list(dict.fromkeys(_tok([q])[0]))
+
+
+def _corpus_texts(store, tenant=None):
+    """id -> text for every Chunk/Memory (corpus statistics for IDF)."""
+    tenant = tenant or store.default_tenant
+    rows = store.query("MATCH (n) WHERE (n:Chunk OR n:Memory) RETURN n.id, n.text", None, tenant)
+    return {r[0]: r[1] for r in rows if r[1]}
+
+
+def _coverage_rescore(store, ranked, q, tenant=None):
+    """Rescore BM25 candidates by query-term coverage.
+
+    score = (sum of tier_weight * idf over matched query terms) * (matched / n_terms)^2.
+    Tiers: full-phrase match > exact term > prefix match. A chunk matching only one
+    common term gets (1/n)^2, so it cannot dominate a multi-term query. Returns
+    [(id, new_score)] best first, keeping only candidates that match at least one term.
+    """
+    tenant = tenant or store.default_tenant
+    if not ranked:
+        return []
+    terms = _qterms(q)
+    n_terms = len(terms)
+    if n_terms == 0:
+        return ranked
+    corpus = _corpus_texts(store, tenant)
+    if not corpus:
+        return ranked
+    n_docs = len(corpus)
+    corpus_toks = {i: _qtokens(tx) for i, tx in corpus.items()}
+    idf = {}
+    for t in terms:
+        df = sum(1 for toks in corpus_toks.values() if t in toks)
+        idf[t] = math.log(1 + n_docs / max(df, 1)) / math.log(1 + n_docs)
+    joined = " ".join(terms)
+    out = []
+    for i, _ in ranked:
+        tx = corpus.get(i, "")
+        if not tx:
+            continue
+        toks = corpus_toks[i]
+        matched = 0
+        tiered = 0.0
+        phrase = joined in tx
+        for t in terms:
+            w = idf.get(t, 1.0)
+            if phrase:
+                tiered += _COVER_PHRASE * w
+                matched += 1
+            elif t in toks:
+                tiered += _COVER_EXACT * w
+                matched += 1
+            elif any(tok.startswith(t) and len(tok) > len(t) for tok in toks):
+                tiered += _COVER_PREFIX * w
+                matched += 1
+        if matched:
+            out.append((i, tiered * (matched / n_terms) ** 2))
+    out.sort(key=lambda x: -x[1])
+    return out
+
+
+def _why_list(store, q, tenant=None):
+    """Supplementary decision-intent list (graphify idea #8: rationale/why tier).
+
+    Scores documents by matching the query against frontmatter title + doc_type +
+    description, so ADRs and decision documents surface even when the body wording
+    differs. score = matched query terms / total terms (1.0 on a full-phrase match).
+    Returns [(doc_id, score)] best first; the caller fuses it with a low weight.
+    """
+    tenant = tenant or store.default_tenant
+    rows = store.query("MATCH (d:Document) RETURN d.id, d.title, d.doc_type, d.description", None, tenant)
+    terms = _qterms(q)
+    if not terms or not rows:
+        return []
+    joined = " ".join(terms)
+    out = []
+    for did, title, doctype, desc in rows:
+        blob = " ".join(str(t or "") for t in (title, doctype, desc)).lower()
+        toks = set(_qtokens(blob))
+        matched = sum(1 for t in terms if t in toks)
+        if joined and joined in blob:
+            matched = len(terms)  # full phrase -> full coverage
+        if matched:
+            out.append((did, matched / len(terms)))
+    out.sort(key=lambda x: -x[1])
+    return out
 
 
 # --- graph ------------------------------------------------------------------------------------------------------
@@ -152,15 +260,19 @@ def link_entities(store, ents, q, tenant=None, cap=SEEDS) -> dict:
     for g in grams:
         want.setdefault(g, 0.7)
     out, hit = {}, set()
+    mention_best = {}
 
-    def put(eid, name, c):
+    def put(eid, name, c, mention=None):
         if c > out.get(eid, ("", 0))[1]:
             out[eid] = (name, c)
+        if mention is not None and c > mention_best.get(mention, ("", 0))[1]:
+            mention_best[mention] = (eid, c)
 
+    mention_keys = {key_of(e["name"]): i for i, e in enumerate(ents)}
     for kk, c in want.items():
         if kk in bykey:
             hit.add(kk)
-            put(bykey[kk][0], bykey[kk][2], c)
+            put(bykey[kk][0], bykey[kk][2], c, mention_keys.get(kk))
     toks = {}  # content word -> entities whose name has it
     for eid, ek, name in rows:
         for t in set(_content(ek or "")):
@@ -169,7 +281,7 @@ def link_entities(store, ents, q, tenant=None, cap=SEEDS) -> dict:
         if 1 <= len(toks.get(t, [])) <= 2:
             for eid, name, ek in toks[t]:
                 put(eid, name, 0.35 + 0.15 / max(len(_content(ek)), 1))
-    for e in ents:
+    for mention, e in enumerate(ents):
         k = key_of(e["name"])
         ct = set(_content(e["name"]))
         if k in hit or not k or not ct:
@@ -179,15 +291,25 @@ def link_entities(store, ents, q, tenant=None, cap=SEEDS) -> dict:
                                          {"q": "|".join(f"%{t}%" for t in ft)}, tenant):
             c = 0.8 * difflib.SequenceMatcher(None, k, ek or key_of(name)).ratio()
             if c >= 0.6:
-                put(eid, name, c)
+                put(eid, name, c, mention)
                 hit.add(k)
         if k not in hit:
             v = models.embed_docs([e["name"]], [e["type"]])[0].tolist()
             for eid, name, d in store.query("CALL db.idx.vector.queryNodes('Entity','emb',3,vecf32($v)) YIELD node, score RETURN node.id, node.name, score",
                                             {"v": v}, tenant):
                 if (1 - d >= 0.9) or (1 - d >= 0.8 and ct & set(_content(name))):
-                    put(eid, name, 0.6)
-    return dict(sorted(out.items(), key=lambda kv: -kv[1][1])[:cap])
+                    put(eid, name, 0.6, mention)
+    ranked = sorted(out.items(), key=lambda kv: -kv[1][1])
+    if os.environ.get("NEO_SEED_PER_TERM") != "1":
+        return dict(ranked[:cap])
+    selected = {eid: out[eid] for eid, _ in mention_best.values() if eid in out}
+    cutoff = ranked[0][1][1] * 0.8 if ranked else 0
+    for eid, value in ranked:
+        if len(selected) >= 3:
+            break
+        if not mention_best and eid not in selected and value[1] >= cutoff:
+            selected[eid] = value
+    return dict(sorted(selected.items(), key=lambda kv: -kv[1][1])[:3])
 
 
 def _render(trail):
@@ -208,6 +330,13 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
     ents = {r[0]: (r[1], r[2]) for r in store.query("MATCH (e:Entity) WHERE e.id IN $i RETURN e.id, e.name, e.mentions",
                                                     {"i": list(seeds)}, tenant)}
     seeds = {e: w for e, w in seeds.items() if e in ents}
+    hub_ids = set()
+    if os.environ.get("NEO_HUB_SKIP") == "1":
+        all_entities = store.query("MATCH (e:Entity) RETURN e.id, e.mentions", None, tenant)
+        counts = sorted((r[1] or 0) for r in all_entities)
+        if counts:
+            threshold = float(np.percentile(counts, 99, method="lower"))
+            hub_ids = {r[0] for r in all_entities if (r[1] or 0) > threshold}
     nb, ch_of, ent_of = {}, {}, {}  # entity -> {entity: [w, type, fwd]}, entity -> {chunk: conf}, chunk -> {entity: conf}
     front, done = set(ents), set()
     cond = "AND coalesce(r.modality,'fact')='fact' " + ("AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)" if current else "")  # non-fact edges never walk
@@ -216,21 +345,24 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
     for _ in range(HOPS):
         if not front or room() <= 0:
             break
+        walk_front = front - hub_ids
         done |= front
         fe, new_c = set(), set()
-        for a, b, bn, bm, t, c, st in store.query(
+        rel_rows = store.query(
                 f"MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $ids {cond} RETURN a.id, b.id, b.name, b.mentions, r.type, "
                 f"coalesce(r.conf, 0.5), startNode(r).id ORDER BY coalesce(r.conf, 0.5) DESC LIMIT {REL_LIMIT}",
-                {"ids": list(front), "now": now or 0}, tenant):
+                {"ids": list(walk_front), "now": now or 0}, tenant) if walk_front else []
+        for a, b, bn, bm, t, c, st in rel_rows:
             if b not in ents and room() <= 0:
                 continue
             ents.setdefault(b, (bn, bm))
             cur = nb.setdefault(a, {}).get(b)
             nb[a][b] = [1 - (1 - (cur[0] if cur else 0)) * (1 - c), t if not cur or c > cur[0] else cur[1], st == a]  # corroborated
             fe.add(b)
-        for n, e, mc in store.query(
+        mention_rows = store.query(
                 "MATCH (n)-[m:MENTIONS]->(e:Entity) WHERE e.id IN $ids AND (n:Chunk OR n:Memory) RETURN n.id, e.id, coalesce(m.conf, 1.0) "
-                "ORDER BY m.conf DESC LIMIT 3000", {"ids": list(front)}, tenant):  # shortcut: hub entities keep their PER_ENT best chunks
+                "ORDER BY m.conf DESC LIMIT 3000", {"ids": list(walk_front)}, tenant) if walk_front else []
+        for n, e, mc in mention_rows:  # shortcut: hub entities keep their PER_ENT best chunks
             if len(ch_of.setdefault(e, {})) >= PER_ENT:
                 continue
             if n not in ent_of and n not in new_c:
@@ -248,7 +380,7 @@ def ppr(store, qseeds, aseeds, tenant=None, now=None, current=True):
                     ents[e] = (en, em)
                     fe.add(e)
                 ent_of.setdefault(n, {})[e] = mc
-        front = fe - done
+        front = fe - done - hub_ids
     idx = {k: i for i, k in enumerate([*ents, *ent_of])}  # a chunk or edge that lost the node budget is dropped here
     P = np.zeros((len(idx), len(idx)))
     for e in ents:
@@ -346,10 +478,53 @@ CHANGE_RE = re.compile(r"\b(chang\w*|histor\w*|timeline|over time|evol\w*|when|b
 RECENT_RE = re.compile(r"\b(current\w*|latest|now|recent\w*|newest|today|yesterday|last|this week)\b", re.I)
 
 
-def temporal(store, f: Filt, tenant=None, pool=None, asc=False, n=N):
+def temporal(store, f: Filt, tenant=None, pool=None, asc=False, n=N, q: str | None = None):
     """Rank by date inside the window: newest first (current/latest questions) or oldest first (what changed).
-    `pool` restricts to candidate ids from the other channels; without it every node in the window is ranked."""
+    `pool` restricts to candidate ids from the other channels; without it every node in the window is ranked.
+    With NEO_TEMPORAL_2PHASE=1 and the query text (`q`), two-phase retrieval instead (Hindsight's
+    retrieve_temporal_combined): phase 1 pulls the newest TWO_PHASE_N Chunk/Memory candidates inside the window
+    from the date range index in one Cypher query — with only a recency cue, the newest TWO_PHASE_N overall —
+    and phase 2 re-ranks those candidates by cosine similarity to the query instead of by date alone."""
+    if q is not None and _2phase():
+        return _temporal_2phase(store, q, f, tenant, n)
     m = meta(store, None if pool is None else list(pool), tenant)
     ranked = keep(store, [(i, v[2] or 0) for i, v in m.items()], f, tenant, m)
     ranked.sort(key=lambda x: (x[1], x[0]) if asc else (-x[1], x[0]))
     return ranked[:n]  # shortcut: pool=None scans every Chunk/Memory; fine to ~10k nodes
+
+
+TWO_PHASE_N = 200  # phase-1 candidates pulled from the date range index
+
+
+def _2phase() -> bool:
+    return os.environ.get("NEO_TEMPORAL_2PHASE") == "1"
+
+
+def _temporal_2phase(store, q: str, f: Filt, tenant, n):
+    """Phase 1: newest TWO_PHASE_N nodes of the window (or of the whole graph, recency cue) in one query — the
+    range indexes on Chunk.date_ms / Memory.valid_from_ms make the filter cheap. Phase 2: cosine re-rank.
+    keep()'s rules (merged/superseded/kinds) are applied inline; the window itself is enforced by the query."""
+    d = "coalesce(n.date_ms, n.valid_from_ms, n.created_ms)"
+    where = f"(n:Chunk OR n:Memory) AND {d} IS NOT NULL"
+    if f.since is not None:
+        where += f" AND {d} >= $since"
+    if f.until is not None:
+        where += f" AND {d} < $until"
+    rows = store.query(f"MATCH (n) WHERE {where} RETURN n.id, labels(n)[0], n.kind, n.status, n.emb "
+                       f"ORDER BY {d} DESC LIMIT $lim", {"since": f.since, "until": f.until, "lim": TWO_PHASE_N}, tenant)
+    if not rows:
+        return []
+    qv = models.embed_query(q)
+    qn = float(np.linalg.norm(qv)) or 1.0
+    out = []
+    for i, label, kind, status, emb in rows:
+        if status == "merged" or (status == "superseded" and not f.superseded):  # merged: dream's duplicate, never shown
+            continue
+        if f.kinds and kind not in f.kinds and label.lower() not in f.kinds:
+            continue
+        e = np.asarray(emb, dtype=np.float32)
+        if e.size != qv.size:  # unembedded node: cannot be similarity-ranked, phase 1 ordering is meaningless for it
+            continue
+        out.append((i, float(np.dot(qv, e) / (qn * (float(np.linalg.norm(e)) or 1.0)))))
+    out.sort(key=lambda x: (-x[1], x[0]))
+    return out[:n]

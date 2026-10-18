@@ -184,11 +184,50 @@ _NAME = re.compile(r"[A-Z][\w'.-]+(?: [A-Z][\w'.-]+)+")
 _SLUG = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)+")
 
 
+# code is not prose: fenced blocks, indented blocks (after a blank line, outside a list) and shell or CLI lines
+_FENCE = re.compile(r"^\s*(`{3,}|~{3,})(.*)$")
+_LIST_ITEM = re.compile(r"^ {0,3}(?:[-*+]|\d+[.)])\s")
+_CMD = re.compile(r"^\s*(?:[-*>+]\s+|\d+\.\s+)?`?(?:\$ |neo |uv run|git |curl |python3? )")
+
+
+def _prose_texts(texts: list[str]) -> list[str]:
+    """Each text with its code lines blanked (line count kept). Fence and list state carry from one text to the next: the
+    chunks of one document come in order, and chunks split on blank lines, so a chunk can start inside a block."""
+    out, fence, in_list = [], None, False
+    for text in texts:
+        lines, prev_blank = [], True
+        for line in text.splitlines():
+            s = line.strip()
+            if fence:
+                if re.fullmatch(re.escape(fence[0]) + "{%d,}" % len(fence), s):
+                    fence = None
+                lines.append("")
+                prev_blank = False
+                continue
+            m = _FENCE.match(line)
+            if m and not (m.group(1)[0] == "`" and "`" in m.group(2)):  # a backtick fence has no backtick in its info string
+                fence = m.group(1)
+                lines.append("")
+                prev_blank = False
+                continue
+            if _LIST_ITEM.match(line):
+                in_list = True
+            elif s and not line[0].isspace():
+                in_list = False
+            if s and prev_blank and not in_list and line.startswith(("    ", "\t")):
+                lines.append("")  # an indented block: prev_blank stays True, the block goes on
+                continue
+            prev_blank = not s
+            lines.append("" if s and _CMD.match(line) else line)
+        out.append("\n".join(lines))
+    return out
+
+
 def _table_facts(text: str) -> list[tuple[str, str, str, str, str]]:
     """Markdown tables row by row: (head, relation, tail, head type, tail type). The first cell is the subject; columns are
     read by header word: owner -> OWNS, team (row about a person) -> MEMBER_OF, depends/upstream/calls/uses -> DEPENDS_ON."""
     out, hdr = [], None
-    lines = text.splitlines()
+    lines = _prose_texts([text])[0].splitlines()
     for n, line in enumerate(lines):
         if not line.strip().startswith("|"):
             hdr = None
@@ -295,7 +334,7 @@ def _windows(text: str) -> tuple[list[str], list[str | None]]:
     """Sentence-sized relation windows (GLiNER pairs entities far better inside one or two sentences than in a chunk) and the
     speaker of each (chat/comment lines only)."""
     out, spk = [], []
-    for line in text.splitlines():
+    for line in _prose_texts([text])[0].splitlines():
         who = None
         m = _SPK.match(line)
         if m:
@@ -646,11 +685,12 @@ def extract_batch(texts: list[str], titles: list[str] | None = None, authors: li
         names = {w for k, x in e.items() if x["type"] == "person" for w in k.split()}
         for k in [k for k, x in e.items() if x["type"] == "team" and k in names]:
             del e[k]
-    wins = [_windows(t) for t in texts]
+    prose = _prose_texts(texts)  # relations and table facts read prose only; the chunk text (search) is untouched
+    wins = [_windows(t) for t in prose]
     flat = [w for ws, _ in wins for w in ws]
     glr = run(flat, _schema(m, False), 16) if flat else []
     out, i = [], 0
-    for e, (ws, sp), t, ti, a in zip(ents, wins, texts, titles, authors):
+    for e, (ws, sp), t, ti, a in zip(ents, wins, prose, titles, authors):
         rels = _relations(e, ws, glr[i:i + len(ws)], ti, a, sp, kind=kind)
         i += len(ws)
         seen = {(normalize_key(r["head"]), r["type"], normalize_key(r["tail"])) for r in rels}

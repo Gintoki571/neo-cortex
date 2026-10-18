@@ -1,4 +1,5 @@
 import datetime as dt
+import math
 import re
 import zlib
 
@@ -255,6 +256,36 @@ def test_linking_drops_generic_and_junk(g):
     assert len(ch.link_entities(g, e("checkout"), "checkout auth platform team session ttl", cap=2)) <= 2
 
 
+def test_seed_per_term_keeps_each_query_entity(monkeypatch, g):
+    monkeypatch.setenv("NEO_SEED_PER_TERM", "1")
+    seeds = ch.link_entities(
+        g,
+        [{"name": "Checkout", "type": "service", "conf": 0.9},
+         {"name": "Auth Service", "type": "service", "conf": 0.9},
+         {"name": "Platform Team", "type": "team", "conf": 0.9}],
+        "checkout auth platform session ttl",
+        cap=5,
+    )
+    assert set(seeds) == {"e_ck", "e_auth", "e_plat"}
+    assert all(0 < score <= 1 for _, score in seeds.values())
+    assert len(seeds) <= 3
+
+
+def test_hub_skip_blocks_transit_but_keeps_hub_target(monkeypatch, g):
+    q = g.query
+    q("CREATE (:Entity {id:'e_hub2', name:'Common Hub', key:'common hub', type:'service', mentions:100}), "
+      "(:Entity {id:'e_tail', name:'Rare Tail', key:'rare tail', type:'service', mentions:1})")
+    q("MATCH (a:Entity {id:'e_ck'}),(h:Entity {id:'e_hub2'}),(t:Entity {id:'e_tail'}) "
+      "CREATE (a)-[:REL {type:'RELATED_TO', conf:1.0}]->(h), "
+      "(h)-[:REL {type:'RELATED_TO', conf:1.0}]->(t)")
+    without = ch.ppr(g, {"e_ck": 1.0}, {})
+    assert "e_tail" in without[0]
+    monkeypatch.setenv("NEO_HUB_SKIP", "1")
+    with_skip = ch.ppr(g, {"e_ck": 1.0}, {})
+    assert "e_hub2" in with_skip[0]
+    assert "e_tail" not in with_skip[0]
+
+
 def test_ppr_bounds_nodes_within_a_hop(g):
     """A hub with 1500 REL neighbours must not grow the dense matrix past MAX_NODES inside one hop."""
     g.query("CREATE (:Entity {id:'e_big', name:'Big Hub', key:'big hub', type:'service', mentions:1})")
@@ -309,3 +340,204 @@ def test_bm25_keeps_numbers_and_flags(g):
     g.query("CREATE (:Chunk {id:'c_port', text:'Start the daemon with neo serve --port 8765 --warm', kind:'doc', date_ms:1})")
     assert ch.bm25(g, "port 8765", ch.Filt())[0][0] == "c_port"
     assert ch.bm25(g, "daemon port", ch.Filt())[0][0] == "c_port"
+
+
+def test_rrf_norm_and_agreement():
+    """NEO_FUSE_NORM math (agentmemory): silent channel costs nothing, extra matching channels add +5%."""
+    r = rrf({"a": [("x", 1)], "b": [("x", 1), ("y", 1)]}, {"a": 1.0, "b": 1.0}, norm=True)
+    sc = {i: s for i, s, _ in r}
+    assert sc["x"] == pytest.approx(1.05)  # (2/61)/(2/61) x (1 + 0.05 x (2-1))
+    assert sc["y"] == pytest.approx(61 / 124)  # (1/62)/(2/61): y is rank 2 in b, found by one channel
+    # a configured but silent heavy channel is no penalty
+    r = rrf({"a": [("x", 1)], "b": []}, {"a": 1.0, "b": 5.0}, norm=True)
+    assert {i: s for i, s, _ in r}["x"] == pytest.approx(1.0)
+    # an item found by more channels wins; a better single-channel rank (y) still loses to z's rank-1 in b
+    r = rrf({"a": [("x", 1), ("y", 2)], "b": [("z", 1)]}, norm=True)
+    assert [i for i, _, _ in r] == ["x", "z", "y"]
+    # default stays the raw weighted sum
+    r = rrf({"a": [("x", 1)]}, {"a": 2.0})
+    assert {i: s for i, s, _ in r}["x"] == pytest.approx(2 / 61)
+
+
+def test_boost_factor_math():
+    from neo_cortex.retrieve.fuse import boost_factor, proof_norm, proximity, recency
+    D = 86400000
+    assert recency(None, NOW) == 0.5  # no date: neutral
+    assert recency(NOW, NOW) == 1.0 and recency(NOW - 365 * D, NOW) == 0.0 and recency(NOW - 400 * D, NOW) == 0.0
+    mar1, apr1 = ms("2026-03-01T00:00:00"), ms("2026-04-01T00:00:00")
+    assert proximity(ms("2026-03-16T12:00:00"), mar1, apr1, NOW) == pytest.approx(1.0)  # window mid
+    assert proximity(mar1, mar1, apr1, NOW) == pytest.approx(0.0)  # window edge
+    assert proximity(NOW, None, None, NOW) is None  # no window in the query
+    assert proximity(mar1, mar1, None, NOW) == pytest.approx(0.0)  # since-only window closes at now; mar1 is its edge
+    assert proof_norm(0) == 0.5 and proof_norm(1) == pytest.approx(0.5)
+    assert proof_norm(10) == pytest.approx(0.5 + math.log(10) / 10) and proof_norm(10**6) == 1.0
+    assert boost_factor(None, NOW) == pytest.approx(1.0)  # everything neutral: no date, no window, no proof
+    assert boost_factor(NOW, NOW) == pytest.approx(1.1)  # fresh item
+    assert boost_factor(mar1, NOW, mar1, apr1, 10) == pytest.approx(
+        (1 + 0.2 * (recency(mar1, NOW) - 0.5)) * (1 + 0.2 * (proximity(mar1, mar1, apr1, NOW) - 0.5))
+        * (1 + 0.1 * (proof_norm(10) - 0.5)))
+
+
+def test_boost_flag_recency_and_proof(g, monkeypatch):
+    """With NEO_FUSE_BOOST=1 a single-channel hit's score is the fused score x recency x proof."""
+    r0 = recall(g, "pizza friday", k=3, channels=["bm25"], now_ms=NOW)[0]
+    monkeypatch.setenv("NEO_FUSE_BOOST", "1")
+    r1 = recall(g, "pizza friday", k=3, channels=["bm25"], now_ms=NOW)[0]
+    d = ms("2026-02-04")
+    exp = (1 + 0.2 * ((1 - (NOW - d) / (365 * 86400000)) - 0.5))  # c_pizza has no MENTIONS: proof neutral
+    assert r1["score"] == pytest.approx(r0["score"] * exp)
+    # a proven memory gets the extra 10%-scale nudge: m_new has uses=0 -> MENTIONS-free, set uses to make it count
+    g.query("MATCH (m:Memory {id:'m_new'}) SET m.uses = 10")
+    monkeypatch.setenv("NEO_FUSE_BOOST", "0")
+    m0 = recall(g, "sessions expire seconds", k=5, channels=["bm25"], now_ms=NOW)
+    monkeypatch.setenv("NEO_FUSE_BOOST", "1")
+    m1 = recall(g, "sessions expire seconds", k=5, channels=["bm25"], now_ms=NOW)
+    dm = next(r for r in m1 if r["id"] == "m_new")["date_ms"]
+    expm = (1 + 0.2 * ((1 - (NOW - dm) / (365 * 86400000)) - 0.5)) * (1 + 0.1 * (0.5 + math.log(10) / 10 - 0.5))
+    assert next(r for r in m1 if r["id"] == "m_new")["score"] == pytest.approx(
+        next(r for r in m0 if r["id"] == "m_new")["score"] * expm)
+
+
+def test_boost_flag_window_proximity(g, monkeypatch):
+    """A query window adds the temporal-proximity boost on top of recency."""
+    since, until = ms("2026-03-01T00:00:00"), ms("2026-04-01T00:00:00")
+    r0 = recall(g, "session ttl seconds", k=5, since_ms=since, until_ms=until, now_ms=NOW)
+    monkeypatch.setenv("NEO_FUSE_BOOST", "1")
+    r1 = recall(g, "session ttl seconds", k=5, since_ms=since, until_ms=until, now_ms=NOW)
+    hit = next(r for r in r1 if r["id"] == "c_ttl_new")
+    d = ms("2026-03-05")
+    prox = 1 - abs(d - (since + until) / 2) / ((until - since) / 2)
+    exp = (1 + 0.2 * ((1 - (NOW - d) / (365 * 86400000)) - 0.5)) * (1 + 0.2 * (prox - 0.5))
+    assert hit["score"] == pytest.approx(next(r for r in r0 if r["id"] == "c_ttl_new")["score"] * exp)
+
+
+def test_norm_flag_scores_bounded(g, monkeypatch):
+    """With NEO_FUSE_NORM=1 fused scores are normalized: at most 1 + 0.05 x (channels - 1)."""
+    monkeypatch.setenv("NEO_FUSE_NORM", "1")
+    rs = recall(g, "checkout service", k=8, now_ms=NOW)
+    assert rs and all(0 < r["score"] <= 1.15 + 1e-9 for r in rs)
+    assert not recall(g, "pizza friday", k=3, now_ms=NOW) or max(r["score"] for r in recall(g, "pizza friday", k=3, now_ms=NOW)) <= 1.15
+
+
+# --- G2 x-lex: NEO_BM25_COVER (graphify idea #2, squared term-coverage rescoring) ---
+
+
+def test_coverage_rescore_one_common_term_cannot_carry(g):
+    """A chunk matching only one common query term is squared down below a full-coverage chunk."""
+    g.query("CREATE (:Chunk {id:'c_port_only', text:'port port port', kind:'doc', date_ms:1})")
+    g.query("CREATE (:Chunk {id:'c_all', text:'port model config', kind:'doc', date_ms:1})")
+    # raw BM25 could rank the repeated common term first; coverage rescoring flips it
+    ranked = [("c_port_only", 100.0), ("c_all", 1.0)]
+    res = ch._coverage_rescore(g, ranked, "port model config")
+    got = dict(res)
+    assert "c_all" in got and "c_port_only" in got
+    assert got["c_all"] > got["c_port_only"]  # 3/3 terms x coverage 1 beats 1/3 x (1/3)^2
+
+
+def test_coverage_rescore_drops_nonmatching(g):
+    g.query("CREATE (:Chunk {id:'c_port_only', text:'port port port', kind:'doc', date_ms:1})")
+    res = ch._coverage_rescore(g, [("c_port_only", 5.0)], "xyzzy nothing")
+    assert res == []  # no query term matches: nothing to carry the chunk
+
+
+def test_bm25_cover_flag_reorders(g, monkeypatch):
+    g.query("CREATE (:Chunk {id:'c_port_only', text:'port port port', kind:'doc', date_ms:1})")
+    g.query("CREATE (:Chunk {id:'c_all', text:'port model config', kind:'doc', date_ms:1})")
+    monkeypatch.setenv("NEO_BM25_COVER", "1")
+    got = [i for i, _ in ch.bm25(g, "port model config", ch.Filt())]
+    assert "c_all" in got and "c_port_only" in got
+    assert got.index("c_all") < got.index("c_port_only")
+    monkeypatch.setenv("NEO_BM25_COVER", "0")
+    got0 = [i for i, _ in ch.bm25(g, "port model config", ch.Filt())]
+    assert "c_all" in got0 and "c_port_only" in got0
+
+
+# --- G2 x-lex: NEO_WHY_TIER (graphify idea #8, frontmatter/why tier) ---
+
+
+def test_why_list_matches_frontmatter(g):
+    """Decision documents surface via title / doc_type / description even when body wording differs."""
+    g.query("CREATE (:Document {id:'d_adr', kind:'adr', title:'Adopt checkout timeout', doc_type:'Decision', "
+            "description:'We decided to set the checkout timeout to 30 seconds', date_ms:$d})",
+            {"d": ms("2026-02-10")})
+    g.query("CREATE (:Document {id:'d_run', kind:'doc', title:'Platform runbook', doc_type:'Guide', "
+            "description:'how to operate the platform', date_ms:$d})", {"d": ms("2026-02-10")})
+    w = dict(ch._why_list(g, "checkout timeout decision"))
+    assert w["d_adr"] == pytest.approx(1.0)  # full phrase: all terms match frontmatter
+    assert "d_run" not in w  # shares none of the query terms
+
+
+def test_why_list_empty_on_nomatch(g):
+    g.query("CREATE (:Document {id:'d_adr', kind:'adr', title:'Adopt checkout timeout', doc_type:'Decision', "
+            "description:'checkout timeout set to 30s', date_ms:1})")
+    assert ch._why_list(g, "zzzqqq nomatch") == []
+
+
+def test_why_tier_surfaces_decision_document(g, monkeypatch):
+    """A "why" question fuses in a low-weight frontmatter list so the ADR surfaces."""
+    g.query("CREATE (:Document {id:'d_adr', kind:'adr', title:'Adopt checkout timeout', doc_type:'Decision', "
+            "description:'We decided to set the checkout timeout to 30 seconds', date_ms:$d})",
+            {"d": ms("2026-02-10")})
+    monkeypatch.setenv("NEO_WHY_TIER", "1")
+    rs = recall(g, "why did we adopt the checkout timeout?", k=12, now_ms=NOW)
+    ids_ = ids(rs)
+    assert "d_adr" in ids_
+    hit = next(r for r in rs if r["id"] == "d_adr")
+    assert hit["label"] == "Document" and hit["source"]["doc_type"] == "Decision"
+    assert "why" in hit["channels"]
+    # off: the ADR is a Document, never returned by the text channels
+    monkeypatch.setenv("NEO_WHY_TIER", "0")
+    assert "d_adr" not in ids(recall(g, "why did we adopt the checkout timeout?", k=12, now_ms=NOW))
+
+
+# --- NEO_TEMPORAL_2PHASE ------------------------------------------------------------------------------------------
+
+
+def test_temporal_two_phase_window_ranks_by_similarity(g, monkeypatch):
+    """Flag on: in-window candidates (one range-index query, newest TWO_PHASE_N first) are re-ranked by cosine
+    to the query, so the newest off-topic chunk falls behind older on-topic ones. Flag off: pure date order."""
+    g.query("CREATE (:Chunk {id:'c_budget', doc_id:'d1', text:'Quarterly budget review deck', kind:'doc', "
+            "date_ms:$d, emb:vecf32($v)})", {"d": ms("2026-03-20"), "v": vec("Quarterly budget review deck").tolist()})
+    f = ch.Filt(ms("2026-03-01"), ms("2026-04-01"))
+    monkeypatch.delenv("NEO_TEMPORAL_2PHASE", raising=False)
+    assert [i for i, _ in ch.temporal(g, f, q="session ttl seconds config")] == ["c_budget", "m_new", "c_ttl_new"]
+    monkeypatch.setenv("NEO_TEMPORAL_2PHASE", "1")
+    assert [i for i, _ in ch.temporal(g, f, q="session ttl seconds config")] == ["c_ttl_new", "m_new", "c_budget"]
+
+
+def test_temporal_two_phase_recency_cue(g, monkeypatch):
+    """Only a recency cue, no window: flag on ranks the newest TWO_PHASE_N nodes by similarity (an older
+    on-topic chunk beats newer off-topic ones); without q the flag changes nothing (date order)."""
+    monkeypatch.setenv("NEO_TEMPORAL_2PHASE", "1")
+    r = ch.temporal(g, ch.Filt(), q="pizza lunch friday")
+    assert r[0][0] == "c_pizza" and r[0][1] > 0.5
+    assert [i for i, _ in ch.temporal(g, ch.Filt())][:2] == ["m_new", "c_ttl_new"]  # no q: unchanged date order
+
+
+def test_temporal_two_phase_keeps_status_and_kind_rules(g, monkeypatch):
+    """The phase-2 re-rank still applies keep()'s rules: merged never surfaces, kinds filter, window enforced."""
+    monkeypatch.setenv("NEO_TEMPORAL_2PHASE", "1")
+    g.query("CREATE (:Memory {id:'m_dup', text:'session ttl seconds config', kind:'semantic', status:'merged', "
+            "created_ms:$d, source_id:'s', agent:'a', emb:vecf32($v)})",
+            {"d": ms("2026-03-15"), "v": vec("session ttl seconds config").tolist()})
+    f = ch.Filt(ms("2026-03-01"), ms("2026-04-01"))
+    assert [i for i, _ in ch.temporal(g, f, q="session ttl seconds config")] == ["c_ttl_new", "m_new"]  # m_dup was top-sim
+    assert [i for i, _ in ch.temporal(g, ch.Filt(ms("2026-03-01"), ms("2026-04-01"), kinds=("memory",)),
+                                      q="session ttl seconds config")] == ["m_new"]
+    assert ch.temporal(g, ch.Filt(ms("2020-01-01"), ms("2020-02-01")), q="session ttl") == []  # empty window
+
+
+def test_temporal_two_phase_pool_ignored_only_with_query(g, monkeypatch):
+    """Flag on but no query text (old callers): the date path is kept, pool honoured."""
+    monkeypatch.setenv("NEO_TEMPORAL_2PHASE", "1")
+    pool = {"c_ttl_old", "c_ttl_new", "m_old", "m_new"}
+    assert [i for i, _ in ch.temporal(g, ch.Filt(superseded=True), pool=pool)] == \
+        ["m_new", "c_ttl_new", "m_old", "c_ttl_old"]
+
+
+def test_recall_two_phase_window(g, monkeypatch):
+    """recall with the flag on: the temporal channel returns only in-window nodes, ranked by similarity."""
+    monkeypatch.setenv("NEO_TEMPORAL_2PHASE", "1")
+    rs = recall(g, "session ttl seconds config", k=5, since_ms=ms("2026-03-01"), until_ms=ms("2026-04-01"), now_ms=NOW)
+    assert rs and set(ids(rs)) <= {"c_ttl_new", "m_new"} and "temporal" in rs[0]["channels"]
+    assert rs[0]["id"] == "c_ttl_new"

@@ -20,3 +20,4 @@ __pycache__/
 /agentmemory/
 /graphify/
 /hindsight/
+/.codegraph/

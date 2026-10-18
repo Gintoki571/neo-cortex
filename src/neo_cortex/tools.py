@@ -106,15 +106,19 @@ def _full_text(store, rs, tenant):
     return rs
 
 
-def _snip(text, query, n=240) -> str:
+def _snip(text, query, n=240, names=()) -> str:
     """The n-char view of a hit: its 1-3 sentences sharing the most terms with the query, in document order, "…" across gaps.
-    Terms are tokenised as BM25 does (stemmed, stopwords out); no IDF. Falls back to the head when nothing matches."""
+    Terms are tokenised as BM25 does (stemmed, stopwords out); no IDF. `names` (lowercase entity names the chunk MENTIONS)
+    add half a point to a sentence that names one, so an answer such as an owner, not in the question, can win.
+    Falls back to the head when nothing matches."""
     flat = re.sub(r"\s+", " ", text or "").strip()
     qs = set(ch._tok([query])[0])
-    if len(flat) <= n or not qs:
+    if len(flat) <= n or not (qs or names):
         return _t(flat, n)
     sents = [s for line in (text or "").splitlines() for s in write._sentences(re.sub(r"\s+", " ", line).strip())]
-    hits = sorted(((len(qs & set(t)), i) for i, t in enumerate(ch._tok(sents)) if qs & set(t)), key=lambda x: (-x[0], x[1]))
+    named = [any(re.search(rf"\b{re.escape(nm)}\b", s.lower()) for nm in names) for s in sents]
+    hits = sorted(((len(qs & set(t)) + 1.0 * nm, i) for i, (t, nm) in enumerate(zip(ch._tok(sents), named)) if qs & set(t) or nm),
+                  key=lambda x: (-x[0], x[1]))
     if not hits:
         return _t(flat, n)
 
@@ -129,13 +133,25 @@ def _snip(text, query, n=240) -> str:
     return view(keep) if keep else _t(sents[hits[0][1]], n)
 
 
-def _item(n, r, query) -> str:
+def _mention_names(store, ids, tenant) -> dict:
+    """Chunk/Memory id -> lowercase names of the entities it MENTIONS (for _snip)."""
+    out = {}
+    for i, name in store.query("MATCH (n)-[:MENTIONS]->(e:Entity) WHERE n.id IN $i RETURN n.id, e.name", {"i": list(ids)}, tenant):
+        if name and len(name) >= 3:
+            out.setdefault(i, []).append(name.lower())
+    return out
+
+
+def _item(n, r, query, names=(), snippet_chars=240, compact=False) -> str:
     s = r["source"]
-    src = (f'doc "{_t(s.get("title"), 60)}" ({s.get("kind")}) [{s.get("doc_id")}]' + (f' by {s["author"]}' if s.get("author") else "") if r["label"] == "Chunk"
-           else "memory " + "/".join(x for x in (s.get("agent"), s.get("project")) if x) + (f" session {s['source_id']}" if s.get("source_id") else ""))
+    if compact:
+        src = f"doc [{s.get('doc_id')}]" if r["label"] == "Chunk" else "memory"
+    else:
+        src = (f'doc "{_t(s.get("title"), 60)}" ({s.get("kind")}) [{s.get("doc_id")}]' + (f' by {s["author"]}' if s.get("author") else "") if r["label"] == "Chunk"
+               else "memory " + "/".join(x for x in (s.get("agent"), s.get("project")) if x) + (f" session {s['source_id']}" if s.get("source_id") else ""))
     why = ",".join(f"{c}#{k}" for c, k in r["channels"].items())
-    out = f"{n}. [{r['id']}] {r['kind'] or r['label'].lower()} {_d(r['date_ms'])}" + (" SUPERSEDED" if r["status"] == "superseded" else "")
-    out += f" | {src} | via {why}\n   {_snip(r['text'], query)}"
+    out = f"{n}. [{r['id']}] {r['kind'] or r['label'].lower()}" + (f" {_d(r['date_ms'])}" if not compact else "") + (" SUPERSEDED" if r["status"] == "superseded" else "")
+    out += f" | {src} | via {why}\n   {_snip(r['text'], query, n=snippet_chars, names=names)}"
     return out + "".join(f"\n   path: {p}" for p in r["paths"][:1])
 
 
@@ -180,12 +196,15 @@ def _paths(store, a, b, max_hops, tenant, count=3):
     return [p for p in rows if all(r[5] is None and r[6] == "fact" for r in p[1])][:count]
 
 
-def _path_lines(store, paths, tenant, lead="") -> list[str]:
+def _path_lines(store, paths, tenant, lead="", compact=False) -> list[str]:
     src = _src_names(store, [r[2] for _, rels in paths for r in rels], tenant)
     out = []
     for nodes, rels in paths:
         out.append(f"{lead}{_trail(nodes, rels)}")
-        out.append("    src: " + "; ".join(f"{r[0]} {src.get(r[2], r[2] or '?')}" for r in rels))
+        if compact:
+            out.append("    src: " + "; ".join(f"{r[0]} [{r[2] or '?'}]" for r in rels))
+        else:
+            out.append("    src: " + "; ".join(f"{r[0]} {src.get(r[2], r[2] or '?')}" for r in rels))
     return out
 
 
@@ -306,7 +325,7 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
             paths += _paths(store, a, b, 3, tenant, count=1)
     if paths:
         out.append("## Bridging paths")
-        out += _path_lines(store, paths, tenant, "- ")
+        out += _path_lines(store, paths, tenant, "- ", compact=True)
         ids = list({*ids, *(n[0] for nodes, _ in paths for n in nodes)})
     rel_ents = [e for e, *_ in ginfo.get("entities", [])[:6]]
     ids = list({*ids, *rel_ents})
@@ -314,18 +333,18 @@ def ask(store, question, max_chars=MAX, tenant=None) -> str:
         facts = store.query(
             "MATCH (a:Entity)-[r:REL]->(b:Entity) WHERE coalesce(r.modality,'fact')='fact' AND ((a.id IN $i AND b.id IN $i) OR ((a.id IN $r OR b.id IN $r) AND r.type IN $ty)) "
             "RETURN a.name, r.type, b.name, r.conf, r.valid_from_ms, r.source_id, r.valid_to_ms "
-            "ORDER BY r.valid_to_ms IS NULL DESC, r.conf DESC LIMIT 15", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them; current first
+            "ORDER BY r.valid_to_ms IS NULL DESC, r.conf DESC LIMIT 8", {"i": ids, "r": rel_ents, "ty": OWN_TYPES}, tenant)  # reached entities: show who owns/approves/works on them; current first
         if facts:
-            src = _src_names(store, [f[5] for f in facts], tenant)
             out.append("## Facts among them")
-            out += [f"- {a} -[{t}]-> {b} ({_d(d)}{', ended ' + _d(vt) if vt else ''}, conf {c or 0:.2f}) src {src.get(s, s or '?')}"
+            out += [f"- {a} -[{t}]-> {b} ({_d(d)}{', ended ' + _d(vt) if vt else ''}, conf {c or 0:.2f}) src {s or '?'}"
                     for a, t, b, c, d, s, vt in facts]
     if ginfo.get("entities"):  # reached by the Personalized PageRank walk: bridging answers (people, owners) show up here
         out.append("## Related entities (graph walk from the seeds, strongest first)")
-        out += [f"- [{e}] {n}: {tr}" for e, n, _, tr in ginfo["entities"][:6]]
+        out += [f"- [{e}] {n}: {tr}" for e, n, _, tr in ginfo["entities"][:4]]
     if rs:
         out.append("## Evidence (cite ids)")
-        out += [_item(i, r, question) for i, r in enumerate(rs, 1)]
+        names = _mention_names(store, [r["id"] for r in rs], tenant)
+        out += [_item(i, r, question, names.get(r["id"], ()), snippet_chars=240, compact=True) for i, r in enumerate(rs, 1)]
     top = max(pq["intent"], key=pq["intent"].get) if pq["intent"] else None
     first = next(iter(seeds.values()))[0] if seeds else None
     if not seeds:

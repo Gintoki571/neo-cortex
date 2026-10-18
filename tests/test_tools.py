@@ -146,6 +146,35 @@ def test_ask_expands_evidence_budget(g, monkeypatch):
     assert 4200 < len(out) <= 12000
 
 
+def test_ask_keeps_more_evidence_within_default_budget(g, monkeypatch):
+    def result(i):
+        return {
+            "id": f"m_budget_{i}",
+            "label": "Memory",
+            "kind": "semantic",
+            "date_ms": NOW,
+            "status": "active",
+            "text": f"Evidence item {i} records the hackathon submission requirements and deadline. "
+                    "The supporting document also describes the review process and the final submission window.",
+            "source": {"agent": "documentation-agent", "project": "neo-cortex-research", "source_id": None},
+            "channels": {"dense": i + 1},
+            "paths": [],
+        }
+
+    monkeypatch.setattr(tools, "_recall", lambda *args, **kwargs: [result(i) for i in range(kwargs["k"])])
+    out = tools.ask(g, "hackathon submission requirements", max_chars=4000)
+    assert out.count("semantic | memory |") >= 12
+
+
+def test_ask_compacts_path_sources(g):
+    paths = [([["e_priya", "Priya Shah"], ["e_plat", "Platform Team"]],
+              [["MEMBER_OF", "e_priya", "d1#0", NOW, 0.9, None, "fact"]])]
+    full = tools._path_lines(g, paths, None)
+    compact = tools._path_lines(g, paths, None, compact=True)
+    assert len(compact[1]) < len(full[1])
+    assert "d1#0" in compact[1]
+
+
 def test_max_chars_respected(g):
     for fn, args in [(tools.brief, ()), (tools.timeline, ("Auth Service",)), (tools.recall, ("auth service",)), (tools.ask, ("who owns Auth Service",)),
                      (tools.explore, ("Auth Service",)), (tools.cypher, ("MATCH (e:Entity) RETURN e",))]:

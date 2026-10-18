@@ -1,7 +1,9 @@
 """Hybrid retrieval: vector + BM25 + graph + temporal channels fused with weighted RRF."""
+import os
+
 from ..util import now_ms as _now
 from . import channels as ch
-from .fuse import BASE, channel_weights, kind_factor, rrf
+from .fuse import BASE, boost_factor, channel_weights, kind_factor, rrf
 from .query import parse_query, parse_time
 
 __all__ = ["recall", "rrf", "parse_query", "parse_time"]
@@ -13,6 +15,14 @@ POOL = 20  # top candidates per channel handed to the temporal re-rank
 def _trim(t, n=400):
     t = t or ""
     return t if len(t) <= n else t[:n].rsplit(" ", 1)[0] + "…"
+
+
+def _proof_counts(store, ids, tenant):
+    """id -> evidence count: Memory.uses, else the number of MENTIONS edges out of the item."""
+    rows = store.query("MATCH (n) WHERE (n:Chunk OR n:Memory) AND n.id IN $ids "
+                       "OPTIONAL MATCH (n)-[m:MENTIONS]->() RETURN n.id, n.uses, count(m)",
+                       {"ids": list(ids)}, tenant)
+    return {r[0]: max(r[1] or 0, r[2]) for r in rows}
 
 
 def recall(store, query, k=8, since_ms=None, until_ms=None, kinds=None, weights=None, channels=None, tenant=None, now_ms=None, info=None, _relax=False):
@@ -53,14 +63,23 @@ def recall(store, query, k=8, since_ms=None, until_ms=None, kinds=None, weights=
     if "temporal" in chans:
         pool = {i for l in lists.values() for i, _ in l[:POOL]} or None
         asc = temporal_q and bool(ch.CHANGE_RE.search(query))
-        lists["temporal"] = ch.temporal(store, f, tenant, pool, asc) if pool is not None or not lists else []
+        lists["temporal"] = ch.temporal(store, f, tenant, pool, asc, q=query) if pool is not None or not lists else []
+    if os.environ.get("NEO_WHY_TIER") == "1" and intent.get("decision"):  # graphify idea #8: why/frontmatter tier
+        lists["why"] = ch._why_list(store, query, tenant)
     w = channel_weights(intent) if weights is None else {**BASE, **weights}
+    if os.environ.get("NEO_WHY_TIER") == "1" and intent.get("decision"):
+        w = {**w, "why": 0.2}  # low weight: supplementary, never a filter
     if "graph" in lists:  # a weak or hub seed scales the graph's rank contribution down
         w = {**w, "graph": w["graph"] * gi.get("strength", 1.0)}
     if _relax:
         w = {**w, "temporal": 2.0}  # recency boost: the user's time words found nothing
-    fused = rrf(lists, w)
-    kind = {i: m[1] for i, m in ch.meta(store, [i for i, _, _ in fused], tenant).items()}  # kind routing: decision nodes
+    fused = rrf(lists, w, norm=os.environ.get("NEO_FUSE_NORM") == "1")
+    meta_rows = ch.meta(store, [i for i, _, _ in fused], tenant)
+    kind = {i: m[1] for i, m in meta_rows.items()}  # kind routing: decision nodes
+    if fused and os.environ.get("NEO_FUSE_BOOST") == "1":  # bounded secondary boosts (recency/window/proof)
+        proof = _proof_counts(store, [i for i, _, _ in fused], tenant)
+        fused = [(i, s * boost_factor(meta_rows.get(i, (None, None, None, None))[2], now, since, until, proof.get(i, 0)), r)
+                 for i, s, r in fused]
     fused = sorted(((i, s * kind_factor(intent, kind.get(i)), r) for i, s, r in fused), key=lambda x: -x[1])[:k]
     if not fused:
         if parsed_window:  # the time words matched nothing: search everything, newest first
@@ -72,8 +91,19 @@ def recall(store, query, k=8, since_ms=None, until_ms=None, kinds=None, weights=
         "MATCH (n) WHERE (n:Chunk OR n:Memory) AND n.id IN $ids OPTIONAL MATCH (d:Document)-[:HAS_CHUNK]->(n) "
         "RETURN n.id, labels(n)[0], n.text, coalesce(n.date_ms, n.valid_from_ms, n.created_ms), n.kind, n.status, "
         "n.source_id, n.agent, n.project, d.id, d.title, d.kind, d.uri, d.author", {"ids": ids}, tenant)}
+    doc_rows = {r[0]: r for r in store.query(
+        "MATCH (d:Document) WHERE d.id IN $ids "
+        "RETURN d.id, d.title, d.kind, d.uri, d.author, d.date_ms, d.description, d.doc_type", {"ids": ids}, tenant)}
     out = []
     for i, s, ranks in fused:
+        if i in doc_rows:  # why-tier hit: a Document surfaced by title / doc_type / description
+            _, dtitle, dkind, duri, dauthor, date, description, doctype = doc_rows[i]
+            out.append({"id": i, "label": "Document", "text": _trim(description or dtitle or ""), "score": s,
+                        "channels": ranks, "paths": paths.get(i, []),
+                        "source": {"doc_id": i, "title": dtitle, "kind": dkind, "uri": duri, "author": dauthor,
+                                   "doc_type": doctype},
+                        "date_ms": date, "kind": dkind, "status": None})
+            continue
         _, label, text, date, kind, status, sid, agent, project, did, dtitle, dkind, duri, dauthor = rows[i]
         src = ({"doc_id": did, "title": dtitle, "kind": dkind, "uri": duri, "author": dauthor} if label == "Chunk"
                else {"source_id": sid, "agent": agent, "project": project, "kind": kind})

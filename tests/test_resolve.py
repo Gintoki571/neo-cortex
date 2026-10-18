@@ -146,3 +146,84 @@ def test_caller_named_lone_surname_stays_ambiguous_and_never_merges(store, fake_
     assert resolve.resolve_entity(store, "Haddad", "person") is None
     assert resolve.resolve_entity(store, "Noor", "person", pin=resolve.PIN_EXPLICIT) not in (None, store.query(
         "MATCH (e:Entity {key:'noor haddad'}) RETURN e.id")[0][0])  # a caller-named "Noor" is its own entity, not Noor Haddad
+
+
+# --- NEO_RESOLVE_JW -----------------------------------------------------------------------------------------------
+
+
+def test_jaro_winkler_math():
+    jw = resolve.jaro_winkler
+    assert jw("falkordb", "falkordb") == 1.0
+    assert jw("", "x") == 0.0 and jw("abc", "xyz") == 0.0
+    assert 0.9 <= jw("falkordb", "falkordblite") <= 1.0        # the merge case the flag is for
+    assert jw("api v2", "api v3") >= 0.9                        # high JW, but blocked by the numeric rule instead
+    assert jw("checkout", "outcheck") < 0.9                     # transposed words: low JW despite shared letters
+
+
+def test_jw_extra_merge_path(store, fake_models, monkeypatch):
+    monkeypatch.setenv("NEO_RESOLVE_JW", "1")
+    a = resolve.resolve_entity(store, "FalkorDB", "tool")
+    assert resolve.resolve_entity(store, "falkordblite", "tool") == a   # guard keeps them apart, JW merges
+    assert _count(store) == 1
+    b = resolve.resolve_entity(store, "FalkorDB Lite", "person")        # wrong type family: never merges
+    assert b != a and _count(store) == 2
+
+
+def test_jw_path_off_by_default(store, fake_models, monkeypatch):
+    monkeypatch.delenv("NEO_RESOLVE_JW", raising=False)
+    a = resolve.resolve_entity(store, "FalkorDB", "tool")
+    assert resolve.resolve_entity(store, "falkordblite", "tool") != a and _count(store) == 2
+
+
+def test_jw_numeric_tokens_hard_block(store, fake_models, monkeypatch):
+    monkeypatch.setenv("NEO_RESOLVE_JW", "1")
+    a = resolve.resolve_entity(store, "API v2", "service")
+    assert resolve.resolve_entity(store, "API v3", "service") != a      # JW >= 0.9 but v2 != v3
+    c = resolve.resolve_entity(store, "GLiNER2.5", "tool")
+    assert resolve.resolve_entity(store, "GLiNER2", "tool") != c        # 2.5 is not 2
+    assert _count(store) == 4
+
+
+def test_jw_never_merges_persons_or_explicit(store, fake_models, monkeypatch):
+    monkeypatch.setenv("NEO_RESOLVE_JW", "1")
+    p = resolve.resolve_entity(store, "Noor Haddad", "person")
+    assert resolve.resolve_entity(store, "Noor Haddadi", "person") != p  # person names never merge fuzzily
+    g = resolve.resolve_entity(store, "auth gateway", "service")
+    assert resolve.resolve_entity(store, "auth gateways", "service", pin=resolve.PIN_EXPLICIT) != g  # explicit: exact only
+    assert _count(store) == 4  # explicit names are never merged away: "auth gateways" is its own entity
+
+
+def _boost_graph(store):
+    """e_x co-mentioned with e_h1/e_h2 in one chunk; a query at cosine 0.88 to e_x sees all three as candidates."""
+    import numpy as np
+    q = store.query
+    e = [np.zeros(768, dtype=np.float32) for _ in range(3)]
+    for v, i in zip(e, range(3)):
+        v[i] = 1.0
+    vq = 0.88 * e[0] + 0.33 * e[1] + 0.33 * e[2]
+    vq = vq / np.linalg.norm(vq)          # cos to e0 = 0.883: SOFT band, judge decides without the boost
+    for eid, k, n, t, v in [("e_x", "report engine", "Report Engine", "service", e[0]),
+                            ("e_h1", "helper alpha", "Helper Alpha", "tool", e[1]),
+                            ("e_h2", "helper beta", "Helper Beta", "tool", e[2])]:
+        q("CREATE (:Entity {id:$i, key:$k, name:$n, type:$t, type_votes:'{}', aliases:[], emb:vecf32($e), "
+          "first_seen_ms:1, last_seen_ms:1, mentions:2})", {"i": eid, "k": k, "n": n, "t": t, "e": v.tolist()})
+    q("CREATE (:Chunk {id:'c1', doc_id:'d1', text:'x', kind:'doc'})")
+    q("MATCH (c:Chunk {id:'c1'}),(a:Entity),(b:Entity),(d:Entity) WHERE a.id='e_x' AND b.id='e_h1' AND d.id='e_h2' "
+      "CREATE (c)-[:MENTIONS {conf:1.0}]->(a),(c)-[:MENTIONS {conf:1.0}]->(b),(c)-[:MENTIONS {conf:1.0}]->(d)")
+    return vq
+
+
+def test_shared_neighbour_boost_pushes_guarded_pair_over_hard(store, fake_models, monkeypatch):
+    monkeypatch.setenv("NEO_RESOLVE_JW", "1")
+    vq = _boost_graph(store)
+    assert resolve.resolve_entity(store, "report engines", "service", emb=vq) == "e_x"  # 0.883 + 2 neighbours = 0.923
+    assert _count(store) == 3
+
+
+def test_without_boost_the_judge_vetoes_the_same_pair(store, fake_models, monkeypatch):
+    from neo_cortex import extract
+    monkeypatch.delenv("NEO_RESOLVE_JW", raising=False)
+    monkeypatch.setattr(extract, "_softmax_labels", lambda text, task, labels: {"same": 0.01, "different": 0.99})
+    vq = _boost_graph(store)
+    assert resolve.resolve_entity(store, "report engines", "service", emb=vq) != "e_x"  # judge veto at 0.883
+    assert _count(store) == 4

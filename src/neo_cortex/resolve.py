@@ -4,6 +4,7 @@ Finding: GLiNER2.5-base is close to chance as a same-entity judge on bare names 
 a fuzzy merge needs a lexical guard first (same words up to plurals, or a head/tail name part) and the judge may only veto.
 """
 import json
+import os
 import re
 
 import numpy as np
@@ -14,6 +15,9 @@ from .util import content_hash, new_id, normalize_key, now_ms
 HARD = 0.92   # vector similarity at or above which a lexically guarded pair merges without asking
 SOFT = 0.85   # between SOFT and HARD the cached judge decides
 JUDGE_NO = 0.5  # the base model is a weak judge: it may only veto a borderline merge, never create one
+JW = 0.9          # Jaro-Winkler on the normalised keys: extra merge threshold (NEO_RESOLVE_JW=1)
+NEIGH_BOOST = 0.02  # vector-score boost per candidate entity co-mentioned with the candidate (structural prior)
+NEIGH_CAP = 0.06    # boost ceiling: three shared neighbours are as good as it gets
 _RANK = {"person": 9, "team": 8, "customer": 7, "service": 6, "ticket": 6, "incident": 6, "decision": 6, "tool": 5,
          "config_setting": 4, "file": 4, "component": 3, "product": 3, "other": 0}
 _SAME = ["same", "different"]
@@ -64,6 +68,52 @@ def variant_key(key: str) -> str:
 def _stem(key: str) -> list[str]:
     """Words with a plural "s" dropped; not after a digit ("bm25s", "k8s" are names, not plurals)."""
     return [t[:-1] if len(t) > 3 and t.endswith("s") and not t[-2].isdigit() else t for t in key.split()]
+
+
+def _jw_flag() -> bool:
+    return os.environ.get("NEO_RESOLVE_JW") == "1"
+
+
+def _family(t: str) -> str:
+    """Coarse type family for the JW merge path: persons never merge fuzzily, org types only among themselves,
+    everything else is one "thing" family."""
+    return {"person": "person", "team": "org", "customer": "org"}.get(t, "thing")
+
+
+def jaro_winkler(a: str, b: str) -> float:
+    """Jaro-Winkler similarity in [0, 1] (prefix scale 0.1, max prefix 4), pure stdlib — graphify's
+    verification metric for candidate duplicate pairs."""
+    if a == b:
+        return 1.0
+    la, lb = len(a), len(b)
+    if not la or not lb:
+        return 0.0
+    w = max(max(la, lb) // 2 - 1, 0)
+    fa, fb = [False] * la, [False] * lb
+    m = 0
+    for i, ca in enumerate(a):
+        for j in range(max(0, i - w), min(lb, i + w + 1)):
+            if not fb[j] and ca == b[j]:
+                fa[i] = fb[j] = True
+                m += 1
+                break
+    if not m:
+        return 0.0
+    k = t = 0
+    for i in range(la):
+        if fa[i]:
+            while not fb[k]:
+                k += 1
+            t += a[i] != b[k]
+            k += 1
+    t //= 2
+    j = (m / la + m / lb + (m - t) / m) / 3
+    p = 0
+    for ca, cb in zip(a, b):
+        if ca != cb or p == 4:
+            break
+        p += 1
+    return j + p * 0.1 * (1 - j)
 
 
 def _guard(a: str, b: str, ta: str, tb: str) -> bool:
@@ -142,13 +192,27 @@ def resolve_entity(store, name: str, type: str, emb=None, tenant=None, weight=1.
         emb = embed_docs([name])[0]
     cand = [] if not fuzzy else q("CALL db.idx.vector.queryNodes('Entity','emb',4,vecf32($e)) YIELD node, score "
                              "RETURN node.id, node.key, node.type, 1 - score ORDER BY score", {"e": np.asarray(emb).tolist()})
+    shared = {}
+    if cand and _jw_flag():  # structural prior (graphify _COMMUNITY_BOOST): candidates co-mentioned with each other
+        ids = [c[0] for c in cand]
+        shared = dict(q("UNWIND $i AS x MATCH (n)-[:MENTIONS]->(a:Entity {id:x}) MATCH (n)-[:MENTIONS]->(y:Entity) "
+                        "WHERE y.id IN $i AND y.id <> x RETURN a.id, count(DISTINCT y)", {"i": ids}))
     for cid, ckey, ctype, sim in cand:
-        if sim < SOFT or not _guard(key, ckey, type, ctype):
+        s = sim + min(shared.get(cid, 0) * NEIGH_BOOST, NEIGH_CAP)  # shared neighbours push a pair over the gates
+        if s < SOFT or not _guard(key, ckey, type, ctype):
             continue
-        if sim >= HARD or judge(store, "", f"{name} = {ckey} ?", _SAME, tenant).get("same", 0) >= JUDGE_NO:
+        if s >= HARD or judge(store, "", f"{name} = {ckey} ?", _SAME, tenant).get("same", 0) >= JUDGE_NO:
             _add_alias(store, cid, key, tenant)
             _vote(store, cid, type, weight, pin, tenant)
             return cid
+    if fuzzy and _jw_flag() and type != "person":  # graphify-style JW path: same-family, non-code, non-explicit names
+        fam, nums = _family(type), re.findall(r"\d+", key)
+        for cid, ckey, ctype in q("MATCH (e:Entity) RETURN e.id, e.key, e.type", None):  # shortcut: O(entities) per call, fine to ~10k
+            if ckey and ckey[0] == key[0] and _family(ctype) == fam \
+                    and re.findall(r"\d+", ckey) == nums and jaro_winkler(key, ckey) >= JW:
+                _add_alias(store, cid, key, tenant)
+                _vote(store, cid, type, weight, pin, tenant)
+                return cid
     eid, t = new_id("ent"), now_ms()
     q("CREATE (:Entity {id:$i, key:$k, name:$n, type:$t, type_votes:$v, aliases:[], emb:vecf32($e), first_seen_ms:$ts, "
       "last_seen_ms:$ts, mentions:0})", {"i": eid, "k": key, "n": name, "t": type, "v": json.dumps({type: [weight, pin]}),
