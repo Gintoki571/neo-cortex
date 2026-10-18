@@ -74,7 +74,7 @@ Built: dream.py (`neo dream` consolidation, no LLM):
 - shortcut: the neighbour search is an exact top-N index query per Memory (N = all Memory nodes), O(N^2) reads; batch it when N grows.
 - Tests: `tests/test_dream.py` (one per step, idempotence, dry_run; controlled-angle vectors).
 
-Planned (not built): `tune.py`.
+The RRSI-style tuner is `eval/tune.py` (outside this package).
 
 ## Work Guidance
 
