@@ -364,7 +364,7 @@ gold questions were AI-generated from a written specification and are
 fictional. Humans directed, reviewed and verified the work, and are
 responsible for the architecture, correctness claims and submitted material.
 
-Team: <!-- TEAM -->
+Team: bindesh (solo)
 
 ## Licenses and third-party components
 
