@@ -1,3 +1,4 @@
 tests/fixtures/** linguist-vendored
 knowledge/** linguist-documentation
 data/** linguist-documentation
+docs/explainer/** linguist-documentation

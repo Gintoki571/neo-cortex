@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="Interactive explainer of Neo-Cortex: one FalkorDB graph that is agent memory, a company brain and multi-hop reasoning, exposed to AI agents over MCP.">
+<title>Neo-Cortex — interactive explainer</title>
+<style>
+:root{
+  --bg:#0f1216; --bg2:#171c23; --bg3:#1e2530; --ink:#e8ecf1; --mut:#9aa7b5; --line:#2c3644;
+  --acc:#5ab0f2; --acc2:#7ee0b0; --hots:rgba(90,176,242,.16);
+  --warn:#e5b567; --bad:#e5735f; --vbase:#46586e; --vtool:#5ab0f2;
+  --shadow:0 8px 30px rgba(0,0,0,.45);
+}
+html[data-theme="light"]{
+  --bg:#f7f9fb; --bg2:#ffffff; --bg3:#eef2f6; --ink:#1a222c; --mut:#5b6b7c; --line:#d4dce5;
+  --acc:#1a6fb5; --acc2:#148a5e; --hots:rgba(26,111,181,.12);
+  --warn:#9a6b12; --bad:#bf4632; --vbase:#b9c6d4; --vtool:#1a6fb5;
+  --shadow:0 8px 30px rgba(20,40,60,.15);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--acc)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--bg3);padding:1px 5px;border-radius:4px}
+.skip{position:absolute;left:-999px;top:0;background:var(--acc);color:#fff;padding:8px 14px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+header.top{border-bottom:1px solid var(--line);background:var(--bg2)}
+.topin{max-width:1280px;margin:0 auto;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.topin h1{font-size:1.25rem;margin:0}
+.topin .sub{color:var(--mut);font-size:.85rem}
+.topin .spacer{flex:1}
+button{font:inherit;color:inherit}
+.tbtn{border:1px solid var(--line);background:var(--bg3);border-radius:8px;padding:5px 12px;cursor:pointer}
+.tbtn:hover{border-color:var(--acc)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 80px;display:grid;grid-template-columns:225px minmax(0,1fr);gap:26px}
+nav#nav{position:sticky;top:0;align-self:start;padding:18px 0}
+nav#nav button{display:block;width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;padding:7px 10px;color:var(--mut);cursor:pointer;border-radius:0 8px 8px 0}
+nav#nav button[aria-selected="true"]{color:var(--ink);border-left-color:var(--acc);background:var(--bg2);font-weight:600}
+nav#nav button:hover{color:var(--ink)}
+main{padding-top:18px;min-width:0}
+section.panel[hidden]{display:none}
+h2{font-size:1.45rem;margin:.2em 0 .4em}
+h3{font-size:1.05rem;margin:1.2em 0 .4em}
+p{margin:.5em 0}
+.lead{font-size:1.06rem}
+.src{color:var(--mut);font-size:.8rem}
+.src a{color:var(--mut)}
+.callout{border-left:3px solid var(--acc);background:var(--bg2);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+.callout.bad{border-left-color:var(--bad)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h4{margin:.1em 0 .3em;font-size:.98rem}
+.card p{margin:.25em 0;font-size:.9rem;color:var(--mut)}
+.card .num{font-size:1.5rem;font-weight:700;color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:.86rem}
+.chip:hover{border-color:var(--acc)}
+.chip.hot{background:var(--hots);border-color:var(--acc);color:var(--ink);font-weight:600}
+.fig{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px;margin:14px 0;overflow-x:auto}
+.fig svg{display:block;min-width:760px;width:100%;height:auto}
+.fig .figcap{padding:6px 8px 2px;color:var(--mut);font-size:.8rem}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.g{cursor:pointer}
+.g .box{fill:var(--bg3);stroke:var(--line);stroke-width:1.2;transition:fill .15s,stroke .15s}
+.g:hover .box,.g:focus-visible .box{stroke:var(--acc);stroke-width:2}
+svg .g:focus-visible{outline:none}
+svg .g:focus-visible .lbl{fill:var(--acc)}
+.card.g:focus-visible,.chip.g:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.g.hot .box{fill:var(--hots);stroke:var(--acc);stroke-width:2.4}
+.lbl{fill:var(--ink)}
+.mut{fill:var(--mut)}
+.wire{stroke:var(--mut);stroke-width:1.4;fill:none;marker-end:url(#ar)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--mut);margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+table.data{border-collapse:collapse;width:100%;font-size:.9rem;margin:10px 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+table.data th{background:var(--bg3)}
+table.data td.n{text-align:right;font-variant-numeric:tabular-nums}
+#backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#backdrop.open{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;height:100%;width:min(400px,94vw);background:var(--bg2);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(103%);transition:transform .22s ease;z-index:50;overflow-y:auto;padding:18px 20px 30px}
+#drawer.open{transform:none}
+#drawer h3{margin:.1em 0 .2em;font-size:1.12rem}
+#drawer .row{margin:10px 0}
+#drawer .row b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:2px}
+#drawer .close{position:absolute;top:10px;right:12px;border:1px solid var(--line);background:var(--bg3);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1rem}
+#drawer .close:hover{border-color:var(--acc)}
+#drawer .srclink{font-size:.85rem}
+.chart{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:12px 0}
+.chart svg{width:100%;height:auto;display:block}
+.chart .csrc{color:var(--mut);font-size:.78rem;margin-top:4px}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.tbtn[disabled]{opacity:.45;cursor:default}
+#tlcap{min-height:3.2em}
+#glfilter{width:100%;max-width:420px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--ink);font:inherit;margin:8px 0}
+dl.gloss dt{font-weight:700;margin-top:10px}
+dl.gloss dd{margin:2px 0 0 0;color:var(--mut)}
+footer.foot{border-top:1px solid var(--line);color:var(--mut);font-size:.85rem;margin-top:40px;padding-top:14px}
+@media(max-width:900px){
+  .wrap{grid-template-columns:1fr;gap:0}
+  nav#nav{position:sticky;top:0;z-index:30;background:var(--bg);display:flex;overflow-x:auto;gap:4px;padding:10px 0;border-bottom:1px solid var(--line)}
+  nav#nav button{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;border-radius:8px 8px 0 0}
+  nav#nav button[aria-selected="true"]{border-bottom-color:var(--acc)}
+}
+@media (prefers-reduced-motion: reduce){
+  #drawer,#backdrop{transition:none}
+}
+@media print{
+  nav#nav,#drawer,#backdrop,.ctl{display:none}
+  section.panel[hidden]{display:block}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="topin">
+    <h1>Neo-Cortex</h1>
+    <span class="sub">interactive explainer — every number is copied from a file in the repo, with its path</span>
+    <span class="spacer"></span>
+    <button class="tbtn" id="themeBtn" aria-label="Switch color theme">Theme: auto</button>
+  </div>
+</header>
+
+<div class="wrap">
+<nav id="nav" aria-label="Sections">
+  <button data-s="pitch" aria-selected="true">1 · Start here</button>
+  <button data-s="arch">2 · Architecture</button>
+  <button data-s="model">3 · Data model</button>
+  <button data-s="write">4 · Write path</button>
+  <button data-s="read">5 · Read path</button>
+  <button data-s="time">6 · Time &amp; history</button>
+  <button data-s="lifecycle">7 · Memory lifecycle</button>
+  <button data-s="results">8 · Results</button>
+  <button data-s="lineage">9 · Ideas it builds on</button>
+  <button data-s="measured">10 · Measured, not adopted</button>
+  <button data-s="limits">11 · Open limits</button>
+  <button data-s="glossary">12 · Glossary</button>
+</nav>
+
+<main id="main">
+
+<!-- ============ 1 PITCH ============ -->
+<section class="panel" id="s-pitch" aria-labelledby="h-pitch">
+<h2 id="h-pitch">The problem and the 30-second pitch</h2>
+<p class="lead">AI agents forget everything between sessions, and the knowledge they need lives in documents, tickets and chats they cannot see as a whole. <strong>Neo-Cortex is one FalkorDB graph that is, at the same time, an agent's long-term memory, a company brain built from documents, and a reasoning layer that answers multi-hop questions.</strong> Agents use it through an MCP server (15 tools) or the <code>neo</code> command line. There is no LLM inside: two small local models — GLiNER2.5 for extraction and decisions, EmbeddingGemma for embeddings — do the fast "System 1" work, and the calling agent (Claude) does the reasoning. <span class="src">(docs/judges-guide.md §1)</span></p>
+
+<div class="grid g3" style="margin:16px 0">
+  <div class="card g" tabindex="0" role="button" data-n="track1" aria-label="Track 1 details">
+    <h4>Track 01 — Agents that act on connected data</h4>
+    <p><code>ask</code> returns an evidence pack (seeds, graph paths between them, facts, cited chunks); <code>connect</code>, <code>impact</code>, <code>who</code> walk the graph.</p>
+  </div>
+  <div class="card g" tabindex="0" role="button" data-n="track2" aria-label="Track 2 details">
+    <h4>Track 02 — Agent memory &amp; coordination</h4>
+    <p>Typed memories, Claude Code hooks that brief at session start and extract at session end, handoffs between agents, <code>dream</code> consolidation.</p>
+  </div>
+  <div class="card g" tabindex="0" role="button" data-n="track3" aria-label="Track 3 details">
+    <h4>Track 03 — Company brain</h4>
+    <p>Docs, tickets, ADRs, chats and meetings in one graph; <code>who</code> finds owners and experts; <code>timeline</code> traces decisions to their sources.</p>
+  </div>
+</div>
+
+<div class="grid g3">
+  <div class="card"><div class="num">1</div><p><strong>graph, three jobs.</strong> Memory + company brain + multi-hop reasoning in one FalkorDB store. <span class="src">(README.md)</span></p></div>
+  <div class="card"><div class="num">15</div><p><strong>MCP tools</strong> plus the <code>neo</code> CLI and Claude Code hooks — all one daemon. <span class="src">(src/neo_cortex/mcp_server.py)</span></p></div>
+  <div class="card"><div class="num">0</div><p><strong>LLMs inside.</strong> GLiNER2.5 (~26 ms/call) and EmbeddingGemma run locally; the calling agent reasons. <span class="src">(docs/judges-guide.md §7)</span></p></div>
+</div>
+
+<h3>The one-sentence version for a judge</h3>
+<p>"It puts what an agent learns and what a company knows into one typed graph, answers the questions files alone cannot — <em>who owns it now, what changed, what breaks if this dies</em> — and shows its work: every answer carries ids, sources and dates."</p>
+<div class="callout">Click any box, chip or diagram node on this page for <em>what it is, why it exists, the code that does it, and the measured result</em>. Numbers carry their source file next to them.</div>
+</section>
+
+<!-- ============ 2 ARCHITECTURE ============ -->
+<section class="panel" id="s-arch" aria-labelledby="h-arch" hidden>
+<h2 id="h-arch">System architecture</h2>
+<p>One local process owns the graph and the models. Agents reach it over MCP (streamable HTTP on <code>127.0.0.1:8765/mcp</code>) or through the <code>neo</code> CLI and Claude Code hooks, which call the same daemon's <code>/api</code> routes. Every tenant is its own graph <code>neo_&lt;tenant&gt;</code>. <span class="src">(docs/architecture.md, src/neo_cortex/store.py)</span></p>
+
+<div class="fig"><svg viewBox="0 0 960 520" role="group" aria-label="Architecture diagram: clients, daemon, database and models">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="var(--mut)"></path></marker></defs>
+<text x="20" y="26" class="lbl" font-weight="700" font-size="14">Clients</text>
+<g class="g" tabindex="0" role="button" data-n="arch-agent" aria-label="Agent details"><rect class="box" x="20" y="40" width="200" height="58" rx="9"/><text class="lbl" x="34" y="64" font-size="13" font-weight="600">Claude Code / any</text><text class="lbl" x="34" y="82" font-size="13" font-weight="600">MCP client</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-hooks" aria-label="Hooks details"><rect class="box" x="20" y="118" width="200" height="58" rx="9"/><text class="lbl" x="34" y="142" font-size="13" font-weight="600">Claude Code hooks</text><text class="mut" x="34" y="160" font-size="11">start · end · pre-compact</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-cli" aria-label="CLI details"><rect class="box" x="20" y="196" width="200" height="58" rx="9"/><text class="lbl" x="34" y="220" font-size="13" font-weight="600">neo CLI</text><text class="mut" x="34" y="238" font-size="11">20+ subcommands</text></g>
+
+<rect x="280" y="14" width="400" height="492" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+<text x="296" y="38" class="lbl" font-weight="700" font-size="14">neo serve — one daemon process</text>
+<text class="mut" x="296" y="55" font-size="11">127.0.0.1:8765 (--port)</text>
+<g class="g" tabindex="0" role="button" data-n="arch-mcp" aria-label="MCP endpoint details"><rect class="box" x="296" y="66" width="176" height="56" rx="9"/><text class="lbl" x="310" y="89" font-size="12.5" font-weight="600">MCP  /mcp</text><text class="mut" x="310" y="107" font-size="11">streamable HTTP</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-api" aria-label="HTTP API details"><rect class="box" x="488" y="66" width="176" height="56" rx="9"/><text class="lbl" x="502" y="89" font-size="12.5" font-weight="600">HTTP  /api + /health</text><text class="mut" x="502" y="107" font-size="11">CLI, hooks, job queue</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-tools" aria-label="Tools details"><rect class="box" x="296" y="138" width="368" height="48" rx="9"/><text class="lbl" x="310" y="160" font-size="12.5" font-weight="600">tools.py — the 15 tools</text><text class="mut" x="310" y="177" font-size="11">brief · recall · remember · ask · explore · connect · who · timeline …</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-write" aria-label="Write path details"><rect class="box" x="296" y="202" width="176" height="120" rx="9"/><text class="lbl" x="310" y="226" font-size="12.5" font-weight="600">Write path</text><text class="mut" x="310" y="244" font-size="11">write.py: convert, chunk,</text><text class="mut" x="310" y="260" font-size="11">extract, resolve, embed,</text><text class="mut" x="310" y="276" font-size="11">UNWIND batches</text><text class="mut" x="310" y="296" font-size="11">→ section 4</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-read" aria-label="Read path details"><rect class="box" x="488" y="202" width="176" height="120" rx="9"/><text class="lbl" x="502" y="226" font-size="12.5" font-weight="600">Read path</text><text class="mut" x="502" y="244" font-size="11">retrieve/: intent, 4 channels,</text><text class="mut" x="502" y="260" font-size="11">weighted RRF (k=60),</text><text class="mut" x="502" y="276" font-size="11">evidence pack</text><text class="mut" x="502" y="296" font-size="11">→ section 5</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-dream" aria-label="Dream details"><rect class="box" x="296" y="338" width="368" height="48" rx="9"/><text class="lbl" x="310" y="360" font-size="12.5" font-weight="600">dream.py — consolidation</text><text class="mut" x="310" y="377" font-size="11">merge · promote · decay · conflicts → section 7</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-jobs" aria-label="Jobs details"><rect class="box" x="296" y="402" width="368" height="48" rx="9"/><text class="lbl" x="310" y="424" font-size="12.5" font-weight="600">Background jobs (one worker)</text><text class="mut" x="310" y="441" font-size="11">session extraction, directory ingest; last 100 finished kept</text></g>
+<text class="mut" x="296" y="486" font-size="11">Guard: loopback Host required, JSON content-type, body ≤ 1 MB (413), read-only cypher</text>
+
+<g class="g" tabindex="0" role="button" data-n="arch-db" aria-label="Database details"><rect class="box" x="740" y="40" width="200" height="118" rx="9"/><text class="lbl" x="754" y="66" font-size="13" font-weight="600">falkordblite</text><text class="mut" x="754" y="84" font-size="11">embedded FalkorDB</text><text class="mut" x="754" y="100" font-size="11">127.0.0.1:NEO_PORT (6390)</text><text class="mut" x="754" y="116" font-size="11">data ~/.neo-cortex/neo.rdb</text><text class="mut" x="754" y="132" font-size="11">one graph per tenant</text><text class="mut" x="754" y="148" font-size="11">exclusive file lock</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-gliner" aria-label="GLiNER details"><rect class="box" x="740" y="196" width="200" height="76" rx="9"/><text class="lbl" x="754" y="220" font-size="13" font-weight="600">GLiNER2.5</text><text class="mut" x="754" y="238" font-size="11">fastino/gliner2.5-base-v1</text><text class="mut" x="754" y="254" font-size="11">extract · type · judge · intent</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-embed" aria-label="EmbeddingGemma details"><rect class="box" x="740" y="288" width="200" height="76" rx="9"/><text class="lbl" x="754" y="312" font-size="13" font-weight="600">EmbeddingGemma</text><text class="mut" x="754" y="330" font-size="11">google/embeddinggemma-2</text><text class="mut" x="754" y="346" font-size="11">768-d float32, cosine</text></g>
+<g class="g" tabindex="0" role="button" data-n="arch-bm25" aria-label="BM25 details"><rect class="box" x="740" y="380" width="200" height="76" rx="9"/><text class="lbl" x="754" y="404" font-size="13" font-weight="600">bm25s index</text><text class="mut" x="754" y="422" font-size="11">in-process lexical index,</text><text class="mut" x="754" y="438" font-size="11">rebuilt when corpus changes</text></g>
+
+<path class="wire" d="M220,69 H296"/><path class="wire" d="M220,147 H296"/><path class="wire" d="M220,225 H296"/>
+<path class="wire" d="M680,242 H700 V99 H740"/>
+<path class="wire" d="M680,110 H740"/>
+<path class="wire" d="M480,262 H700 V234 H740"/>
+<path class="wire" d="M480,300 H700 V326 H740"/>
+<path class="wire" d="M480,320 H700 V418 H740"/>
+</svg>
+<div class="figcap">Click any box for details. The daemon is the only process that opens the database; CLI commands fall back to a local store only when no daemon answers. <span class="src">(docs/architecture.md, src/neo_cortex/AGENTS.md)</span></div></div>
+
+<h3>The 15 MCP tools</h3>
+<p>Each tool returns token-budgeted text with ids, sources, dates, confidence and the channels or paths that matched. <span class="src">(README.md; src/neo_cortex/mcp_server.py <code>API_TOOLS</code>)</span></p>
+<div class="chips" id="toolchips"></div>
+<p class="src">Smoke test: 15 of 15 tools OK end to end; schemas cost ≈ 2,077 tokens of agent context. <a href="../../eval/mcp_smoke.md">eval/mcp_smoke.md</a></p>
+
+<h3>The <code>neo</code> CLI (for humans and coding agents)</h3>
+<p>Every tool command POSTs to the daemon's <code>/api/&lt;tool&gt;</code>; a local store opens only when no daemon answers (connection refused on the default URL). Hooks never open the database and never fail the session. <span class="src">(src/neo_cortex/cli.py)</span></p>
+<div class="chips">
+  <button class="chip g" data-n="cli-serve">serve</button><button class="chip g" data-n="cli-status">status</button>
+  <button class="chip g" data-n="cli-brief">brief</button><button class="chip g" data-n="cli-recall">recall</button>
+  <button class="chip g" data-n="cli-ask">ask</button><button class="chip g" data-n="cli-who">who / timeline</button>
+  <button class="chip g" data-n="cli-explore">explore / connect / impact</button>
+  <button class="chip g" data-n="cli-relate">relate</button><button class="chip g" data-n="cli-read">read</button>
+  <button class="chip g" data-n="cli-remember">remember</button><button class="chip g" data-n="cli-ingest">ingest / jobs / ingest-session</button>
+  <button class="chip g" data-n="cli-handoff">handoff</button><button class="chip g" data-n="cli-cypher">cypher</button>
+  <button class="chip g" data-n="cli-dream">dream</button><button class="chip g" data-n="cli-hook">hook / install-claude</button>
+</div>
+</section>
+
+<!-- ============ 3 DATA MODEL ============ -->
+<section class="panel" id="s-model" aria-labelledby="h-model" hidden>
+<h2 id="h-model">Data model (entity–relationship)</h2>
+<p>Every node has an <code>id</code> string; times are <code>*_ms</code> epoch-millisecond integers; each tenant is its own graph, so there is no tenant property. One relationship type <code>REL</code> carries a <code>type</code> property, so Cypher never builds types from strings. <span class="src">Binding contract: <a href="../../src/neo_cortex/AGENTS.md">src/neo_cortex/AGENTS.md</a>; created by <a href="../../src/neo_cortex/schema.py">schema.py</a> (768-d cosine vector indexes on Memory/Chunk/Entity.emb, full-text on Entity.name, range indexes).</span></p>
+
+<div class="fig"><svg viewBox="0 0 960 640" role="group" aria-label="Entity relationship diagram">
+<g class="g" tabindex="0" role="button" data-n="ent-document" aria-label="Document details">
+  <rect class="box" x="24" y="30" width="200" height="118" rx="8"/>
+  <text class="lbl" x="38" y="52" font-size="13" font-weight="700">Document</text>
+  <text class="mut" x="38" y="70" font-size="10.5">id, kind, title, uri, path,</text>
+  <text class="mut" x="38" y="84" font-size="10.5">author, date_ms, status,</text>
+  <text class="mut" x="38" y="98" font-size="10.5">labels, hash, doc_type,</text>
+  <text class="mut" x="38" y="112" font-size="10.5">description, tags</text>
+  <text class="mut" x="38" y="132" font-size="10">kind: doc|adr|ticket|chat|</text><text class="mut" x="38" y="143" font-size="10">meeting|session|file|code</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-chunk" aria-label="Chunk details">
+  <rect class="box" x="300" y="30" width="200" height="104" rx="8"/>
+  <text class="lbl" x="314" y="52" font-size="13" font-weight="700">Chunk</text>
+  <text class="mut" x="314" y="70" font-size="10.5">id (doc#pos), doc_id, pos,</text>
+  <text class="mut" x="314" y="84" font-size="10.5">text, kind, date_ms, emb</text>
+  <text class="mut" x="314" y="104" font-size="10">the unit of search and citation;</text>
+  <text class="mut" x="314" y="115" font-size="10">120–250 words</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-entity" aria-label="Entity details">
+  <rect class="box" x="576" y="30" width="200" height="118" rx="8"/>
+  <text class="lbl" x="590" y="52" font-size="13" font-weight="700">Entity</text>
+  <text class="mut" x="590" y="70" font-size="10.5">id, key, name, type,</text>
+  <text class="mut" x="590" y="84" font-size="10.5">type_votes, aliases, emb,</text>
+  <text class="mut" x="590" y="98" font-size="10.5">first_seen_ms, last_seen_ms,</text>
+  <text class="mut" x="590" y="112" font-size="10.5">mentions</text>
+  <text class="mut" x="590" y="132" font-size="10">13 types: person, team, service,</text><text class="mut" x="590" y="143" font-size="10">file, ticket, decision, …</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-memory" aria-label="Memory details">
+  <rect class="box" x="24" y="270" width="212" height="170" rx="8"/>
+  <text class="lbl" x="38" y="292" font-size="13" font-weight="700">Memory</text>
+  <text class="mut" x="38" y="310" font-size="10.5">id, text, kind, confidence,</text>
+  <text class="mut" x="38" y="324" font-size="10.5">created_ms, valid_from_ms,</text>
+  <text class="mut" x="38" y="338" font-size="10.5">valid_to_ms, status, uses,</text>
+  <text class="mut" x="38" y="352" font-size="10.5">last_used_ms, decayed_ms,</text>
+  <text class="mut" x="38" y="366" font-size="10.5">source_id, agent, project, emb</text>
+  <text class="mut" x="38" y="386" font-size="10">kind: episodic|semantic|procedural|</text><text class="mut" x="38" y="397" font-size="10">preference|decision</text>
+  <text class="mut" x="38" y="417" font-size="10">status: active|superseded|merged</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-session" aria-label="Session details">
+  <rect class="box" x="300" y="270" width="180" height="96" rx="8"/>
+  <text class="lbl" x="314" y="292" font-size="13" font-weight="700">Session</text>
+  <text class="mut" x="314" y="310" font-size="10.5">id, agent, project,</text>
+  <text class="mut" x="314" y="324" font-size="10.5">started_ms, path, hash</text>
+  <text class="mut" x="314" y="344" font-size="10">an ingested transcript</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-agent" aria-label="Agent details">
+  <rect class="box" x="530" y="270" width="150" height="70" rx="8"/>
+  <text class="lbl" x="544" y="292" font-size="13" font-weight="700">Agent</text>
+  <text class="mut" x="544" y="310" font-size="10.5">id, name</text>
+  <text class="mut" x="544" y="328" font-size="10">who acted</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-handoff" aria-label="Handoff details">
+  <rect class="box" x="530" y="380" width="180" height="96" rx="8"/>
+  <text class="lbl" x="544" y="402" font-size="13" font-weight="700">Handoff</text>
+  <text class="mut" x="544" y="420" font-size="10.5">id, summary, tasks,</text>
+  <text class="mut" x="544" y="434" font-size="10.5">status (open|done),</text>
+  <text class="mut" x="544" y="448" font-size="10.5">created_ms</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-judgment" aria-label="Judgment details">
+  <rect class="box" x="790" y="30" width="152" height="88" rx="8"/>
+  <text class="lbl" x="804" y="52" font-size="13" font-weight="700">Judgment</text>
+  <text class="mut" x="804" y="70" font-size="10.5">id (=content hash),</text>
+  <text class="mut" x="804" y="84" font-size="10.5">question, result,</text>
+  <text class="mut" x="804" y="98" font-size="10.5">created_ms</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-dreamrun" aria-label="DreamRun details">
+  <rect class="box" x="790" y="160" width="152" height="88" rx="8"/>
+  <text class="lbl" x="804" y="182" font-size="13" font-weight="700">DreamRun</text>
+  <text class="mut" x="804" y="200" font-size="10.5">id, at_ms, merged,</text>
+  <text class="mut" x="804" y="214" font-size="10.5">promoted, decayed,</text>
+  <text class="mut" x="804" y="228" font-size="10.5">conflicts</text>
+</g>
+<g class="g" tabindex="0" role="button" data-n="ent-tunerun" aria-label="TuneRun details">
+  <rect class="box" x="790" y="290" width="152" height="100" rx="8"/>
+  <text class="lbl" x="804" y="312" font-size="13" font-weight="700">TuneRun</text>
+  <text class="mut" x="804" y="330" font-size="10.5">id, at_ms, weights,</text>
+  <text class="mut" x="804" y="344" font-size="10.5">split, score, accepted,</text>
+  <text class="mut" x="804" y="358" font-size="10.5">setting, delta, lo</text>
+  <text class="mut" x="804" y="378" font-size="10">written by eval/tune.py</text>
+</g>
+
+<path class="wire" d="M224,84 H300"/><text class="mut" x="228" y="76" font-size="10.5">HAS_CHUNK</text>
+<path class="wire" d="M500,74 Q540,50 576,74"/><text class="mut" x="506" y="46" font-size="10.5">MENTIONS {conf}</text>
+<path class="wire" d="M236,300 C300,240 420,180 470,120"/><text class="mut" x="300" y="220" font-size="10.5">MENTIONS</text>
+<path class="wire" d="M776,60 Q776,10 700,10 Q640,10 648,30"/><text class="mut" x="664" y="24" font-size="10.5">REL {type, conf, source_id, valid_from_ms, valid_to_ms, modality, p_fact}</text>
+<path class="wire" d="M660,148 Q600,200 560,240"/><text class="mut" x="588" y="196" font-size="10.5">AUTHORED / PARTICIPATED</text>
+<path class="wire" d="M130,270 Q150,220 300,140"/><text class="mut" x="160" y="212" font-size="10.5">DERIVED_FROM</text>
+<path class="wire" d="M236,340 H300"/><text class="mut" x="240" y="332" font-size="10.5">DERIVED_FROM</text>
+<path class="wire" d="M480,318 H530"/><text class="mut" x="486" y="310" font-size="10.5">BY</text>
+<path class="wire" d="M560,340 Q520,380 560,400"/><text class="mut" x="474" y="368" font-size="10.5">WROTE</text>
+<path class="wire" d="M620,380 V340"/><path class="wire" d="M660,380 V340"/><text class="mut" x="626" y="366" font-size="10.5">FROM / TO</text>
+<path class="wire" d="M60,270 Q20,230 60,190 Q100,160 130,190"/><text class="mut" x="20" y="176" font-size="10.5">SUPERSEDES · MERGED_INTO · CONFLICTS_WITH {found_ms}</text>
+</svg>
+<div class="figcap">Audit nodes: Judgment caches GLiNER yes/no and choice decisions (pg-jev idea); DreamRun logs each real consolidation run; TuneRun logs each self-tuning trial (written by <a href="../../eval/tune.py">eval/tune.py</a>). Click any entity for its role and code.</div></div>
+
+<h3>REL edge types and the assertion gate</h3>
+<p><span class="mono">OWNS MEMBER_OF DEPENDS_ON CAUSED_BY FIXED_BY APPROVED DECIDED PART_OF WORKS_ON REPORTED REPLACED_BY RENAMED_TO RELATED_TO</span> — 13 whitelisted types on the single <code>REL</code> relationship. <span class="src">(src/neo_cortex/AGENTS.md)</span></p>
+<div class="grid g2">
+  <div class="card g" tabindex="0" role="button" data-n="edge-gate"><h4>Every extracted edge is gated</h4><p>Its source sentence is classified fact / possibility / denial / plan; <code>modality</code> and <code>p_fact</code> are stored on the edge; denials are never written; current-state tools and the graph walk read facts only. Agent-written edges are facts.</p></div>
+  <div class="card g" tabindex="0" role="button" data-n="edge-time"><h4>Every edge can carry history</h4><p><code>valid_from_ms</code> is the document date; <code>valid_to_ms</code> (absent while current) closes an edge — an edge with an end date is history, skipped by queries about "now".</p></div>
+</div>
+</section>
+
+<!-- ============ 4 WRITE PATH ============ -->
+<section class="panel" id="s-write" aria-labelledby="h-write" hidden>
+<h2 id="h-write">Write path — two ways in, on purpose</h2>
+<p><strong>Automatic</strong> for documents nobody has read yet; <strong>direct</strong> for what an agent already knows. Why both: on this repository's own prose GLiNER found only 5 relations in 72 documents — the agent that just did the work knows the facts better than any extractor. <span class="src">(<a href="../../eval/real_check.md">eval/real_check.md</a>: ingest <code>rels: 5</code>; docs/judges-guide.md §4)</span></p>
+
+<div class="fig"><svg viewBox="0 0 960 470" role="group" aria-label="Write path diagram, automatic lane and direct lane">
+<text x="24" y="24" class="lbl" font-weight="700" font-size="13">Automatic — documents, transcripts (write.py ingest_path / ingest_session)</text>
+<g class="g" tabindex="0" role="button" data-n="w-ingest" aria-label="ingest details"><rect class="box" x="24" y="40" width="128" height="56" rx="8"/><text class="lbl" x="36" y="62" font-size="11.5" font-weight="600">ingest</text><text class="mut" x="36" y="79" font-size="10">file, dir or text</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-convert" aria-label="convert details"><rect class="box" x="176" y="40" width="150" height="56" rx="8"/><text class="lbl" x="188" y="62" font-size="11.5" font-weight="600">convert</text><text class="mut" x="188" y="79" font-size="10">anydoc; built-in HTML</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-chunk" aria-label="chunk details"><rect class="box" x="350" y="40" width="150" height="56" rx="8"/><text class="lbl" x="362" y="62" font-size="11.5" font-weight="600">chunk</text><text class="mut" x="362" y="79" font-size="10">120–250 words</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-embed" aria-label="embed details"><rect class="box" x="524" y="40" width="150" height="56" rx="8"/><text class="lbl" x="536" y="62" font-size="11.5" font-weight="600">embed</text><text class="mut" x="536" y="79" font-size="10">EmbeddingGemma 768-d</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-gliner" aria-label="extract details"><rect class="box" x="24" y="140" width="170" height="72" rx="8"/><text class="lbl" x="36" y="162" font-size="11.5" font-weight="600">GLiNER2.5 extract</text><text class="mut" x="36" y="179" font-size="10">typed entities + relations,</text><text class="mut" x="36" y="193" font-size="10">memory kind, junk filter</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-patterns" aria-label="patterns details"><rect class="box" x="218" y="140" width="170" height="72" rx="8"/><text class="lbl" x="230" y="162" font-size="11.5" font-weight="600">deterministic patterns</text><text class="mut" x="230" y="179" font-size="10">"X owns Y", "depends on",</text><text class="mut" x="230" y="193" font-size="10">"replaced by", Owner tables</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-gate" aria-label="edge gate details"><rect class="box" x="412" y="140" width="150" height="72" rx="8"/><text class="lbl" x="424" y="162" font-size="11.5" font-weight="600">edge gate</text><text class="mut" x="424" y="179" font-size="10">fact / possibility /</text><text class="mut" x="424" y="193" font-size="10">denial / plan → modality</text></g>
+<g class="g" tabindex="0" role="button" data-n="w-resolve" aria-label="resolution details"><rect class="box" x="586" y="140" width="170" height="72" rx="8"/><text class="lbl" x="598" y="162" font-size="11.5" font-weight="600">entity resolution</text><text class="mut" x="598" y="179" font-size="10">key → alias → variant →</text><text class="mut" x="598" y="193" font-size="10">vector + guard → judge veto</text></g>
+<path class="wire" d="M152,68 H176"/><path class="wire" d="M326,68 H350"/><path class="wire" d="M500,68 H524"/>
+<path class="wire" d="M599,96 V140"/>
+<path class="wire" d="M194,176 H218"/><path class="wire" d="M388,176 H412"/><path class="wire" d="M562,176 H586"/>
+
+<text x="24" y="266" class="lbl" font-weight="700" font-size="13">Direct — agents writing facts they already know (no GLiNER)</text>
+<g class="g" tabindex="0" role="button" data-n="d-remember" aria-label="remember details"><rect class="box" x="24" y="282" width="270" height="72" rx="8"/><text class="lbl" x="36" y="304" font-size="11.5" font-weight="600">remember(text, kind, entities, relations)</text><text class="mut" x="36" y="321" font-size="10">dedupe ≥ 0.92 reinforces; 0.75–0.92 flags</text><text class="mut" x="36" y="335" font-size="10">conflicts; supersedes= retires the old memory</text></g>
+<g class="g" tabindex="0" role="button" data-n="d-relate" aria-label="relate details"><rect class="box" x="318" y="282" width="240" height="72" rx="8"/><text class="lbl" x="330" y="304" font-size="11.5" font-weight="600">relate(head, TYPE, tail)</text><text class="mut" x="330" y="321" font-size="10">writes or corrects one typed edge;</text><text class="mut" x="330" y="335" font-size="10">--supersede / --end keep history</text></g>
+<g class="g" tabindex="0" role="button" data-n="d-match" aria-label="exact match details"><rect class="box" x="586" y="282" width="170" height="72" rx="8"/><text class="lbl" x="598" y="304" font-size="11.5" font-weight="600">exact or alias only</text><text class="mut" x="598" y="321" font-size="10">caller-named entities are</text><text class="mut" x="598" y="335" font-size="10">never fuzzily merged</text></g>
+<path class="wire" d="M294,318 H318"/><path class="wire" d="M558,318 H586"/>
+
+<g class="g" tabindex="0" role="button" data-n="arch-db" aria-label="graph details"><rect class="box" x="790" y="150" width="152" height="150" rx="10"/><text class="lbl" x="802" y="180" font-size="12.5" font-weight="700">FalkorDB graph</text><text class="mut" x="802" y="198" font-size="10.5">UNWIND batched writes</text><text class="mut" x="802" y="214" font-size="10.5">under one write lock;</text><text class="mut" x="802" y="230" font-size="10.5">unchanged hash skipped,</text><text class="mut" x="802" y="246" font-size="10.5">changed doc replaced</text><text class="mut" x="802" y="268" font-size="10.5">neo_&lt;tenant&gt;</text></g>
+<path class="wire" d="M756,176 H790"/><path class="wire" d="M756,318 Q780,318 780,290 V270"/>
+</svg>
+<div class="figcap">Both lanes converge on the same graph. Synthetic corpus ingest measured: 102 documents, 136 chunks, 97 REL edges, 130 entities in 85.5 s <span class="src">(<a href="../../eval/results.md">eval/results.md</a>)</span>. Real-repo ingest: 72 docs → 423 chunks, 1,166 mentions, but only 5 RELs in 307.7 s <span class="src">(<a href="../../eval/real_check.md">eval/real_check.md</a>)</span>.</div></div>
+
+<div class="grid g2">
+  <div class="card g" tabindex="0" role="button" data-n="w-gate"><h4>Why an edge gate?</h4><p>Trap probe of 25 hand-labelled sentences: base model alone 17/25; model + negation-cue rule 20/25. Fact-only relations after the gate: precision 0.880 → 0.903. <span class="src">(README.md "System 1 decisions")</span></p></div>
+  <div class="card g" tabindex="0" role="button" data-n="w-resolve"><h4>Why a judge that can only veto?</h4><p>GLiNER2.5-base is near chance as a same-entity judge on bare names, so between similarity 0.85–0.92 it may only reject a merge — never create one. A wrong merge corrupts owners and impact. <span class="src">(src/neo_cortex/AGENTS.md resolve.py)</span></p></div>
+</div>
+</section>
+
+<!-- ============ 5 READ PATH ============ -->
+<section class="panel" id="s-read" aria-labelledby="h-read" hidden>
+<h2 id="h-read">Read path — four channels, one fused ranking</h2>
+<p><code>recall</code> runs four channels and fuses them with weighted reciprocal rank fusion: <code>score = Σ w_c / (60 + rank_c)</code>. Base weights 1.0 (temporal 0.5), scaled softly by the GLiNER intent of the question — one misroute nudges the ranking instead of breaking it. <span class="src">(README.md Retrieval; <a href="../../src/neo_cortex/retrieve/fuse.py">retrieve/fuse.py</a> <code>rrf()</code>, <code>channel_weights()</code>)</span></p>
+
+<h3>Try it: pick a question and see the routing</h3>
+<div class="chips" id="qsel" role="group" aria-label="Example questions"></div>
+<div class="callout" id="qnote" aria-live="polite">Pick a question above. Highlighting is static logic from the documented intent boosts (<a href="../../src/neo_cortex/retrieve/fuse.py">retrieve/fuse.py</a> <code>BOOST</code>) — no backend.</div>
+
+<div class="fig"><svg viewBox="0 0 960 440" role="group" aria-label="Read path flow diagram">
+<g class="g" tabindex="0" role="button" data-n="r-q" aria-label="question details"><rect class="box" x="330" y="16" width="220" height="44" rx="9"/><text class="lbl" x="345" y="43" font-size="12.5" font-weight="600">question (from agent or CLI)</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-parse" aria-label="parse_query details"><rect class="box" x="330" y="84" width="220" height="62" rx="9"/><text class="lbl" x="344" y="107" font-size="12" font-weight="600">parse_query (GLiNER)</text><text class="mut" x="344" y="124" font-size="10.5">intent confidences + explicit time</text><text class="mut" x="344" y="138" font-size="10.5">windows; "current/latest" = recency cue</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-link" aria-label="link entities details"><rect class="box" x="330" y="170" width="220" height="48" rx="9"/><text class="lbl" x="344" y="192" font-size="12" font-weight="600">link query entities</text><text class="mut" x="344" y="208" font-size="10.5">exact key · fuzzy · rare word · embedding</text></g>
+<path class="wire" d="M440,60 V84"/><path class="wire" d="M440,146 V170"/>
+
+<g class="g" tabindex="0" role="button" data-n="r-vector" aria-label="vector channel details"><rect class="box" x="24" y="248" width="176" height="64" rx="9"/><text class="lbl" x="38" y="271" font-size="12" font-weight="600">1 · vector</text><text class="mut" x="38" y="288" font-size="10.5">EmbeddingGemma cosine over</text><text class="mut" x="38" y="302" font-size="10.5">Chunk + Memory indexes</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-bm25" aria-label="BM25 channel details"><rect class="box" x="216" y="248" width="176" height="64" rx="9"/><text class="lbl" x="230" y="271" font-size="12" font-weight="600">2 · BM25</text><text class="mut" x="230" y="288" font-size="10.5">bm25s in process; FalkorDB</text><text class="mut" x="230" y="302" font-size="10.5">full-text only for names</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-graph" aria-label="graph channel details"><rect class="box" x="408" y="248" width="196" height="64" rx="9"/><text class="lbl" x="422" y="271" font-size="12" font-weight="600">3 · graph (PPR)</text><text class="mut" x="422" y="288" font-size="10.5">personalized PageRank, 3 hops,</text><text class="mut" x="422" y="302" font-size="10.5">500 nodes; seed-strength gate</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-temporal" aria-label="temporal channel details"><rect class="box" x="620" y="248" width="176" height="64" rx="9"/><text class="lbl" x="634" y="271" font-size="12" font-weight="600">4 · temporal</text><text class="mut" x="634" y="288" font-size="10.5">explicit windows filter;</text><text class="mut" x="634" y="302" font-size="10.5">recency cue boosts</text></g>
+<path class="wire" d="M400,218 L120,248"/><path class="wire" d="M430,218 L310,248"/><path class="wire" d="M460,218 L500,248"/><path class="wire" d="M490,218 L700,248"/>
+<text class="mut" x="24" y="238" font-size="10.5">each channel returns a ranked list of Chunks/Memories</text>
+
+<g class="g" tabindex="0" role="button" data-n="r-rrf" aria-label="RRF details"><rect class="box" x="286" y="344" width="220" height="52" rx="9"/><text class="lbl" x="300" y="366" font-size="12" font-weight="600">weighted RRF, k = 60</text><text class="mut" x="300" y="383" font-size="10.5">score = Σ w_c / (60 + rank_c)</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-keep" aria-label="keep rules details"><rect class="box" x="530" y="344" width="180" height="52" rx="9"/><text class="lbl" x="544" y="366" font-size="12" font-weight="600">keep / hide</text><text class="mut" x="544" y="383" font-size="10.5">merged never; superseded unless change</text></g>
+<g class="g" tabindex="0" role="button" data-n="r-pack" aria-label="evidence pack details"><rect class="box" x="734" y="344" width="200" height="52" rx="9"/><text class="lbl" x="748" y="366" font-size="12" font-weight="600">evidence pack</text><text class="mut" x="748" y="383" font-size="10.5">ids, snippets, channels, paths, dates</text></g>
+<path class="wire" d="M112,312 Q120,370 286,370"/><path class="wire" d="M506,370 H530"/><path class="wire" d="M710,370 H734"/>
+<text class="mut" x="734" y="420" font-size="10.5">the calling agent writes the answer from it</text>
+
+<g class="g" tabindex="0" role="button" data-n="r-sppaths" aria-label="SPpaths details"><rect class="box" x="24" y="344" width="236" height="52" rx="9"/><text class="lbl" x="38" y="366" font-size="12" font-weight="600">graph-native tools on top</text><text class="mut" x="38" y="383" font-size="10.5">algo.SPpaths bridging paths for ask/connect</text></g>
+</svg>
+<div class="figcap">The graph channel only runs when a query entity links strongly (seed strength = link conf × corpus IDF; below SEED_FLOOR 0.2 it returns nothing), so weak entity matches cannot pull rankings off the text channels. <span class="src">(<a href="../../src/neo_cortex/retrieve/channels.py">retrieve/channels.py</a> SEED_FLOOR; README.md)</span></div></div>
+
+<h3>Graph-native tools on top of recall</h3>
+<div class="chips">
+  <button class="chip g" data-n="tool-ask">ask</button><button class="chip g" data-n="tool-connect">connect</button>
+  <button class="chip g" data-n="tool-who">who</button><button class="chip g" data-n="tool-impact">impact</button>
+  <button class="chip g" data-n="tool-timeline">timeline</button><button class="chip g" data-n="tool-explore">explore</button>
+  <button class="chip g" data-n="tool-read">read</button><button class="chip g" data-n="tool-brief">brief</button>
+  <button class="chip g" data-n="tool-cypher">cypher</button>
+</div>
+<p class="src">Every tool accepts <code>max_chars</code> (default 4000); <a href="../../docs/neo-for-agents.md">docs/neo-for-agents.md</a> tells coding agents to keep it small and use <code>read</code> for full text.</p>
+</section>
+
+<!-- ============ 6 TIME ============ -->
+<section class="panel" id="s-time" aria-labelledby="h-time" hidden>
+<h2 id="h-time">Time: how text becomes history</h2>
+<p>Validity is a property, not a guess. An edge or memory carries <code>valid_from_ms</code>; <code>valid_to_ms</code> (or a supersede) closes it, and closed things stay in the graph as history. "Who owns X <em>now</em>" and "what changed" become graph queries instead of text searches. <span class="src">(README.md Graph data model; <a href="../../src/neo_cortex/tools.py">tools.py</a> <code>relate()</code>)</span></p>
+<div class="grid g3">
+  <div class="card g" tabindex="0" role="button" data-n="time-valid"><h4>valid_from / valid_to</h4><p>Extracted edges date from the document; single-valued relations (OWNS per target, MEMBER_OF per person) are closed automatically when a later-dated document names a different counterpart.</p></div>
+  <div class="card g" tabindex="0" role="button" data-n="time-super"><h4>supersede</h4><p><code>remember(..., supersedes=id)</code> links <code>SUPERSEDES</code> and retires the old memory; <code>relate --supersede</code> closes the edge an agent corrects (single-valued types only).</p></div>
+  <div class="card g" tabindex="0" role="button" data-n="time-end"><h4>end=True</h4><p><code>relate --end</code> closes the current edge with no replacement — "this stopped being true", kept as history, not deleted.</p></div>
+</div>
+
+<div class="fig"><svg viewBox="0 0 960 300" role="group" aria-label="Animated timeline of a config value and an ownership edge" id="tlsvg">
+<text x="24" y="24" class="lbl" font-weight="700" font-size="13">Worked example, verified outputs from the demo corpus <tspan class="mut" font-size="10.5">(demo/VIDEO.md — fictional Pellucid Pay)</tspan></text>
+<line x1="60" y1="252" x2="920" y2="252" class="wire"/>
+<text class="mut" x="52" y="270" font-size="10.5">Jun 2026</text><text class="mut" x="330" y="270" font-size="10.5">mid Jun</text><text class="mut" x="500" y="270" font-size="10.5">11 Aug</text><text class="mut" x="580" y="270" font-size="10.5">12 Aug</text><text class="mut" x="880" y="270" font-size="10.5">Oct 2026</text>
+<text x="24" y="70" class="lbl" font-size="11.5" font-weight="600">session.ttl_seconds value</text>
+<rect x="60" y="52" width="300" height="24" rx="5" fill="var(--vbase)"/><text x="70" y="68" font-size="11" fill="var(--ink)">3600 — original ADR</text>
+<rect x="360" y="52" width="230" height="24" rx="5" fill="var(--vbase)" data-t="2"/><text x="368" y="68" font-size="11" fill="var(--ink)" data-t="2">900 — CFG-4380, 2026-06-18</text>
+<rect x="590" y="52" width="330" height="24" rx="5" fill="var(--acc)" data-t="3"/><text x="600" y="68" font-size="11" fill="var(--ink)" data-t="3">300 — ADR-007, 2026-08-12 (current)</text>
+<text x="24" y="130" class="lbl" font-size="11.5" font-weight="600">OWNS “session cache” edges</text>
+<rect x="60" y="112" width="470" height="24" rx="5" fill="var(--vbase)" data-t="4"/><text x="70" y="128" font-size="11" fill="var(--ink)" data-t="4">Lukas Brandt OWNS — valid_to 2026-08-11 (former)</text>
+<rect x="530" y="112" width="390" height="24" rx="5" fill="var(--acc2)" data-t="4"/><text x="540" y="128" font-size="11" fill="var(--ink)" data-t="4">Mateo Alvarez OWNS — current, source doc-14</text>
+<g data-t="2"><line x1="360" y1="52" x2="360" y2="252" stroke="var(--warn)" stroke-dasharray="4 3"/><text x="344" y="244" font-size="10" fill="var(--warn)">2026-06-18</text></g>
+<g data-t="3"><line x1="590" y1="52" x2="590" y2="252" stroke="var(--warn)" stroke-dasharray="4 3"/><text x="574" y="244" font-size="10" fill="var(--warn)">2026-08-12</text></g>
+<g data-t="4"><line x1="530" y1="112" x2="530" y2="252" stroke="var(--warn)" stroke-dasharray="4 3"/><text x="484" y="244" font-size="10" fill="var(--warn)">2026-08-11</text></g>
+<text x="24" y="200" class="lbl" font-size="11.5" font-weight="600">What the queries see</text>
+<text class="mut" x="24" y="220" font-size="10.5" id="tlq">Timeline of the TTL value and the current owner, as the graph stores them.</text>
+</svg>
+<div class="figcap ctl">
+  <button class="tbtn" id="tlprev">◀ Prev</button><button class="tbtn" id="tlplay">▶ Play</button><button class="tbtn" id="tlnext">Next ▶</button>
+  <span class="src" id="tlstep">step 0 / 4</span>
+</div>
+<div class="callout" id="tlcap" aria-live="polite">Press Play (or step) to move through time. The bars are what <code>timeline "session.ttl_seconds"</code> and <code>who "session cache"</code> print; older values and the former owner keep their end dates.</div>
+</div>
+<p class="src">Numbers from <a href="../../demo/VIDEO.md">demo/VIDEO.md</a> (verified demo outputs): TTL 3600 → 900 on 2026-06-18 (CFG-4380) → 300 on 2026-08-12 (ADR-007); Lukas Brandt FORMER, ended 2026-08-11; Mateo Alvarez current with source doc-14. Retrieval hides superseded memories unless the question is about change; merged memories never surface. <span class="src">(<a href="../../src/neo_cortex/retrieve/channels.py">retrieve/channels.py</a> <code>keep()</code>)</span></p>
+</section>
+
+<!-- ============ 7 LIFECYCLE ============ -->
+<section class="panel" id="s-lifecycle" aria-labelledby="h-lifecycle" hidden>
+<h2 id="h-lifecycle">Memory lifecycle</h2>
+<p>From "the agent just learned something" to "the next agent knows it" — with an overnight-style consolidation in between. Everything below runs without an LLM.</p>
+
+<div class="fig"><svg viewBox="0 0 960 300" role="group" aria-label="Memory lifecycle diagram">
+<g class="g" tabindex="0" role="button" data-n="lc-remember" aria-label="remember details"><rect class="box" x="24" y="40" width="180" height="84" rx="9"/><text class="lbl" x="38" y="64" font-size="12" font-weight="600">1 · remember</text><text class="mut" x="38" y="82" font-size="10.5">agent or hook stores one</text><text class="mut" x="38" y="96" font-size="10.5">fact; dedupe, conflicts,</text><text class="mut" x="38" y="110" font-size="10.5">SUPERSEDES</text></g>
+<g class="g" tabindex="0" role="button" data-n="lc-hooks" aria-label="hooks details"><rect class="box" x="250" y="40" width="200" height="84" rx="9"/><text class="lbl" x="264" y="64" font-size="12" font-weight="600">2 · session hooks</text><text class="mut" x="264" y="82" font-size="10.5">SessionEnd / PreCompact send</text><text class="mut" x="264" y="96" font-size="10.5">the transcript; ≤ 15 memories</text><text class="mut" x="264" y="110" font-size="10.5">extracted in background</text></g>
+<g class="g" tabindex="0" role="button" data-n="lc-dream" aria-label="dream details"><rect class="box" x="496" y="24" width="220" height="116" rx="9"/><text class="lbl" x="510" y="48" font-size="12" font-weight="600">3 · dream (on demand)</text><text class="mut" x="510" y="66" font-size="10.5">merge ≥ 0.92 cosine, same kind</text><text class="mut" x="510" y="80" font-size="10.5">promote episodic cluster in ≥ 3 sessions</text><text class="mut" x="510" y="94" font-size="10.5">decay × 0.9 per idle 30 days (floor 0.1)</text><text class="mut" x="510" y="108" font-size="10.5">flag conflicts — agent resolves</text><text class="mut" x="510" y="126" font-size="10.5">writes one DreamRun; idempotent</text></g>
+<g class="g" tabindex="0" role="button" data-n="lc-brief" aria-label="brief details"><rect class="box" x="762" y="40" width="180" height="84" rx="9"/><text class="lbl" x="776" y="64" font-size="12" font-weight="600">4 · brief</text><text class="mut" x="776" y="82" font-size="10.5">SessionStart hook injects</text><text class="mut" x="776" y="96" font-size="10.5">preferences, decisions,</text><text class="mut" x="776" y="110" font-size="10.5">lessons, open handoffs</text></g>
+<g class="g" tabindex="0" role="button" data-n="lc-handoff" aria-label="handoff details"><rect class="box" x="250" y="180" width="200" height="84" rx="9"/><text class="lbl" x="264" y="204" font-size="12" font-weight="600">handoff</text><text class="mut" x="264" y="222" font-size="10.5">agent leaves work for another;</text><text class="mut" x="264" y="236" font-size="10.5">shown in the next agent's</text><text class="mut" x="264" y="250" font-size="10.5">brief; done= closes it</text></g>
+<g class="g" tabindex="0" role="button" data-n="lc-never" aria-label="nothing deleted details"><rect class="box" x="496" y="180" width="220" height="84" rx="9"/><text class="lbl" x="510" y="204" font-size="12" font-weight="600">nothing is deleted</text><text class="mut" x="510" y="222" font-size="10.5">merged → status merged + MERGED_INTO</text><text class="mut" x="510" y="236" font-size="10.5">superseded → status superseded</text><text class="mut" x="510" y="250" font-size="10.5">decayed → confidence lowered</text></g>
+<path class="wire" d="M204,82 H250"/><path class="wire" d="M450,82 H496"/><path class="wire" d="M716,82 H762"/>
+<path class="wire" d="M350,180 V150"/>
+<path class="wire" d="M450,222 H496"/>
+<text class="mut" x="700" y="164" font-size="10.5">next session</text>
+</svg>
+<div class="figcap">The SessionStart hook injects the brief, so memory works even if the agent never calls <code>remember</code>. Hooks return in about 60 ms and never fail the session. <span class="src">(README.md Memory lifecycle; <a href="../../src/neo_cortex/AGENTS.md">src/neo_cortex/AGENTS.md</a> cli.py)</span></div></div>
+
+<div class="grid g2">
+  <div class="card g" tabindex="0" role="button" data-n="lc-sessions"><h4>Sessions, not just explicit writes</h4><p>Deterministic rules pick self-contained statements (preferences, decisions, lessons); GLiNER only scores them. Narration, fragments and plans are dropped; assistant text is rewritten to third person.</p></div>
+  <div class="card g" tabindex="0" role="button" data-n="lc-dream2"><h4>Why "dream"?</h4><p>An offline, deterministic, idempotent consolidation pass — the Dream-RSI idea. A rerun changes nothing; every real run is logged as a DreamRun node. Tests cover merge, promote, decay, conflicts, idempotence and dry runs. <span class="src">(docs/lineage.md §3)</span></p></div>
+</div>
+</section>
+
+<!-- ============ 8 RESULTS ============ -->
+<section class="panel" id="s-results" aria-labelledby="h-results" hidden>
+<h2 id="h-results">Results — including the honest losses</h2>
+<p>Every bar below is copied from a file in <code>eval/</code>, named under the chart. Evaluations: a synthetic company (102 AI-generated documents, 80 retrieval questions, 30 structured-answer questions) and this repository's own 72 docs (30 questions). All comparisons are paired bootstraps (1000 resamples, seed 0, 95% CI). <span class="src">(README.md; <a href="../../eval/README.md">eval/README.md</a>)</span></p>
+
+<div class="chart" id="ch-answers"><div class="legend"><span><i style="background:var(--vtool)"></i>graph-native tool</span><span><i style="background:var(--vbase)"></i>text-search baseline (top-8 vector)</span></div></div>
+<div class="chart" id="ch-retrieval"></div>
+<div class="chart" id="ch-who"></div>
+<div class="chart" id="ch-real"></div>
+<div class="chart" id="ch-mcp"></div>
+
+<h3>What we say about the losses</h3>
+<div class="callout bad"><strong>Graph ties text on finding documents.</strong> Recall@10 full 0.76 vs vector+bm25 0.75, delta +0.006 [−0.029, +0.040] — the CIs include 0. The graph earns its keep on structural questions, not on document retrieval. <span class="src">(<a href="../../eval/results.md">eval/results.md</a>)</span></div>
+<div class="callout bad"><strong>Value-change answers: the tool loses.</strong> 0.80 vs 1.00 all-keys on the 10 change questions (−0.20 [−0.50, +0.00], inside noise but tool lower). We report it. <span class="src">(<a href="../../eval/answers.md">eval/answers.md</a>)</span></div>
+<div class="callout bad"><strong>Relations from real prose are sparse.</strong> 5 REL edges extracted from this repo's 72 documents — that is why agents write relations directly with <code>remember(entities, relations)</code> and <code>relate</code>. <span class="src">(<a href="../../eval/real_check.md">eval/real_check.md</a>)</span></div>
+<div class="callout bad"><strong>Seven measured ideas were not adopted</strong> — none beat the default across both corpora (next section). <span class="src">(<a href="../../eval/flags.md">eval/flags.md</a>)</span></div>
+
+<h3>More measurements</h3>
+<table class="data">
+<tr><th>What</th><th>Result</th><th>Source</th></tr>
+<tr><td><code>ask</code> at equal output size, multi-hop questions</td><td class="n">answer keys +0.23 [+0.04, +0.42], significant</td><td><a href="../../README.md">README.md</a> (eval/run_eval.py)</td></tr>
+<tr><td><code>ask</code> with the default (unequal) budget</td><td class="n">−0.12 — the pack is shorter (3,810 vs 9,932 chars)</td><td><a href="../../eval/results.md">eval/results.md</a></td></tr>
+<tr><td>Relation extraction, synthetic, graded types</td><td class="n">precision 0.880 (66/75), recall 0.825; CAUSED_BY recall 0/5</td><td><a href="../../eval/graph_quality.md">eval/graph_quality.md</a></td></tr>
+<tr><td>Real docs (72, 30 questions)</td><td class="n">gold doc in top 5: 0.50, MRR 0.41; answer in top-5 chunks 0.70</td><td><a href="../../eval/real_check.md">eval/real_check.md</a></td></tr>
+<tr><td>Real-docs latency</td><td class="n">recall p50 133 ms, ask p50 193 ms</td><td><a href="../../eval/real_check.md">eval/real_check.md</a></td></tr>
+<tr><td>Concurrency stress, 16 clients</td><td class="n">0 errors, 0 lost writes; read p50 11 ms</td><td><a href="../../eval/stress.md">eval/stress.md</a></td></tr>
+<tr><td>MCP smoke, 15 tools</td><td class="n">15/15 OK; schemas ≈ 2,077 tokens</td><td><a href="../../eval/mcp_smoke.md">eval/mcp_smoke.md</a></td></tr>
+<tr><td>Self-tuning acceptance rule</td><td class="n">tuner rejected its own weights (even-split CI [−0.075, +0.038])</td><td><a href="../../docs/lineage.md">docs/lineage.md</a> §2</td></tr>
+</table>
+</section>
+
+<!-- ============ 9 LINEAGE ============ -->
+<section class="panel" id="s-lineage" aria-labelledby="h-lineage" hidden>
+<h2 id="h-lineage">Ideas it builds on</h2>
+<p>Each outside idea: what was taken, where it lives, what was measured — written down in <a href="../../docs/lineage.md">docs/lineage.md</a>. Click a card.</p>
+<div class="grid g2" id="lineage-cards"></div>
+</section>
+
+<!-- ============ 10 MEASURED ============ -->
+<section class="panel" id="s-measured" aria-labelledby="h-measured" hidden>
+<h2 id="h-measured">What we measured and did not adopt</h2>
+<p>Decisions were made with evidence; several measured alternatives lost and shipped off by default. This is the table we show judges. <span class="src">(README.md "System 1 decisions, measured"; <a href="../../eval/flags.md">eval/flags.md</a>; <a href="../../docs/lineage.md">docs/lineage.md</a>)</span></p>
+<table class="data">
+<tr><th>Decision</th><th>Measured result</th><th>Kept?</th></tr>
+<tr><td>Edge assertion gate: base GLiNER2.5 + negation-cue rule</td><td class="n">trap probe 20/25 (model alone 17/25); fact-only P 0.880→0.903, R 0.825→0.812 (F1 0.852→0.855)</td><td>Yes — default</td></tr>
+<tr><td>GLiNER2.5-Decide as the gate</td><td class="n">also 20/25, but a second ~1.9 GB model, ≈6× slower</td><td>No</td></tr>
+<tr><td>JointIE / combined schema (<code>NEO_EXTRACT</code>)</td><td class="n">precision 0.719 / 0.774 vs 0.880 split; slower on real docs (222 s / 140 s vs 92 s)</td><td>No — split stays</td></tr>
+<tr><td>fp16 GLiNER (<code>NEO_GLINER_FP16=1</code>)</td><td class="n">peak GPU memory 1098 → 589 MB, ≈2.4× slower per call (GTX 1660 Ti)</td><td>Opt-in only</td></tr>
+<tr><td>Tuned channel weights (RRSI acceptance rule)</td><td class="n">odd-split 0.752 vs 0.648, but held-out even-split delta −0.019 [−0.075, +0.038] → <code>accepted: false</code></td><td>No — defaults ship</td></tr>
+<tr><td>HTML ingestion by anydoc</td><td class="n">anydoc has no HTML reader; built-in stdlib converter added</td><td>Yes</td></tr>
+</table>
+
+<h3>Seven flag-gated ideas from open memory systems — all stay off</h3>
+<p>From agentmemory, graphify and Hindsight, measured on both corpora (synthetic 80 questions, real 30 questions). <span class="src">(<a href="../../eval/flags.md">eval/flags.md</a>, 2026-10-18)</span></p>
+<table class="data">
+<tr><th>Flag(s)</th><th>Idea (source)</th><th>Outcome</th></tr>
+<tr><td><code>NEO_FUSE_NORM</code> + <code>NEO_FUSE_BOOST</code></td><td>normalise ranks before RRF, bounded boosts (agentmemory)</td><td>Off: no gain (synthetic 0.73 vs 0.75 base)</td></tr>
+<tr><td><code>NEO_BM25_COVER</code> + <code>NEO_WHY_TIER</code></td><td>squared term-coverage BM25, why-tier (graphify)</td><td>Off: real Hit@5 0.50→0.60 but MRR 0.41→0.37; synthetic −0.01…−0.07</td></tr>
+<tr><td><code>NEO_SEED_PER_TERM</code> + <code>NEO_HUB_SKIP</code></td><td>per-term graph seeds, hub skip (graphify)</td><td>Off: no change</td></tr>
+<tr><td><code>NEO_TEMPORAL_2PHASE</code></td><td>two-phase temporal (Hindsight)</td><td>Off: temporal fullcover 0.44→0.56 but multi-hop 0.38→0.27</td></tr>
+<tr><td><code>NEO_RESOLVE_JW</code></td><td>Jaro-Winkler entity merge (graphify)</td><td>Off: merged <code>FalkorDB</code> into <code>falkordblite</code> — a wrong merge is worse than a duplicate</td></tr>
+</table>
+<p class="src">The published gain this lineage came from (edge F1 0.330 → 0.396 on one author's 10-doc corpus) did not reproduce here. (docs/lineage.md §5)</p>
+</section>
+
+<!-- ============ 11 LIMITS ============ -->
+<section class="panel" id="s-limits" aria-labelledby="h-limits" hidden>
+<h2 id="h-limits">Limits we state openly</h2>
+<div class="grid g2">
+  <div class="card"><h4>Small evaluation</h4><p>One synthetic corpus and 80 questions written by the same team that built the tools. The numbers show the design works on this corpus; they do not establish general accuracy. <span class="src">(README.md Limitations)</span></p></div>
+  <div class="card"><h4>Relation recall</h4><p>GLiNER finds many entities but misses many relations (CAUSED_BY recall 0/5 on synthetic; 5 edges in 72 real docs). Deterministic patterns recover some; the rest is absent and answers then depend on the text channels. <span class="src">(README.md; eval/graph_quality.md)</span></p></div>
+  <div class="card"><h4>Single node</h4><p>One daemon owns one graph: no replication, no multi-writer scaling, no authentication beyond loopback-only binding. Keep the daemon on the loopback interface. <span class="src">(README.md)</span></p></div>
+  <div class="card"><h4>No LLM by design</h4><p><code>ask</code> returns evidence and paths; the calling agent writes the answer. Answer quality depends on that agent. <span class="src">(README.md)</span></p></div>
+  <div class="card"><h4>BM25 rebuilds</h4><p>The BM25 index is rebuilt in full whenever the corpus changes — fine at demo size, stated in the code as a shortcut to ~10k chunks. <span class="src">(README.md; retrieve/channels.py <code>_bm25_index</code>)</span></p></div>
+  <div class="card"><h4>Docker volume</h4><p>The compose file's persistence path for the combined FalkorDB image is not verified by a run. <span class="src">(README.md; docker-compose.yml)</span></p></div>
+</div>
+
+<h3>What we would do next</h3>
+<p>Better relation extraction from real prose, an answer-grounding check, and lessons from open memory systems (agentmemory, graphify, Hindsight) for fusion and temporal reasoning. <span class="src">(docs/judges-guide.md §9)</span></p>
+
+<h3>AI-use note</h3>
+<div class="callout">"Neo-Cortex was built with Claude Code, using Anthropic Claude models as the orchestrator and coding sub-agents. Some tasks were done with GitHub Copilot CLI, CodeBuddy (GLM-5.3-Flash) and OpenCode. The synthetic company corpus and gold questions were AI-generated from a written specification and are fictional. Humans directed, reviewed and verified the work, and are responsible for the architecture, correctness claims and submitted material." <span class="src">(README.md, AI use disclosure — copied verbatim)</span></div>
+
+<footer class="foot">
+<p><strong>Primary sources:</strong>
+<a href="../../README.md">README.md</a> ·
+<a href="../../docs/judges-guide.md">docs/judges-guide.md</a> ·
+<a href="../../docs/architecture.md">docs/architecture.md</a> ·
+<a href="../../docs/lineage.md">docs/lineage.md</a> ·
+<a href="../../docs/neo-for-agents.md">docs/neo-for-agents.md</a> ·
+<a href="../../docs/cypher.md">docs/cypher.md</a> ·
+<a href="../../src/neo_cortex/AGENTS.md">src/neo_cortex/AGENTS.md</a> ·
+<a href="../../eval/README.md">eval/README.md</a> ·
+<a href="../../eval/results.md">results.md</a> ·
+<a href="../../eval/answers.md">answers.md</a> ·
+<a href="../../eval/real_check.md">real_check.md</a> ·
+<a href="../../eval/flags.md">flags.md</a> ·
+<a href="../../eval/graph_quality.md">graph_quality.md</a> ·
+<a href="../../eval/mcp_smoke.md">mcp_smoke.md</a> ·
+<a href="../../eval/stress.md">stress.md</a> ·
+<a href="../../demo/VIDEO.md">demo/VIDEO.md</a> ·
+<a href="../../integrations/claude-code/README.md">integrations/claude-code/README.md</a></p>
+<p>Interactive explainer generated for the WeMakeDevs "Graph Hacks: Context for AI Agents" hackathon (FalkorDB). Standalone file: no network requests, works from disk and GitHub Pages.</p>
+</footer>
+</section>
+
+<!-- ============ 12 GLOSSARY ============ -->
+<section class="panel" id="s-glossary" aria-labelledby="h-glossary" hidden>
+<h2 id="h-glossary">Glossary</h2>
+<label for="glfilter" class="src">Filter terms:</label>
+<input id="glfilter" type="search" placeholder="type to filter…" aria-label="Filter glossary terms">
+<dl class="gloss" id="gloss"></dl>
+</section>
+
+</main>
+</div>
+
+<div id="backdrop"></div>
+<aside id="drawer" role="dialog" aria-labelledby="d-title" aria-modal="false">
+  <button class="close" id="dclose" aria-label="Close details panel">✕</button>
+  <h3 id="d-title"></h3>
+  <div class="row" id="d-what"><b>What it is</b><div id="d-what-t"></div></div>
+  <div class="row" id="d-why"><b>Why it exists</b><div id="d-why-t"></div></div>
+  <div class="row" id="d-code"><b>Code</b><div id="d-code-t" class="mono" style="font-size:.82rem"></div></div>
+  <div class="row" id="d-result"><b>Measured result</b><div id="d-result-t"></div></div>
+  <div class="row" id="d-link"><b>Source file</b><div class="srclink" id="d-link-t"></div></div>
+</aside>
+
+<script>
+/* ---------- node details: t=title w=what y=why c=code r=result(optional) l=link(optional) ---------- */
+var INFO = {
+"track1":{t:"Track 01 — Agents that act on connected data",w:"`ask` and `connect` return the multi-hop graph paths (seeds, shortest SPpaths between them, cited chunks) that an agent acts on.",y:"Connected-data questions need paths between things, not similar text.",c:"src/neo_cortex/tools.py ask(), connect(); algo.SPpaths",r:"`ask` at equal output size: answer keys +0.23 [+0.04, +0.42] on multi-hop questions, significant (README.md).",l:"../../README.md"},
+"track2":{t:"Track 02 — Agent memory and coordination",w:"Episodic, semantic, procedural, preference and decision memories; Claude Code hooks inject a brief at session start and auto-extract memories at session end; handoffs between agents; `dream` consolidation.",y:"Agents forget between sessions; hooks make memory work without discipline.",c:"src/neo_cortex/write.py remember(), session_mem.py, dream.py, cli.py hook()",r:"Hooks return in about 60 ms; up to 15 memories per session (README.md, src/neo_cortex/AGENTS.md).",l:"../../README.md"},
+"track3":{t:"Track 03 — Company brain",w:"Docs, tickets, ADRs and chats in one graph; `who` finds owners and experts; `timeline` traces decisions to sources and shows what superseded what.",y:"Company knowledge is scattered across files no agent reads as a whole.",c:"src/neo_cortex/tools.py who(), timeline(); write.py ingest_path()",r:"Current owner: 1.00 all-keys (tie with baseline); impact +0.60 significant (eval/answers.md).",l:"../../README.md"},
+"arch-agent":{t:"Claude Code / any MCP client",w:"The reasoning layer. It calls the 15 MCP tools over streamable HTTP at /mcp and writes the final answer from the cited evidence.",y:"No LLM inside the system: the tools return compact evidence; the calling agent reasons.",c:"src/neo_cortex/mcp_server.py make_server() registers the tools",r:"15/15 tools pass the end-to-end smoke test (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"arch-hooks":{t:"Claude Code hooks (SessionStart / SessionEnd / PreCompact)",w:"session-start injects the brief as additionalContext; session-end and pre-compact POST the transcript to /api/ingest-session with background:true.",y:"Memory should work even if the agent never calls remember.",c:"src/neo_cortex/cli.py hook(); hooks JSON via neo install-claude",r:"Hooks return in about 60 ms and never fail the session (exit 0, silent on any error) — src/neo_cortex/AGENTS.md.",l:"../../integrations/claude-code/README.md"},
+"arch-cli":{t:"neo CLI",w:"20+ subcommands (brief, recall, ask, who, timeline, impact, relate, remember, ingest, dream, ...). Every command POSTs to the daemon's /api/<tool>.",y:"Agents that can run shell commands can use the memory with no MCP setup.",c:"src/neo_cortex/cli.py; docs/neo-for-agents.md is the usage contract",r:"Falls back to a local store only on connection refused to the default URL; an explicit NEO_DAEMON_URL is never replaced.",l:"../../docs/neo-for-agents.md"},
+"arch-daemon":{t:"neo serve — the daemon",w:"One process on 127.0.0.1:8765 that owns the database and the models, serves MCP at /mcp plus /api and /health, and runs background jobs on one worker thread.",y:"The embedded database takes an exclusive file lock: exactly one process (the daemon) may have it open.",c:"src/neo_cortex/cli.py serve → src/neo_cortex/mcp_server.py main()",r:"Stress test: 16 clients, 0 errors, 0 lost writes; read p50 11 ms (eval/stress.md).",l:"../../eval/stress.md"},
+"arch-mcp":{t:"MCP endpoint /mcp",w:"Streamable-HTTP MCP server exposing 15 tools; stdio transport also available (python -m neo_cortex.mcp_server --transport stdio).",y:"Any MCP-capable harness gets the whole memory without custom integration.",c:"src/neo_cortex/mcp_server.py (MCPServer, API_TOOLS)",r:"Tool descriptions + schemas ≈ 2,077 tokens of agent context (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"arch-api":{t:"HTTP API /api + /health",w:"Loopback JSON API for the CLI and hooks: POST /api/<tool>, POST /api/ingest-session and /api/ingest (background:true queues a job), GET /api/jobs, GET /health.",y:"The CLI must not open the database while the daemon owns it.",c:"src/neo_cortex/mcp_server.py _add_api(), class Jobs",r:"Guards: loopback Host required, JSON content-type required, body over 1 MB → 413.",l:"../../src/neo_cortex/mcp_server.py"},
+"arch-tools":{t:"tools.py — the 15 tools",w:"brief, recall, remember, ask, explore, connect, who, timeline, impact, relate, read, ingest, handoff, cypher, dream. Plain-text output with ids, sources and dates.",y:"Token-budgeted, cited text: the agent reads it, not a JSON maze.",c:"src/neo_cortex/tools.py; every public tool wrapped by _guarded",r:"Bad tenants or dates return text, never exceptions; cypher is read-only with a forced LIMIT.",l:"../../src/neo_cortex/tools.py"},
+"arch-write":{t:"Write path (write.py)",w:"Convert, chunk (120–250 words), embed, extract (GLiNER + deterministic patterns), gate, resolve entities, batch-write with UNWIND.",y:"Turns raw files and transcripts into a typed, time-aware graph.",c:"src/neo_cortex/write.py ingest_path(), remember(), ingest_session()",r:"Synthetic corpus: 102 docs, 136 chunks, 97 RELs in 85.5 s (eval/results.md).",l:"../../docs/architecture.md"},
+"arch-read":{t:"Read path (retrieve/)",w:"parse_query → link entities → vector, BM25, graph PPR, temporal channels → weighted RRF (k=60) → hide merged/superseded → cited evidence pack.",y:"Hybrid retrieval so no single channel's weakness becomes the answer's weakness.",c:"src/neo_cortex/retrieve/__init__.py recall(); channels.py; fuse.py",r:"Full config recall@10 0.76 vs vector 0.73; delta vs vector+bm25 inside noise (eval/results.md).",l:"../../docs/architecture.md"},
+"arch-dream":{t:"dream.py — consolidation",w:"Merge near-duplicates, promote episodic clusters seen in ≥ 3 sessions, decay unused memories, flag conflicts. Plans in Python, writes with UNWIND, under the write lock.",y:"Long-lived memory needs maintenance; doing it deterministically keeps it explainable.",c:"src/neo_cortex/dream.py dream(); surfaces as neo dream and the dream tool",r:"Idempotent — a rerun changes nothing; every real run writes a DreamRun node.",l:"../../src/neo_cortex/AGENTS.md"},
+"arch-jobs":{t:"Background jobs",w:"One worker thread runs session extraction and directory ingests; jobs keep ids and status (queued | running | done | error); the last 100 finished are kept.",y:"A slow GPU-bound ingest must not block other agents' reads.",c:"src/neo_cortex/mcp_server.py class Jobs; neo jobs prints them",r:"Session hooks return at once (~60 ms) while extraction continues in the background.",l:"../../src/neo_cortex/AGENTS.md"},
+"arch-db":{t:"falkordblite — embedded FalkorDB",w:"Embedded server bound to 127.0.0.1:NEO_PORT (default 6390), data at ~/.neo-cortex/neo.rdb (NEO_HOME). One graph per tenant: neo_<tenant> (default tenant `default`).",y:"Zero-setup graph database with Cypher, vector indexes and graph algorithms; the file lock makes single-owner explicit.",c:"src/neo_cortex/store.py Store; schema.py ensure_schema()",r:"Exclusive flock on <home>/.lock — a second writer gets an error naming that lock.",l:"../../src/neo_cortex/AGENTS.md"},
+"arch-gliner":{t:"GLiNER2.5 (fastino/gliner2.5-base-v1)",w:"Small non-generative encoder: extracts typed entities and relations, classifies memory kind and query intent, scores session candidates, judges borderline merges, gates edges. Apache-2.0.",y:"The no-LLM 'System 1': fast (about 26 ms/call on a 6 GB GPU), private, deterministic.",c:"src/neo_cortex/models.py gliner(); extract.py; resolve.py judge()",r:"Relation precision 0.880 / recall 0.825 on the synthetic graph (eval/graph_quality.md).",l:"../../eval/graph_quality.md"},
+"arch-embed":{t:"EmbeddingGemma (google/embeddinggemma-2)",w:"Text-only embedding model: float32, L2-normalized, 768 dimensions, cosine; documents embed as 'title: ... | text: ...', queries use the search prompt.",y:"Local vectors for the vector channel, memory dedupe and entity neighbours.",c:"src/neo_cortex/models.py _embedder() (vision/audio configs None)",r:"No eval number beyond retrieval; licence ambiguity noted in knowledge/models/embeddinggemma.md (docs/lineage.md §6).",l:"../../docs/lineage.md"},
+"arch-bm25":{t:"bm25s index",w:"In-process BM25 with an English stemmer; identifiers are split on _ - . / : so a query word can hit SESSION_TTL or config/ci.yaml.",y:"FalkorDB's full-text index is not BM25, so a real BM25 channel runs next to it.",c:"src/neo_cortex/retrieve/channels.py _bm25_index(), bm25()",r:"bm25 channel mean latency 6 ms; recall@10 0.71 alone, 0.75 combined with vector (eval/results.md).",l:"../../eval/results.md"},
+"cli-serve":{t:"neo serve [--port 8765] [--warm]",w:"Starts the daemon; --warm loads both models at start instead of on first use.",y:"One command to bring the whole system up.",c:"src/neo_cortex/cli.py serve; src/neo_cortex/mcp_server.py main()",r:"Refuses a non-loopback --host unless NEO_ALLOW_REMOTE=1.",l:"../../src/neo_cortex/cli.py"},
+"cli-status":{t:"neo status",w:"Daemon health, background job counts and graph node counts.",y:"First thing an agent checks; '0 rows' on a fresh graph is an empty count, not an error (README.md).",c:"src/neo_cortex/cli.py status()",r:"",l:"../../src/neo_cortex/cli.py"},
+"cli-brief":{t:"neo brief [--project] [--agent]",w:"Prints the session-start context: open handoffs, preferences, active decisions, lessons, recent facts.",y:"Same entry point the SessionStart hook uses.",c:"src/neo_cortex/tools.py brief()",r:"Smoke test OK, 37.8 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"cli-recall":{t:"neo recall \"<q>\" [-k K]",w:"Hybrid search over memories and documents, with 'why it matched' per hit.",y:"The workhorse before re-solving anything or asking the user.",c:"src/neo_cortex/tools.py recall() → retrieve.recall()",r:"Real-docs recall p50 133 ms (eval/real_check.md).",l:"../../eval/real_check.md"},
+"cli-ask":{t:"neo ask \"<question>\"",w:"Multi-hop evidence pack: linked seeds, bridging paths, facts, cited chunks. Does not answer — the agent does.",y:"Questions that span documents need paths, not snippets.",c:"src/neo_cortex/tools.py ask()",r:"Equal-size test: multi-hop keys +0.23 [+0.04, +0.42], significant (README.md).",l:"../../README.md"},
+"cli-who":{t:"neo who / neo timeline",w:"who: owners and experts for a topic, from ownership paths and authorship. timeline: dated events with the values stated in each source.",y:"Ownership and change history are graph queries, not text guesses.",c:"src/neo_cortex/tools.py who(), timeline()",r:"who with entity topic: gold person in top 3, 0.94 vs 0.71 baseline (eval/results.md).",l:"../../eval/results.md"},
+"cli-explore":{t:"neo explore / connect / impact",w:"explore: neighbourhood of an entity with relation, date and source. connect: shortest relation paths (algo.SPpaths). impact: blast radius — dependents, owners to tell, linked customers and incidents.",y:"The three structural questions files cannot answer.",c:"src/neo_cortex/tools.py explore(), connect(), impact()",r:"impact all-keys 0.80 vs 0.20 text baseline, +0.60 [+0.30, +0.90] significant (eval/answers.md).",l:"../../eval/answers.md"},
+"cli-relate":{t:"neo relate HEAD TYPE TAIL [--source] [--supersede] [--end]",w:"Writes or corrects one typed edge; supersede closes the edge it replaces (single-valued types only), end closes with no replacement.",y:"Agents correct the graph instead of contradicting it.",c:"src/neo_cortex/tools.py relate(), _edge()",r:"supersede is refused for multi-valued types like DEPENDS_ON (src/neo_cortex/mcp_server.py tool description).",l:"../../src/neo_cortex/tools.py"},
+"cli-read":{t:"neo read <id>",w:"Full text of a chunk, memory or document by id, with metadata and neighbour ids.",y:"recall shows only the best-matching sentences; read gives the whole thing.",c:"src/neo_cortex/tools.py read()",r:"Smoke test OK, 6.2 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"cli-remember":{t:"neo remember \"<text>\" [--kind] [--entity name:type] [--rel 'head|TYPE|tail']",w:"Stores one memory. With kind plus entities or relations, nothing is extracted — about 0.2 s, mostly the embedding.",y:"The agent that just did the work knows the facts better than any extractor.",c:"src/neo_cortex/tools.py remember() → write.remember()",r:"Dedupe at cosine 0.92 reinforces; 0.75–0.92 with a shared entity returns conflicts (src/neo_cortex/write.py DEDUPE/CONFLICT).",l:"../../src/neo_cortex/write.py"},
+"cli-ingest":{t:"neo ingest / jobs / ingest-session",w:"ingest: a file or directory (directories run as daemon jobs, --wait follows). jobs: job status. ingest-session: extract memories from a Claude Code transcript.",y:"Batch loading and transcript capture without blocking.",c:"src/neo_cortex/cli.py ingest(), jobs(); mcp_server.py Jobs",r:"Exit 2 with a warning when nothing was ingested and files were unsupported or failed.",l:"../../src/neo_cortex/cli.py"},
+"cli-handoff":{t:"neo handoff \"<summary>\" --to <agent> [--task T]...",w:"Leaves work for another agent; shown in its brief; done=<handoff id> closes one.",y:"Coordination between agents without a chat channel.",c:"src/neo_cortex/tools.py handoff()",r:"",l:"../../src/neo_cortex/tools.py"},
+"cli-cypher":{t:"neo cypher \"<query>\"",w:"Read-only Cypher, the escape hatch. The schema is in the tool description; the LIMIT is enforced into the query.",y:"Power users can check the graph directly without write risk.",c:"src/neo_cortex/tools.py cypher()",r:"Smoke test OK, 3.0 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"cli-dream":{t:"neo dream [--dry-run]",w:"Consolidate memories: merge duplicates, promote recurring episodes, decay unused ones, flag conflicts. --dry-run reports only.",y:"Maintenance pass an agent or a cron can run at any time.",c:"src/neo_cortex/dream.py dream(); tools.py dream()",r:"Idempotent; every real run writes a DreamRun node (tests/test_dream.py).",l:"../../src/neo_cortex/AGENTS.md"},
+"cli-hook":{t:"neo hook session-start|session-end|pre-compact / neo install-claude",w:"Hook entry point reads Claude Code's hook JSON on stdin. install-claude prints the hooks JSON and the `claude mcp add` command; --yes merges the hooks.",y:"Memory without discipline: the harness wires it up once.",c:"src/neo_cortex/cli.py hook(), install_claude()",r:"Hooks are silent no-ops on any failure, so they never break a session.",l:"../../integrations/claude-code/README.md"},
+/* data model */
+"ent-document":{t:"Document",w:"One source file. kind says what it is: doc, adr, ticket, chat, meeting, session, file, code (a .py file becomes one chunk per top-level def/class).",y:"Everything retrievable must be traceable to a source with an id, a title and a date.",c:"src/neo_cortex/write.py _ingest_doc(); schema in src/neo_cortex/AGENTS.md",r:"Synthetic corpus: 102 documents in six kind folders; WORLD.md is never ingested (README.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-chunk":{t:"Chunk",w:"A slice of a Document (120–250 words on paragraph or message boundaries) that carries the embedding and the citation. id is <doc id>#<pos>.",y:"The unit of search and citation: big enough for context, small enough to cite.",c:"src/neo_cortex/write.py chunk_text()",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-entity":{t:"Entity",w:"Every named thing the text mentions (person, team, service, component, file, config_setting, ticket, customer, product, tool, incident, decision, other), deduplicated across name variants.",y:"The nodes that make the graph traversable: ownership, dependencies and paths live between entities.",c:"src/neo_cortex/resolve.py resolve_entity(); type is a confidence-weighted vote (type_votes)",r:"Real-repo ingest created 594 entities from 72 docs (eval/real_check.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-memory":{t:"Memory",w:"One fact an agent or a session chose to keep, with a kind — episodic (what happened), semantic (what is true), procedural (how to), preference (how the user wants it), decision (what was decided).",y:"The agent-memory track: durable, typed, time-aware facts with provenance.",c:"src/neo_cortex/write.py remember(); session_mem.py extraction",r:"Status lifecycle: active → superseded | merged; superseded hidden unless the question is about change (retrieve/channels.py keep()).",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-session":{t:"Session",w:"An ingested agent conversation (a Claude Code transcript), linked to its Agent by BY.",y:"Sessions are where episodic memories come from, without anyone calling remember.",c:"src/neo_cortex/write.py ingest_session(); cli.py hook session-end",r:"hash makes re-ingesting the same transcript idempotent.",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-agent":{t:"Agent",w:"Who acted: the agent name on memories, sessions and handoffs (NEO_AGENT or claude-code:<session id>).",y:"Coordination needs to know who wrote and who a handoff is for.",c:"src/neo_cortex/write.py _agent_edge(); cli.py _agent()",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-handoff":{t:"Handoff",w:"Work one agent leaves for another: summary, tasks, status open|done. Shown in the target agent's brief; FROM/TO edges point at the agents.",y:"Multi-agent coordination is a first-class object, not a sticky note.",c:"src/neo_cortex/tools.py handoff()",r:"Demo shows a handoff created mid-incident and picked up by the next session's brief (demo/VIDEO.md).",l:"../../demo/VIDEO.md"},
+"ent-judgment":{t:"Judgment",w:"Cache for GLiNER yes/no and choice decisions, keyed by a content hash (question, text, labels).",y:"The pg-jev idea: decisions stored as data next to the graph, so they are auditable and cheap to reuse.",c:"src/neo_cortex/resolve.py judge()",r:"Used for borderline entity merges (similarity 0.85–0.92), where the judge may only veto.",l:"../../docs/lineage.md"},
+"ent-dreamrun":{t:"DreamRun",w:"One node per real dream() run: counts of merged, promoted, decayed, conflicts.",y:"Consolidation must be auditable; a run log makes 'what did dream change' a query.",c:"src/neo_cortex/dream.py dream()",r:"A rerun changes no Memory or edge (idempotence is tested in tests/test_dream.py).",l:"../../src/neo_cortex/AGENTS.md"},
+"ent-tunerun":{t:"TuneRun",w:"One node per self-tuning trial: weights tried, split, score, accepted flag.",y:"The RRSI idea: the tuner's every proposal is recorded, and acceptance is decided by a held-out rule, not by taste.",c:"eval/tune.py ledger() writes (:TuneRun {id, at_ms, weights, split, score, accepted, setting, delta, lo})",r:"The tuner rejected its own weights: even-split delta -0.019 [-0.075, +0.038] (docs/lineage.md §2).",l:"../../eval/tune.py"},
+"edge-gate":{t:"The edge assertion gate",w:"Every extracted relation is classified on its source sentence as fact / possibility / denial / plan. modality and p_fact are stored on the edge; a denied edge is never written; current-state tools and the graph walk read facts only.",y:"Text hedges ('might be', 'we plan to') must not become current-state facts.",c:"src/neo_cortex/extract.py _gate(); default gate = base GLiNER2.5 + a negation-cue rule",r:"Trap probe: model only 17/25, model + rule 20/25; fact-only relations P 0.880 → 0.903 (README.md).",l:"../../README.md"},
+"edge-time":{t:"Validity on edges",w:"valid_from_ms is the document date; valid_to_ms is set at ingest for single-valued fact relations (OWNS per target, MEMBER_OF per person) when a later-dated document names a different counterpart, and by relate --supersede/--end.",y:"An edge with an end date is closed history — 'who owns X now' is a query, not a guess.",c:"src/neo_cortex/write.py _supersede(); tools.py _edge()",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+/* write path */
+"w-ingest":{t:"ingest (entry)",w:"ingest_path() walks a file or directory tree; ingest_session() handles transcripts from the hooks. An unchanged document hash is skipped; a changed one is replaced with its chunks and REL edges.",y:"Re-ingesting a repo must be safe and cheap.",c:"src/neo_cortex/write.py ingest_path(), ingest_session()",r:"Synthetic ingest: 102 docs, 85.5 s; real-repo ingest: 72 docs, 307.7 s (eval/results.md, eval/real_check.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"w-convert":{t:"convert",w:"Markdown, text and Python are read directly; other formats go through anydoc.to_markdown; .html/.htm through a small built-in stdlib converter (anydoc has no HTML reader); images are skipped.",y:"Office files, PDFs and CSVs must get in without a cloud OCR.",c:"src/neo_cortex/write.py _load(), _html_to_markdown()",r:"tests/test_anydoc_ingest.py runs the real write path: docx, xlsx, pptx, pdf, rtf, csv convert; html, json, eml count as unsupported; scanned PDFs are errors (docs/lineage.md §8).",l:"../../docs/lineage.md"},
+"w-chunk":{t:"chunk",w:"120–250 words on paragraph boundaries; chat threads on message boundaries; .py files chunked by top-level def/class via the stdlib ast module.",y:"Chunks must read alone — they are what gets embedded, cited and shown.",c:"src/neo_cortex/write.py chunk_text(), _code_chunks()",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+"w-embed":{t:"embed (EmbeddingGemma)",w:"Every chunk gets a 768-d float32 L2-normalized embedding; documents embed as 'title: ... | text: ...'.",y:"The vector channel needs one vector space for chunks, memories, entities and queries.",c:"src/neo_cortex/models.py embed_docs(); schema.py DIM = 768",r:"",l:"../../src/neo_cortex/models.py"},
+"w-gliner":{t:"GLiNER2.5 extract",w:"Typed entities with per-type confidence floors (person 0.6 up to 0.85 for component/product/decision), typed relations per sentence window (floor 0.6), memory-kind classification, junk filter, ticket/ADR/INC ids by regex; code fences are blanked so code is not read as prose.",y:"Zero-shot extraction without an LLM keeps ingest fast, private and deterministic.",c:"src/neo_cortex/extract.py extract_batch(), _gate(), _sane_type()",r:"Synthetic ingest: 97 REL edges; real-repo ingest: only 5 — the honest reason agents also write relations directly (eval/results.md, eval/real_check.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"w-patterns":{t:"deterministic patterns",w:"Regex and table patterns recover ownership ('X owns Y'), dependencies ('depends on'), supersession ('replaced by', 'renamed to') and Owner columns in tables.",y:"Zero-shot relation extraction is weak (published GLiNER2.5 relation F1 about 0.27–0.37); patterns are exact where they match (docs/judges-guide.md §4).",c:"src/neo_cortex/extract.py _relations(), _table_facts()",r:"The table reader and pattern families are unit-tested without GLiNER (tests/test_write.py).",l:"../../src/neo_cortex/AGENTS.md"},
+"w-gate":{t:"edge gate",w:"Each relation's source sentence is classified fact / possibility / denial / plan; modality and p_fact land on the edge; denials are never written; hedges are kept but not treated as current.",y:"A 'maybe' and a 'no' must not look like a fact in a graph that answers 'who owns X now'.",c:"src/neo_cortex/extract.py _gate(), _negated()",r:"Trap probe 20/25 with the rule; fact-only precision 0.880 → 0.903 (README.md).",l:"../../README.md"},
+"w-resolve":{t:"entity resolution",w:"Order: exact normalised key → alias → code identifiers (exact only) → lone person name → variant key (spacing, case, punctuation, version suffix ignored: 'GLiNER 2.5 base' = 'gliner2.5-base-v1') → Entity vector neighbours ≥ 0.85 that pass a lexical guard. Merge at ≥ 0.92; between 0.85 and 0.92 the cached GLiNER judge may only veto.",y:"Two names for one thing must become one node — but FalkorDB must never merge into falkordblite.",c:"src/neo_cortex/resolve.py resolve_entity(), variant_key(), judge()",r:"The Jaro-Winkler experiment that merged FalkorDB into falkordblite stayed off (eval/flags.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"d-remember":{t:"remember(...) — direct write",w:"remember(text, kind=..., entities=[{name,type}], relations=[[head,TYPE,tail]]) stores one fact with typed entities and edges, no GLiNER at all. With kind plus entities or relations, nothing is extracted.",y:"About 0.2 s per call, exact names, no extraction risk — the agent's words are the facts.",c:"src/neo_cortex/tools.py remember() → src/neo_cortex/write.py remember()",r:"Measured in the demo: entities and an edge created in one call, about 0.2 s (demo/VIDEO.md).",l:"../../demo/VIDEO.md"},
+"d-relate":{t:"relate(head, TYPE, tail)",w:"Writes or corrects one typed edge from the 13-type whitelist. supersede closes the edge it replaces (single-valued types: OWNS, RENAMED_TO, REPLACED_BY only); end closes it with no replacement; both keep history.",y:"Corrections must retire the old fact, not contradict it.",c:"src/neo_cortex/tools.py relate(), _edge()",r:"supersede is refused for multi-valued types like DEPENDS_ON (src/neo_cortex/mcp_server.py).",l:"../../src/neo_cortex/tools.py"},
+"d-match":{t:"exact or alias only",w:"Names the agent passes explicitly match by exact key or alias, never fuzzily; unknown names create new entities.",y:"The agent's words must never be silently merged into something else.",c:"src/neo_cortex/resolve.py (PIN_EXPLICIT path)",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+/* read path */
+"r-q":{t:"question",w:"Arrives from the calling agent (MCP recall/ask) or the CLI. Every tool takes max_chars (default 4000).",y:"One entry point for both harnesses keeps behaviour identical.",c:"src/neo_cortex/tools.py recall(), ask()",r:"",l:"../../src/neo_cortex/tools.py"},
+"r-parse":{t:"parse_query (GLiNER)",w:"Extracts entities, classifies intent (fact, connection, temporal, owner, decision, howto) with independent confidences, and parses explicit time windows. 'why/decided/reason/chose' forces decision intent ≥ 0.6; 'today/now/current/latest' are recency cues, never filters.",y:"Soft intent weights mean one misroute nudges the ranking instead of breaking it.",c:"src/neo_cortex/retrieve/query.py parse_query(), DECISION_RE",r:"Invalid calendar dates (2026-02-31) are skipped, not guessed.",l:"../../src/neo_cortex/retrieve/query.py"},
+"r-link":{t:"link query entities",w:"Links question entities to graph nodes: exact key (1.0/0.7), fuzzy full-text name (0.8 × similarity), a rare content word shared (0.35–0.5), nearest embedding (0.6) only when very close. At most 5 seeds; generic phrases never link fuzzily.",y:"The graph channel needs anchors; bad anchors would poison it.",c:"src/neo_cortex/retrieve/channels.py link_entities()",r:"Links below 0.65 are kept only if the entity is mentioned by a top dense/BM25 hit.",l:"../../src/neo_cortex/retrieve/channels.py"},
+"r-vector":{t:"vector channel",w:"EmbeddingGemma query embedding over Chunk and Memory vector indexes (cosine); the stored score is a distance, converted to similarity.",y:"Finds paraphrases — the same idea in different words.",c:"src/neo_cortex/retrieve/channels.py vector()",r:"recall@10 0.73 alone; mean latency 36 ms (eval/results.md).",l:"../../eval/results.md"},
+"r-bm25":{t:"BM25 channel",w:"bm25s over the same Chunk/Memory texts, in process, with an English stemmer and identifier splitting. The index is rebuilt when the corpus changes (stated shortcut).",y:"Exact keywords — error codes, file names, config keys — that embeddings blur.",c:"src/neo_cortex/retrieve/channels.py bm25(), _bm25_index()",r:"recall@10 0.71 alone, mean latency 6 ms (eval/results.md).",l:"../../eval/results.md"},
+"r-graph":{t:"graph channel (personalized PageRank)",w:"HippoRAG-style PPR over a local subgraph (at most 3 hops, 500 nodes, restart 0.5, numpy — algo.pageRank has no personalization). Seeds are the linked query entities plus the entities of the top dense/BM25 hits. Entity mass flows 50% along REL edges, else to its chunks; chunk mass flows back weighted by conf × specificity², so hub entities carry little.",y:"Finds evidence two or three hops from the query that text search cannot see.",c:"src/neo_cortex/retrieve/channels.py ppr(), graph()",r:"Impact all-keys 0.80 vs 0.20 baseline; on document finding it ties text (eval/answers.md, eval/results.md).",l:"../../src/neo_cortex/retrieve/channels.py"},
+"r-temporal":{t:"temporal channel",w:"Explicit windows ('since June', 'last 30 days', '15 July 2026') filter; 'current/latest' only switch on a recency cue. A window that matches nothing is dropped and the search repeated with a stronger temporal weight.",y:"Time questions need date ordering, not similarity.",c:"src/neo_cortex/retrieve/query.py parse_time(); channels.py temporal()",r:"",l:"../../src/neo_cortex/retrieve/channels.py"},
+"r-rrf":{t:"weighted RRF (k = 60)",w:"score = Σ w_c / (60 + rank_c). Base weights 1.0 (temporal 0.5), scaled by intent: fact boosts bm25 +0.5 / vector +0.25 and damps graph −0.3; connection and owner boost graph +1.0; temporal boosts temporal +2.0; howto boosts vector +0.5.",y:"Fusion lets each channel compensate for the others; soft weights keep misroutes harmless.",c:"src/neo_cortex/retrieve/fuse.py rrf(), channel_weights(), BOOST",r:"",l:"../../src/neo_cortex/retrieve/fuse.py"},
+"r-keep":{t:"keep / hide rules",w:"Merged memories never surface; superseded memories stay hidden unless the question is about change (temporal intent). Items without a date are dropped when a window is set.",y:"A memory system that shows dead facts loses trust.",c:"src/neo_cortex/retrieve/channels.py keep()",r:"",l:"../../src/neo_cortex/retrieve/channels.py"},
+"r-pack":{t:"evidence pack",w:"Token-budgeted, cited output: per hit the best-matching sentences (not just the chunk head), its id, source document, date, status, which channels found it and 'narrow with' hints; ask adds seeds, bridging paths (algo.SPpaths) and facts.",y:"The agent writes the answer — the pack gives it everything needed to do that with citations.",c:"src/neo_cortex/tools.py _item(), _snip(), ask()",r:"ask equal-size multi-hop keys +0.23 [+0.04, +0.42], significant (README.md).",l:"../../README.md"},
+"r-sppaths":{t:"algo.SPpaths bridging paths",w:"FalkorDB's shortest-path procedure produces the seed-to-seed relation paths that ask, connect and who print, each edge with its source; paths through ended or non-fact edges are skipped.",y:"The path is the answer to 'how are these related' — shown, not implied.",c:"src/neo_cortex/tools.py _paths(), _path_lines()",r:"Demo: connect prints Olivia -[OWNS]-> reporting-service -[DEPENDS_ON]-> ledger-service <-[OWNS]- Elif (demo/VIDEO.md).",l:"../../demo/VIDEO.md"},
+/* time */
+"time-valid":{t:"valid_from / valid_to",w:"Edges and memories carry epoch-ms validity. Extracted edges date from the document; single-valued relations are auto-closed when a later document names a different counterpart; memories carry valid_from_ms/valid_to_ms too.",y:"History stays queryable: closed things are skipped by 'now' queries but visible to timeline.",c:"src/neo_cortex/write.py _supersede(); src/neo_cortex/AGENTS.md data conventions",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+"time-super":{t:"supersede",w:"remember(..., supersedes=<id>) links SUPERSEDES and retires the old memory; relate --supersede closes the replaced edge (single-valued types only). Superseded memories are hidden unless the question is about change.",y:"Corrections must retire, not contradict — otherwise recall returns both sides.",c:"src/neo_cortex/write.py remember(); tools.py _edge()",r:"",l:"../../src/neo_cortex/AGENTS.md"},
+"time-end":{t:"end=True",w:"relate --end closes the current edge with no replacement: 'this stopped being true'. The edge stays with its valid_to_ms as history.",y:"Facts expire without a replacement all the time; deleting them would lose the timeline.",c:"src/neo_cortex/tools.py relate()",r:"Demo: `neo relate \"old-service\" DEPENDS_ON \"db\" --end` retires the edge, keeps history (docs/neo-for-agents.md).",l:"../../docs/neo-for-agents.md"},
+/* lifecycle */
+"lc-remember":{t:"1 · remember",w:"A memory at cosine ≥ 0.92 to an active one reinforces it (uses + 1) unless the texts differ in a number or negation; 0.75–0.92 with a shared entity is returned as a conflict for the agent to resolve; supersedes= retires the old memory.",y:"Dedupe and conflict-flagging keep the store trustworthy without deleting anything.",c:"src/neo_cortex/write.py remember(); DEDUPE, CONFLICT = 0.92, 0.75",r:"",l:"../../src/neo_cortex/write.py"},
+"lc-hooks":{t:"2 · session hooks",w:"SessionEnd and PreCompact hooks POST the transcript to /api/ingest-session (background:true); the daemon returns at once and extracts up to 15 memories. Deterministic patterns pick self-contained statements; GLiNER only scores them.",y:"Memory works even if the agent never calls remember.",c:"src/neo_cortex/cli.py hook(); session_mem.py; write.py ingest_session()",r:"Hooks return in about 60 ms; SessionEnd budget is 1.5 s, so installed hooks set timeout 15/5/5 s (src/neo_cortex/AGENTS.md).",l:"../../src/neo_cortex/AGENTS.md"},
+"lc-dream":{t:"3 · dream consolidation",w:"1) Merge: same kind, cosine ≥ 0.92, never across a differing number or negation. 2) Promote: an episodic cluster (≥ 0.80) seen in ≥ 3 sessions becomes one semantic memory with provenance. 3) Decay: ×0.9 confidence per idle 30 days, floor 0.1; preferences and decisions exempt. 4) Conflicts: flagged with CONFLICTS_WITH; the agent resolves them.",y:"Deterministic, idempotent maintenance — no LLM reflection, nothing deleted.",c:"src/neo_cortex/dream.py _plan_merge(), _plan_promote(), _plan_decay(), _plan_conflicts()",r:"Every real run writes a DreamRun; a rerun changes nothing (tests/test_dream.py).",l:"../../src/neo_cortex/AGENTS.md"},
+"lc-brief":{t:"4 · brief",w:"Session-start context: open handoffs for you, preferences, active decisions, lessons, recent facts and documents. Injected by the SessionStart hook as additionalContext (max 3000 chars via the hook).",y:"The next session starts already knowing what happened.",c:"src/neo_cortex/tools.py brief(); cli.py hook session-start",r:"Smoke test OK, 37.8 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"lc-handoff":{t:"handoff",w:"handoff(to, summary, tasks) writes a Handoff node with FROM/TO agent edges; shown in the target agent's brief; done=<handoff id> closes it.",y:"Work in progress survives the end of a session.",c:"src/neo_cortex/tools.py handoff()",r:"",l:"../../src/neo_cortex/tools.py"},
+"lc-never":{t:"Nothing is deleted",w:"Merged memories get status merged + MERGED_INTO; superseded ones stay with SUPERSEDES; decay only lowers confidence (floor 0.1). Deletion is not part of the lifecycle.",y:"Provenance and history are the product: judges and agents can ask 'what did we used to believe?'.",c:"src/neo_cortex/dream.py; retrieve/channels.py keep()",r:"",l:"../../src/neo_cortex/dream.py"},
+"lc-sessions":{t:"Session extraction rules",w:"User preferences from normative cues (always/never/prefer/stop), decisions from 'decided/chose/went with', lessons from failure explanations ('When <cmd> failed with <err> ...'), outcomes from concrete assistant closings. Fragments, chatter, questions and ephemeral status are dropped; assistant text is rewritten to third person.",y:"Raw transcripts are noise; the rules keep only statements that read alone.",c:"src/neo_cortex/session_mem.py units(), user_candidates(), pattern_candidates(), select()",r:"Tests cover candidate types, fragment filters and the stored result on a synthetic transcript (tests/test_write_session.py).",l:"../../src/neo_cortex/AGENTS.md"},
+"lc-dream2":{t:"Dream-RSI lineage",w:"Took the offline, deterministic, idempotent consolidation pass with a run log; left out the replay simulator, policy search and LLM reflection (the Dream-RSI repo has no released code).",y:"The idea fit the no-LLM rule exactly.",c:"docs/lineage.md §3; knowledge/architecture/inspiration-dream-rsi.md",r:"No eval number; unit-tested instead (tests/test_dream.py).",l:"../../docs/lineage.md"},
+/* MCP tool details */
+"tool-brief":{t:"brief(project?, agent?, max_chars?)",w:"Session-start context: preferences, active decisions, lessons, facts, recent episodes, open handoffs.",y:"The cheapest way to give a new session its memory.",c:"src/neo_cortex/tools.py brief()",r:"Smoke OK 37.8 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-recall":{t:"recall(query, k?, since?, until?, kinds?)",w:"Hybrid search (vector, BM25, graph, temporal) with 'why it matched' per hit.",y:"The general-purpose retrieval tool.",c:"src/neo_cortex/tools.py recall()",r:"Smoke OK 153.2 ms; real-docs p50 133 ms (eval/mcp_smoke.md, eval/real_check.md).",l:"../../eval/real_check.md"},
+"tool-remember":{t:"remember(text, kind?, about?, supersedes?, entities?, relations?)",w:"Store a memory; dedupes, flags conflicts, links the memory it supersedes. With kind plus entities or relations you already know, nothing is extracted.",y:"Direct writes are the answer to weak prose extraction.",c:"src/neo_cortex/tools.py remember()",r:"Smoke OK 39.9 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-ask":{t:"ask(question)",w:"Multi-hop evidence pack: seeds, bridging paths, cited chunks and facts. Does not answer.",y:"Track 01's core tool.",c:"src/neo_cortex/tools.py ask()",r:"Smoke OK 225.5 ms; equal-size multi-hop keys +0.23, significant (eval/mcp_smoke.md, README.md).",l:"../../README.md"},
+"tool-explore":{t:"explore(entity, hops?, since?)",w:"Compact neighbourhood of an entity with relation, date and source, plus the documents mentioning it most.",y:"Orient before you change something.",c:"src/neo_cortex/tools.py explore()",r:"Smoke OK 7.6 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-connect":{t:"connect(a, b, max_hops?)",w:"Shortest relation paths between two entities (algo.SPpaths), with the source of each edge.",y:"'How are A and B related' with the path shown.",c:"src/neo_cortex/tools.py connect()",r:"Smoke OK 5.7 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-who":{t:"who(topic)",w:"Owners and experts for a topic, from ownership paths and authorship.",y:"Track 03: who owns it, who knows most.",c:"src/neo_cortex/tools.py who()",r:"Entity topic: gold person in top 3, 0.94 vs 0.71 baseline (eval/results.md).",l:"../../eval/results.md"},
+"tool-timeline":{t:"timeline(topic, since?, until?)",w:"Dated events about a topic, oldest first: relation changes, documents, superseded memories, with the values stated in each source.",y:"Change history with citations.",c:"src/neo_cortex/tools.py timeline()",r:"Both old+new values listed 1.00 vs 0.75 baseline, n=8 (eval/results.md).",l:"../../eval/results.md"},
+"tool-impact":{t:"impact(entity, max_hops?)",w:"Blast radius: what depends on it (current DEPENDS_ON, both ways), the owners to tell, linked customers and incidents.",y:"The measured graph win.",c:"src/neo_cortex/tools.py impact()",r:"All-keys 0.80 vs 0.20 baseline, +0.60 [+0.30, +0.90] significant (eval/answers.md).",l:"../../eval/answers.md"},
+"tool-relate":{t:"relate(head, type, tail, source?, supersede?, end?)",w:"Write or correct a typed edge; supersede closes the edge it replaces, end closes it with no replacement.",y:"Agents maintain the graph as they work.",c:"src/neo_cortex/tools.py relate()",r:"Smoke OK 40.5 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-read":{t:"read(id, max_chars?)",w:"Full text of a chunk, memory or document by id, with metadata and neighbour ids.",y:"Follow a citation to its source.",c:"src/neo_cortex/tools.py read()",r:"Smoke OK 6.2 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-ingest":{t:"ingest(path_or_text, kind?)",w:"Ingest a file, a directory or text (a directory can be queued with background).",y:"Getting knowledge in without leaving the agent loop.",c:"src/neo_cortex/tools.py ingest()",r:"Smoke OK 168.1 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-handoff":{t:"handoff(to?, summary?, tasks?, done?)",w:"Leave work for another agent (shown in its brief), or mark a handoff done.",y:"Track 02 coordination.",c:"src/neo_cortex/tools.py handoff()",r:"Smoke OK 4.1 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-cypher":{t:"cypher(query, limit?)",w:"Read-only Cypher, the escape hatch; the schema is in the tool description and the LIMIT is enforced.",y:"Power without write risk.",c:"src/neo_cortex/tools.py cypher()",r:"Smoke OK 3.0 ms (eval/mcp_smoke.md).",l:"../../eval/mcp_smoke.md"},
+"tool-dream":{t:"dream(dry_run?)",w:"Consolidate memories: merge duplicates, promote recurring episodes, decay, flag conflicts. dry_run reports only.",y:"Maintenance as a tool call.",c:"src/neo_cortex/tools.py dream()",r:"Smoke OK 7.3 ms; idempotent (eval/mcp_smoke.md, tests/test_dream.py).",l:"../../eval/mcp_smoke.md"},
+/* lineage */
+"lin-pgjev":{t:"pg-jev — cached typed judgments",w:"Judgments stored as data with probabilities, cached by content — plus an assertion gate (fact / possibility / denial / plan) on every extracted relation.",y:"Decisions next to the data are auditable and reusable.",c:"resolve.py judge() (Judgment nodes); extract.py _gate()",r:"Trap probe 17/25 → 20/25 with the rule; the published Decide gain did not reproduce here (docs/lineage.md §1).",l:"../../docs/lineage.md"},
+"lin-rrsi":{t:"RRSI — held-out acceptance for tuning",w:"Search weight combinations on odd questions, accept only if the paired-bootstrap 95% CI lower bound is above 0 on even questions and latency is within 20%.",y:"Self-tuning that cannot talk itself into a regression.",c:"eval/tune.py main(), ledger() (TuneRun nodes)",r:"The tuner rejected its own weights: even-split delta -0.019 [-0.075, +0.038] — the rule working (docs/lineage.md §2).",l:"../../docs/lineage.md"},
+"lin-dreamrsi":{t:"Dream-RSI — offline consolidation",w:"A deterministic, idempotent consolidation pass with a run log: merge, promote, decay, conflicts.",y:"Memory maintenance without an LLM in the loop.",c:"dream.py dream(); surfaces as neo dream and the dream tool",r:"Unit-tested for merge, promote, decay, conflicts, idempotence and dry runs; no eval number (docs/lineage.md §3).",l:"../../docs/lineage.md"},
+"lin-hipporag":{t:"HippoRAG — personalized PageRank",w:"PPR from query-linked entities over an entity-and-chunk graph, so chunks two or three hops away gain mass; no LLM-based extraction taken.",y:"The graph channel's core algorithm.",c:"retrieve/channels.py ppr() (restart 0.5, ≤ 3 hops, 500 nodes, numpy); SEED_FLOOR 0.2",r:"On documents it ties text (0.74 vs 0.75 recall@10); on impact it wins 0.80 vs 0.20 (docs/lineage.md §4).",l:"../../docs/lineage.md"},
+"lin-gliner":{t:"GLiNER2.5 as System 1",w:"A small non-generative encoder as extractor, typer, classifier and judge; no LLM SDK is imported under src/neo_cortex/.",y:"Fast, cheap, private, deterministic — and reasoning stays with the calling agent.",c:"extract.py, session_mem.py, resolve.py judge(), retrieve/query.py, models.py gliner(); joint.py holds the non-adopted paths",r:"Relation precision 0.880 / recall 0.825 synthetic; only 5 relations in 72 real docs (docs/lineage.md §5).",l:"../../docs/lineage.md"},
+"lin-embed":{t:"EmbeddingGemma, text-only",w:"The text tower only: vision and audio configs are set to None; images are skipped by the ingest path.",y:"One local embedder for chunks, memories, entities and queries.",c:"models.py _embedder(); embed_docs(), embed_query()",r:"No eval number beyond retrieval; licence ambiguous — read before redistributing weights (docs/lineage.md §6).",l:"../../docs/lineage.md"},
+"lin-bm25rrf":{t:"bm25s + weighted RRF",w:"A BM25 lexical channel and weighted reciprocal rank fusion (k=60) over four channels.",y:"Lexical exactness plus principled fusion beats any single channel.",c:"retrieve/channels.py bm25(), _bm25_index(); retrieve/fuse.py rrf()",r:"recall@10: bm25 0.71, vector 0.73, combined 0.75; bm25 mean latency 6 ms (docs/lineage.md §7).",l:"../../docs/lineage.md"},
+"lin-anydoc":{t:"anydoc — Office/PDF to Markdown",w:"anydoc converts anything that is not Markdown, text or Python; a built-in stdlib converter handles HTML because anydoc has no HTML reader; hosted OCR not taken.",y:"Company knowledge lives in docx, xlsx, pptx and pdf.",c:"write.py _load(); dependency firecrawl-anydoc in pyproject.toml",r:"Real-path tests: docx, xlsx, pptx, pdf, rtf, csv convert; scanned/encrypted PDFs count as errors (docs/lineage.md §8).",l:"../../docs/lineage.md"},
+"lin-okf":{t:"OKF + DOX — process, not code",w:"The OKF v0.2 layout organises the project's own research in knowledge/; AGENTS.md files (DOX) are the work contracts for every subtree.",y:"The project eats its own cooking: its research is a structured bundle, its rules are agent-readable.",c:"knowledge/ bundle, checked by knowledge/references/evidence/okf/validate_okf.py; root AGENTS.md",r:"No measured result — it is process (docs/lineage.md §9).",l:"../../docs/lineage.md"}
+};
+
+/* ---------- 15 tool chips (section 2) ---------- */
+var TOOLS = [
+ ["tool-brief","brief"],["tool-recall","recall"],["tool-remember","remember"],["tool-ask","ask"],
+ ["tool-explore","explore"],["tool-connect","connect"],["tool-who","who"],["tool-timeline","timeline"],
+ ["tool-impact","impact"],["tool-relate","relate"],["tool-read","read"],["tool-ingest","ingest"],
+ ["tool-handoff","handoff"],["tool-cypher","cypher"],["tool-dream","dream"]];
+var tc = document.getElementById("toolchips");
+TOOLS.forEach(function(p){
+  var b = document.createElement("button");
+  b.className = "chip g"; b.dataset.n = p[0]; b.textContent = p[1];
+  b.setAttribute("aria-label", p[1] + " tool details");
+  tc.appendChild(b);
+});
+
+/* ---------- lineage cards (section 9) ---------- */
+var LIN = [
+ ["lin-pgjev","pg-jev","Cached typed judgments + assertion gating on every extracted relation.","realZachi/pg-jev"],
+ ["lin-rrsi","RRSI","Held-out acceptance rule for self-tuning; the tuner rejected its own weights.","google-research/rrsi"],
+ ["lin-dreamrsi","Dream-RSI","Offline, deterministic, idempotent consolidation with a run log (DreamRun).","zhengkid/Dream-RSI"],
+ ["lin-hipporag","HippoRAG","Personalized PageRank from query entities over the entity-chunk graph.","arXiv 2405.14831 / 2502.14802"],
+ ["lin-gliner","GLiNER2.5","Small non-generative encoder as extractor, typer, classifier and judge — the no-LLM System 1.","fastino/gliner2.5-base-v1"],
+ ["lin-embed","EmbeddingGemma","Text-only embeddings (768-d) for chunks, memories, entities and queries.","google/embeddinggemma-2"],
+ ["lin-bm25rrf","bm25s + RRF","BM25 lexical channel fused with weighted reciprocal rank fusion (k=60).","bm25s"],
+ ["lin-anydoc","anydoc","Office and PDF to Markdown for non-text ingest; HTML via a built-in converter.","firecrawl/anydoc"],
+ ["lin-okf","OKF + DOX","Knowledge bundle for the project's research; AGENTS.md hierarchy as work contracts.","GoogleCloudPlatform/open-knowledge-format"]];
+var lc = document.getElementById("lineage-cards");
+LIN.forEach(function(p){
+  var d = document.createElement("div");
+  d.className = "card g"; d.tabIndex = 0; d.setAttribute("role","button");
+  d.dataset.n = p[0];
+  d.setAttribute("aria-label", p[1] + " details");
+  d.innerHTML = "<h4>" + p[1] + "</h4><p>" + p[2] + "</p><p class=\"src\">Source: " + p[3] + "</p>";
+  lc.appendChild(d);
+});
+
+/* ---------- glossary (section 12) ---------- */
+var GLOSS = [
+ ["RRF","Reciprocal Rank Fusion — combine ranked lists by summing 1/(k + rank); here weighted per channel with k = 60."],
+ ["PPR","Personalized PageRank — PageRank restarted from chosen seed nodes, computed in numpy over a local subgraph because FalkorDB's algo.pageRank has no personalization vector."],
+ ["BM25","A classic lexical ranking function; bm25s is the in-process Python library that runs it over Chunk/Memory texts."],
+ ["GLiNER","A small non-generative encoder that extracts typed entities and classifies text under labels; here GLiNER2.5-base, ~26 ms per call."],
+ ["System 1","The fast, automatic kind of cognition; here the two small local models that do extraction and classification while the calling agent does the reasoning."],
+ ["MCP","Model Context Protocol — the standard way AI harnesses call tools; Neo-Cortex serves 15 tools over streamable HTTP at /mcp."],
+ ["tenant","A partition of the data: each tenant is its own graph named neo_<tenant> (default `default`), chosen with --tenant."],
+ ["modality","The assertion status stored on every REL edge: fact (default), possibility or plan; a denied edge is never written."],
+ ["p_fact","The stored P(fact) of the sentence an edge was extracted from; 1.0 for agent-written edges."],
+ ["supersede","Retire a replaced memory or edge by linking SUPERSEDES / setting valid_to_ms; the old version stays as history."],
+ ["end=True","relate --end closes the current edge with no replacement — 'this stopped being true'."],
+ ["falkordblite","The embedded FalkorDB server (BSD-licensed) that Neo-Cortex starts on 127.0.0.1:NEO_PORT, default 6390."],
+ ["EmbeddingGemma","Google's local embedding model, loaded text-only here; 768-d float32, L2-normalized, cosine."],
+ ["anydoc","The firecrawl library that converts docx/xlsx/pptx/pdf/rtf/csv to Markdown at ingest."],
+ ["chunk","A 120–250-word slice of a document that carries the embedding and is the unit of search and citation."],
+ ["entity resolution","Deciding whether two names are the same thing: exact key → alias → variant key → vector neighbours with a lexical guard → judge veto."],
+ ["seed-strength gate","The rule that keeps the graph channel off unless a query entity links strongly (strength = conf × IDF, floor 0.2), so weak matches cannot distort text rankings."],
+ ["hooks","Claude Code events wired to `neo hook`: SessionStart injects the brief, SessionEnd/PreCompact send the transcript for background extraction."],
+ ["handoff","A Handoff node: work one agent leaves for another, shown in the next brief."],
+ ["memory kinds","episodic (what happened), semantic (what is true), procedural (how to do it), preference (how the user wants it), decision (what was decided)."],
+ ["Judgment","A cached GLiNER yes/no or choice decision stored as a node, keyed by content hash."],
+ ["DreamRun","The log node written by every real `dream` consolidation run."],
+ ["TuneRun","The log node written by every self-tuning trial in eval/tune.py."],
+ ["SPpaths","FalkorDB's shortest-path procedure; produces the bridging paths that `ask`, `connect` and `who` print."],
+ ["recall@10","The share of gold documents found in the top 10 unique documents."],
+ ["FullCover@10","The share of questions where every gold document is found in the top 10."],
+ ["MRR","Mean Reciprocal Rank — the average of 1/(rank of the first gold document)."],
+ ["paired bootstrap","Confidence-interval method used for every comparison: 1000 resamples, seed 0, 95% CI of the mean delta over questions."],
+ ["JointIE","GLiNER2.5's joint entity-relation decoding, measured behind NEO_EXTRACT and not adopted (precision 0.719/0.774 vs 0.880)."],
+ ["Jaro-Winkler","A fuzzy string similarity; its merge experiment wrongly merged FalkorDB into falkordblite, so it stays off."],
+ ["fp16","Half-precision model loading, opt-in via NEO_GLINER_FP16=1: half the GPU memory, ~2.4x slower on the GTX 1660 Ti."],
+ ["OKF","Open Knowledge Format — the frontmatter-and-index layout used for the knowledge/ research bundle."],
+ ["DOX","This repo's name for its AGENTS.md hierarchy: binding work contracts per subtree."],
+ ["RSI","Recursive Self-Improvement — the family of ideas (RRSI, Dream-RSI) about a system improving its own settings under an acceptance rule."]];
+var gl = document.getElementById("gloss");
+GLOSS.forEach(function(p){
+  var dt = document.createElement("dt"), dd = document.createElement("dd");
+  dt.textContent = p[0]; dd.textContent = p[1];
+  gl.appendChild(dt); gl.appendChild(dd);
+});
+document.getElementById("glfilter").addEventListener("input", function(){
+  var q = this.value.toLowerCase();
+  var kids = gl.children, show = true;
+  for (var i = 0; i + 1 < kids.length; i += 2) {
+    show = q === "" || kids[i].textContent.toLowerCase().indexOf(q) !== -1 || kids[i+1].textContent.toLowerCase().indexOf(q) !== -1;
+    kids[i].style.display = show ? "" : "none";
+    kids[i+1].style.display = show ? "" : "none";
+  }
+});
+
+/* ---------- drawer ---------- */
+var drawer = document.getElementById("drawer"), backdrop = document.getElementById("backdrop");
+var lastFocus = null;
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function openInfo(key){
+  var n = INFO[key]; if(!n) return;
+  lastFocus = document.activeElement;
+  document.getElementById("d-title").textContent = n.t;
+  document.getElementById("d-what-t").textContent = n.w;
+  document.getElementById("d-why-t").textContent = n.y || "";
+  document.getElementById("d-why").style.display = n.y ? "" : "none";
+  document.getElementById("d-code-t").textContent = n.c || "";
+  document.getElementById("d-code").style.display = n.c ? "" : "none";
+  document.getElementById("d-result-t").textContent = n.r || "";
+  document.getElementById("d-result").style.display = n.r ? "" : "none";
+  var lt = document.getElementById("d-link-t");
+  lt.innerHTML = "";
+  if (n.l) { var a = document.createElement("a"); a.href = n.l; a.textContent = n.l.replace("../../",""); lt.appendChild(a); }
+  document.getElementById("d-link").style.display = n.l ? "" : "none";
+  drawer.classList.add("open"); backdrop.classList.add("open");
+  document.getElementById("dclose").focus();
+}
+function closeInfo(){
+  drawer.classList.remove("open"); backdrop.classList.remove("open");
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+document.getElementById("dclose").addEventListener("click", closeInfo);
+backdrop.addEventListener("click", closeInfo);
+document.addEventListener("keydown", function(e){ if(e.key === "Escape" && drawer.classList.contains("open")) closeInfo(); });
+document.addEventListener("click", function(e){
+  var el = e.target.closest("[data-n]");
+  if (el) openInfo(el.dataset.n);
+});
+document.addEventListener("keydown", function(e){
+  if (e.key !== "Enter" && e.key !== " ") return;
+  var el = e.target.closest && e.target.closest("[data-n]");
+  if (el && el.tagName !== "BUTTON" && el.tagName !== "A") { e.preventDefault(); openInfo(el.dataset.n); }
+});
+
+/* ---------- section nav ---------- */
+var navBtns = Array.prototype.slice.call(document.querySelectorAll("#nav button"));
+function showSection(id){
+  document.querySelectorAll("section.panel").forEach(function(s){ s.hidden = true; });
+  var sec = document.getElementById("s-" + id);
+  if (sec) sec.hidden = false;
+  navBtns.forEach(function(b){ b.setAttribute("aria-selected", b.dataset.s === id ? "true" : "false"); });
+}
+navBtns.forEach(function(b){
+  b.addEventListener("click", function(){ location.hash = b.dataset.s; showSection(b.dataset.s); });
+});
+function fromHash(){
+  var h = (location.hash || "").replace("#","");
+  if (h && document.getElementById("s-" + h)) showSection(h); else showSection("pitch");
+}
+window.addEventListener("hashchange", fromHash);
+fromHash();
+
+/* ---------- theme ---------- */
+var themeBtn = document.getElementById("themeBtn");
+var themeMode = "auto";
+function applyTheme(){
+  var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var t = themeMode === "auto" ? (dark ? "dark" : "light") : themeMode;
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = "Theme: " + themeMode;
+}
+try { themeMode = localStorage.getItem("neo-theme") || "auto"; } catch(e) {}
+applyTheme();
+themeBtn.addEventListener("click", function(){
+  themeMode = themeMode === "auto" ? "light" : themeMode === "light" ? "dark" : "auto";
+  try { localStorage.setItem("neo-theme", themeMode); } catch(e) {}
+  applyTheme();
+});
+
+/* ---------- charts ---------- */
+function chart(el, title, src, rows, max, grouped){
+  var W = 640, rowH = 30, top = 30, left = 190, rightPad = 78;
+  var h = top + rows.length * (grouped ? rowH * 2 + 10 : rowH) + 12;
+  var s = '<svg viewBox="0 0 ' + W + ' ' + h + '" role="img" aria-label="' + esc(title) + '">';
+  s += '<text x="8" y="18" font-size="13" font-weight="700" fill="var(--ink)">' + esc(title) + '</text>';
+  var y = top;
+  rows.forEach(function(r){
+    if (grouped) {
+      [ [r.tool, "var(--vtool)", r.t || ""], [r.base, "var(--vbase)", ""] ].forEach(function(bar, i){
+        var w = Math.max(2, (W - left - rightPad) * bar[0] / max);
+        s += '<rect x="' + left + '" y="' + (y + i * rowH) + '" width="' + w + '" height="' + (rowH - 8) + '" rx="3" fill="' + bar[1] + '"></rect>';
+        s += '<text x="' + (left + w + 6) + '" y="' + (y + i * rowH + rowH - 14) + '" font-size="11" fill="var(--ink)">' + bar[0].toFixed(2) + (i === 0 && r.ci ? '  ' + esc(r.ci) : '') + '</text>';
+      });
+      s += '<text x="8" y="' + (y + rowH - 6) + '" font-size="11.5" fill="var(--mut)">' + esc(r.label) + '</text>';
+      y += rowH * 2 + 10;
+    } else {
+      var w2 = Math.max(2, (W - left - rightPad) * r.value / max);
+      s += '<rect x="' + left + '" y="' + y + '" width="' + w2 + '" height="' + (rowH - 10) + '" rx="3" fill="' + (r.color || "var(--vtool)") + '"></rect>';
+      s += '<text x="' + (left + w2 + 6) + '" y="' + (y + rowH - 16) + '" font-size="11" fill="var(--ink)">' + r.value.toFixed(2) + (r.suffix || "") + '</text>';
+      s += '<text x="8" y="' + (y + rowH - 16) + '" font-size="11.5" fill="var(--mut)">' + esc(r.label) + '</text>';
+      y += rowH;
+    }
+  });
+  s += '</svg>';
+  el.insertAdjacentHTML("beforeend", s);
+  el.insertAdjacentHTML("beforeend", '<div class="csrc">Source: ' + src + '</div>');
+}
+chart(document.getElementById("ch-answers"),
+  "Graph-native answers vs text search — share of expected answer keys present (30 questions)",
+  '<a href="../../eval/answers.md">eval/answers.md</a> — all-keys, tool vs top-8 vector baseline at 4000 chars',
+  [{label:"impact / blast radius (n=10)", tool:0.80, base:0.20, ci:"+0.60 [+0.30, +0.90] significant"},
+   {label:"current owner (n=10)", tool:1.00, base:1.00, ci:"tie"},
+   {label:"value changes (n=10)", tool:0.80, base:1.00, ci:"−0.20, tool lower"},
+   {label:"overall (n=30)", tool:0.87, base:0.73, ci:"+0.13, inside noise"}],
+  1.0, true);
+chart(document.getElementById("ch-retrieval"),
+  "Document retrieval recall@10 (80 questions, synthetic company)",
+  '<a href="../../eval/results.md">eval/results.md</a> — top 10 unique documents; auto = product default',
+  [{label:"vector", value:0.73},
+   {label:"bm25", value:0.71},
+   {label:"vector+bm25", value:0.75},
+   {label:"auto (graph-routed default)", value:0.74},
+   {label:"full (all four channels)", value:0.76}],
+  1.0);
+chart(document.getElementById("ch-who"),
+  "who: gold person in top 3 (ownership questions, n=17)",
+  '<a href="../../eval/results.md">eval/results.md</a> — tools vs vector top-10 people baseline',
+  [{label:"topic = the gold entity", tool:0.94, base:0.71, ci:"+0.235 [0.000, +0.471]"},
+   {label:"topic = whole question", tool:0.82, base:0.71, ci:"+0.118, inside noise"}],
+  1.0, true);
+chart(document.getElementById("ch-real"),
+  "Real docs: this repository's own 72 docs, 30 agent questions",
+  '<a href="../../eval/real_check.md">eval/real_check.md</a>',
+  [{label:"gold doc in top 5 (Hit@5)", value:0.50},
+   {label:"MRR", value:0.41},
+   {label:"answer in top-5 docs' chunks", value:0.70},
+   {label:"answer in `recall` output", value:0.47}],
+  1.0);
+chart(document.getElementById("ch-mcp"),
+  "MCP smoke test — tool latency, ms (15 of 15 tools OK)",
+  '<a href="../../eval/mcp_smoke.md">eval/mcp_smoke.md</a> — selected tools; schemas ≈ 2,077 tokens total',
+  [{label:"ask", value:225.5, suffix:" ms"},
+   {label:"timeline", value:170.1, suffix:" ms"},
+   {label:"ingest", value:168.1, suffix:" ms"},
+   {label:"recall", value:153.2, suffix:" ms"},
+   {label:"brief", value:37.8, suffix:" ms"},
+   {label:"who", value:11.4, suffix:" ms"},
+   {label:"cypher", value:3.0, suffix:" ms"}],
+  240);
+
+/* ---------- question router (section 5) ---------- */
+var QS = [
+ {q:"Who owns the session cache today?", intent:"owner (+ recency cue \"today\")",
+  chans:["r-graph","r-temporal"], tools:["tool-who","tool-explore","tool-read"],
+  note:"Intent `owner` doubles the graph channel weight (BOOST owner → graph +1.0); \"today\" switches the temporal recency cue on. First tool: who. Needs doc, adr and meeting data. (README.md example; retrieve/fuse.py)"},
+ {q:"Whose configuration edit lay behind the 41-minute payment outage that hit Orchard & Vane?",
+  intent:"connection (multi-hop)", chans:["r-graph"], tools:["tool-ask","tool-connect","tool-timeline"],
+  note:"Intent `connection` doubles the graph weight; ask returns seeds, the bridging paths and cited chunks — ticket, chat and ADR data. (README.md example)"},
+ {q:"What is the current session TTL?", intent:"fact + recency cue \"current\"",
+  chans:["r-bm25","r-vector","r-temporal"], tools:["tool-recall","tool-read"],
+  note:"Intent `fact` boosts BM25 (+0.5) and vector (+0.25) and damps the graph (−0.3); \"current\" only switches on the recency cue. Needs adr, doc, chat data. (README.md example)"},
+ {q:"How did the session TTL change since June?", intent:"temporal",
+  chans:["r-temporal"], tools:["tool-timeline","tool-recall"],
+  note:"Intent `temporal` triples the temporal weight (+2.0 boost); the explicit window \"since June\" filters. timeline lists both values on dated lines. (README.md example)"},
+ {q:"Why does fusion normalisation stay off?", intent:"decision (\"why\" forces ≥ 0.6)",
+  chans:["r-graph","r-bm25"], tools:["tool-ask","tool-recall","tool-read"],
+  note:"DECISION_RE forces decision intent ≥ 0.6; fused scores of decision Memories and adr Chunks are multiplied by kind_factor. (retrieve/query.py, retrieve/fuse.py)"}];
+var qsel = document.getElementById("qsel"), qnote = document.getElementById("qnote");
+var CH_IDS = ["r-vector","r-bm25","r-graph","r-temporal"];
+QS.forEach(function(q, i){
+  var b = document.createElement("button");
+  b.className = "chip"; b.textContent = q.q;
+  b.setAttribute("aria-pressed","false");
+  b.addEventListener("click", function(){
+    qsel.querySelectorAll(".chip").forEach(function(c){ c.classList.remove("hot"); c.setAttribute("aria-pressed","false"); });
+    b.classList.add("hot"); b.setAttribute("aria-pressed","true");
+    CH_IDS.forEach(function(id){
+      var g = document.querySelector('[data-n="' + id + '"]');
+      if (g) g.classList.toggle("hot", q.chans.indexOf(id) !== -1);
+    });
+    qnote.innerHTML = "<strong>Q" + (i+1) + " — intent: " + esc(q.intent) + ".</strong> " + esc(q.note) +
+      "<br>Tools that would handle it: " + q.tools.map(function(t){ return "<button class=\"chip g\" data-n=\"" + t + "\">" + t.replace("tool-","") + "</button>"; }).join(" ");
+  });
+  qsel.appendChild(b);
+});
+
+/* ---------- timeline (section 6) ---------- */
+var TL_STEPS = [
+ "Start: the ADR sets session.ttl_seconds = 3600. An OWNS edge for Lukas Brandt is current — valid_to_ms is absent.",
+ "2026-06-18: ticket CFG-4380 lowers the TTL to 900. The new chunk dates its edges; the old value keeps its place in history — timeline still shows it.",
+ "2026-08-11: Lukas Brandt stops owning the session cache — the OWNS edge gets valid_to_ms = 2026-08-11 (FORMER). It is skipped by 'who owns it now' queries.",
+ "2026-08-12: ADR-007 lowers the TTL to 300 (current) and Mateo Alvarez owns the cache now (source doc-14). 'Now' queries read only open edges and current values.",
+ "Same graph, later: `neo timeline \"session.ttl_seconds\"` prints 3600 → 900 (2026-06-18, CFG-4380) → 300 (2026-08-12, ADR-007); `neo who \"session cache\"` prints Mateo (current) and Lukas (former, ended 2026-08-11)."];
+var tlT = 0, tlTimer = null;
+var tlMax = 4;
+function tlRender(){
+  document.querySelectorAll("#tlsvg [data-t]").forEach(function(el){
+    el.style.display = (Number(el.dataset.t) <= tlT) ? "" : "none";
+  });
+  document.getElementById("tlq").textContent = TL_STEPS[tlT];
+  document.getElementById("tlcap").textContent = TL_STEPS[tlT];
+  document.getElementById("tlstep").textContent = "step " + tlT + " / " + tlMax;
+  document.getElementById("tlprev").disabled = tlT === 0;
+  document.getElementById("tlnext").disabled = tlT === tlMax;
+}
+function tlPlay(){
+  if (tlTimer) { clearInterval(tlTimer); tlTimer = null; document.getElementById("tlplay").textContent = "▶ Play"; return; }
+  document.getElementById("tlplay").textContent = "❚❚ Pause";
+  tlTimer = setInterval(function(){
+    if (tlT >= tlMax) { clearInterval(tlTimer); tlTimer = null; document.getElementById("tlplay").textContent = "▶ Play"; return; }
+    tlT++; tlRender();
+  }, 1600);
+}
+document.getElementById("tlprev").addEventListener("click", function(){ if(tlT>0){tlT--;tlRender();} });
+document.getElementById("tlnext").addEventListener("click", function(){ if(tlT<tlMax){tlT++;tlRender();} });
+document.getElementById("tlplay").addEventListener("click", tlPlay);
+var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+tlRender();
+
+</script>
+</body>
+</html>
