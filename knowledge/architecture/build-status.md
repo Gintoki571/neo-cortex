@@ -85,7 +85,7 @@ One line each; the source is the named commit or eval file.
 - Seed-strength gate for the graph channel: no graph channel without a strong seed, channel weight scaled by seed strength (commit `bc62cc8`).
 - Decision routing (commit `bc62cc8`).
 - Query-matching snippets in `recall`/`ask` output (commit `6898afb`).
-- Real-docs check (`eval/real_check.py` + `eval/real_gold.jsonl`, commit `e4e196d`; numbers in `eval/real_check.md`): the repository's own 69 docs, 30 questions - Hit@5 0.53, MRR 0.39, AnswerIn chunk5 0.73; entity checks 4/5 PASS; targeted relation checks 0/5 found; only 12 REL edges in the whole corpus.
+- Real-docs check (`eval/real_check.py` + `eval/real_gold.jsonl`, commit `e4e196d`; numbers in `eval/real_check.md`): the repository's own 72 docs, 30 questions (re-run 2026-10-18 after code-fence lines were excluded from relation windows) - Hit@5 0.50, MRR 0.41, AnswerIn chunk5 0.70; entity checks 4/5 PASS; targeted relation checks 0/5 found; only 5 REL edges in the whole corpus.
 - MCP smoke test (`scripts/mcp_smoke.py`, commit `e4e196d`; numbers in `eval/mcp_smoke.md`): 15 of 15 tools OK on commit `bc62cc8`, tool descriptions plus schemas cost about 2077 tokens of agent context per session.
 - anydoc ingestion verified for docx, xlsx, pptx, pdf, rtf, csv - converts with tables, entities and relations; unsupported/scanned/encrypted files are counted, never abort a batch (commit `2637587`).
 - `docs/lineage.md`: source, what we took, code location and measured result per outside idea (commit `504c816`).
@@ -93,7 +93,7 @@ One line each; the source is the named commit or eval file.
 
 # Open risks
 
-- GLiNER finds few relations in real prose (`eval/real_check.md`: 12 REL edges in 69 docs, most from command text in demo scripts), so on real data agents should write relations directly (`remember(entities=, relations=)`, `relate`). JointIE and a combined schema were measured and did not beat the split extractor (2026-10-17: P 0.719 / 0.774 vs 0.880).
+- GLiNER finds few relations in real prose (`eval/real_check.md`: 5 REL edges in 72 docs; before the code-fence fix 12, most from command text in demo scripts), so on real data agents should write relations directly (`remember(entities=, relations=)`, `relate`). JointIE and a combined schema were measured and did not beat the split extractor (2026-10-17: P 0.719 / 0.774 vs 0.880).
 - The edge gate (pg-jev-style assertion gating) is built on the base model and neutral on synthetic F1 (0.852 -> 0.855, fact-only view); the base model misses most negations. A GLiNER2.5-Decide comparison is in progress; no result is claimed here.
 - Small evaluation: one synthetic corpus, 110 questions written by the team that built the tools; numbers show the design works on this corpus, not general accuracy.
 - Value-change answers did not beat the text baseline (0.80 vs 1.00 all keys) and `timeline`'s win is inside noise (n=8).

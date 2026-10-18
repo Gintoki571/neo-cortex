@@ -32,7 +32,7 @@ Two ways, on purpose:
 1. **Automatic, for documents nobody has read yet.** `ingest` converts the file (Markdown and text directly; docx, xlsx, pptx, pdf, rtf, csv through anydoc; HTML through a small built-in converter), chunks it (120-250 words on paragraph or message boundaries), embeds the chunks, and runs GLiNER2.5 for entities and relations. Relations also come from deterministic patterns ("X owns Y", "depends on", "replaced by", tables with an Owner column) because zero-shot relation extraction is weak (published GLiNER2.5 relation F1 is about 0.27-0.37). Every extracted relation then goes through an **edge gate**: its source sentence is classified as fact, possibility, denial or plan; denials are dropped, hedges are kept but not treated as current.
 2. **Direct, for what an agent already knows.** `remember(text, kind, entities=[{name,type}], relations=[[head, TYPE, tail]])` writes typed entities and edges without running GLiNER at all (about 0.2 s, mostly the embedding). `relate(head, TYPE, tail)` adds or corrects one edge; `relate(..., end=True)` retires it and keeps it as history. Explicitly named entities only match exact names, so the agent's words are never fuzzily merged into something else.
 
-Why both: on this repository's own prose GLiNER found only 12 relations in 69 documents (`eval/real_check.md`). The agent that just did the work knows the facts better than any extractor, so we let it write them.
+Why both: on this repository's own prose GLiNER found only 5 relations in 72 documents (`eval/real_check.md`). The agent that just did the work knows the facts better than any extractor, so we let it write them.
 
 **Entity resolution** (`resolve.py`): exact name, alias, a spelling-variant key (`GLiNER 2.5 base` = `gliner2.5-base-v1`), then embedding neighbours that must pass a lexical guard; in the borderline band GLiNER can only veto a merge. Code-like names merge only exactly. An entity's type is a confidence-weighted vote over all its mentions (one bad mention cannot turn FalkorDB into a "team").
 
@@ -58,7 +58,7 @@ On top of `recall` sit graph-native tools: `who` (owners and experts), `impact` 
 | Document retrieval, 80 questions, synthetic company | recall@10: vector 0.73, BM25 0.71, vector+BM25 0.75, full 0.76; graph ties text on finding documents | `eval/results.md` |
 | `who` with the entity as topic | gold person in top 3: 0.94 vs 0.71 baseline | `eval/results.md` |
 | Relation extraction (synthetic, graded types) | precision 0.88, recall 0.83; on the facts the tools read after the edge gate: 0.903 / 0.812 | `eval/graph_quality.py`, commit eac7484 |
-| Real documents (this repo's 69 docs, 30 questions) | gold doc in top 5: 0.53, MRR 0.39; answer text in the top-5 chunks 0.73 | `eval/real_check.md` |
+| Real documents (this repo's 72 docs, 30 questions) | gold doc in top 5: 0.50, MRR 0.41; answer text in the top-5 chunks 0.70 | `eval/real_check.md` |
 | MCP | 15 of 15 tools pass end to end; tool schemas cost about 2,100 tokens of agent context | `eval/mcp_smoke.md` |
 | Concurrency | 16 clients, 0 errors, 0 lost writes; read p50 about 10 ms | `eval/stress.md` |
 
@@ -70,6 +70,7 @@ What to say about the limits: the synthetic company is AI-generated (the gold an
 - **GLiNER2.5 vs GLiNER2.5-Decide** for the edge gate: on 25 hand-labelled trap sentences, base model 17/25, base + a negation rule 20/25, Decide 20/25 but a second 1.9 GB model and 6x slower. We kept base + rule.
 - **JointIE and one combined schema** (GLiNER2.5's newer decoding): implemented and measured, precision 0.72 and 0.77 vs 0.88, slower on real documents. Not adopted.
 - **fp16** on the GTX 1660 Ti: half the memory but 2.4x slower. Opt-in only.
+- **Ideas from agentmemory, graphify and Hindsight** (fusion normalisation, BM25 term coverage, two-phase temporal, Jaro-Winkler merge): implemented behind flags and measured on both corpora (`eval/flags.md`); none beat the default across both, so they stay off. The Jaro-Winkler merge wrongly merged FalkorDB into falkordblite, which is why entity merges stay strict.
 - **Self-tuning with an acceptance rule (RRSI idea):** the tuner proposes new channel weights and keeps them only if they beat the noise band on held-out questions without a cost penalty. It rejected its own weights, which is the rule working.
 - **Dream consolidation (Dream-RSI idea):** `neo dream` merges duplicate memories, promotes, decays and flags conflicts, logged as `DreamRun` nodes.
 - **pg-jev idea:** decisions are cached next to the data (`Judgment` nodes) and every relation carries its assertion verdict.

@@ -61,9 +61,11 @@ Graph routing ties text retrieval on finding documents; the CIs include 0. Full 
 | fp16 GLiNER on the GTX 1660 Ti | `NEO_GLINER_FP16=1` | Peak GPU memory halved (1098 -> 589 MB), ~2.4x slower per call | Opt-in, not default |
 | HTML ingestion | built-in standard-library converter (anydoc has no HTML reader) | HTML now converts to Markdown | Yes |
 
+**Ideas from open memory systems, measured** (`eval/flags.md`): seven retrieval and resolution changes taken from agentmemory (fusion normalisation), graphify (BM25 term coverage, per-term seeds, Jaro-Winkler merge) and Hindsight (two-phase temporal) are in the code behind flags. None beat the default across both corpora, so all stay off: for example term-coverage BM25 raised real-docs Hit@5 from 0.50 to 0.60 but lowered MRR, and the Jaro-Winkler merge wrongly merged `FalkorDB` into `falkordblite`.
+
 The published gain this idea came from (edge F1 0.330 -> 0.396, one author's 10-doc corpus with Decide) did not reproduce here.
 
-**Real docs** (`eval/real_check.py`, this repository's own 69 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.53 of questions (MRR 0.39); the answer string is in the top-5 documents' chunks for 0.73 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 370 ms, `ask` about 650 ms. GLiNER finds few relations in real prose (12 edges in 69 docs), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
+**Real docs** (`eval/real_check.py`, this repository's own 72 docs, 30 questions an agent working on it asks, gold in `eval/real_gold.jsonl`; report in [eval/real_check.md](eval/real_check.md)): the gold document is in the top 5 for 0.50 of questions (MRR 0.41); the answer string is in the top-5 documents' chunks for 0.70 (facts are often repeated across docs) and in what `recall` prints for 0.47 (0.30 before it showed query-matching sentences instead of each chunk's head). Recall p50 about 370 ms, `ask` about 650 ms. GLiNER finds few relations in real prose (5 edges in 72 docs, now that command text in code fences is skipped), so agents write relations directly with `remember(entities=, relations=)` and `relate`.
 
 Reproduce: measurement details in [eval/README.md](eval/README.md); numbers in [eval/results.md](eval/results.md) and [eval/answers.md](eval/answers.md).
 
@@ -269,7 +271,7 @@ Hooks are installed by `neo install-claude`. Details: [integrations/claude-code/
 - Gold set: 80 questions (single-hop, multi-hop, temporal, ownership, procedural) in `eval/gold.jsonl`, checked by `eval/check_dataset.py`.
 - Ablation: vector, BM25, vector plus BM25, plus graph, plus temporal, full (intent weights), and the product default; with paired-bootstrap confidence intervals.
 - How to run and the full results: [eval/README.md](eval/README.md), [eval/results.md](eval/results.md), [eval/results.json](eval/results.json).
-- Real-docs check: the repository's own 69 docs and 30 questions an agent working on it asks (`eval/real_check.md`), reported above with its misses — a second evaluation on prose GLiNER was not tuned for.
+- Real-docs check: the repository's own 72 docs and 30 questions an agent working on it asks (`eval/real_check.md`), reported above with its misses — a second evaluation on prose GLiNER was not tuned for.
 
 <!-- DEMO_VIDEO -->
 

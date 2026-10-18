@@ -39,7 +39,7 @@ The `dream` operation is the consolidation pass. It merges near-duplicate memori
 
 Extraction is for documents nobody has read yet. When the agent already knows the facts, it writes them itself: `remember(text, kind, entities=[{name, type}], relations=[[head, TYPE, tail]])` stores typed entities and edges without running GLiNER at all (about 0.2 s, mostly the embedding), and `relate(head, TYPE, tail)` writes or corrects one edge — with `supersede` closing the edge it replaces and `end` retiring it while keeping the history. Explicitly named entities only ever match by exact name or alias, so the agent's words are never fuzzily merged into something else.
 
-The motivation is measured: on our own repository's 69 prose documents, GLiNER found only 12 relations (`eval/real_check.md`). The agent that just fixed the bug knows what changed better than any extractor, so we let it write. In the demo, the triage agent moves ownership of `reporting-service` to Elif Yildiz with one `relate --supersede` call — the old edge is closed and kept as dated history — and leaves a handoff that appears in the next agent's session-start brief.
+The motivation is measured: on our own repository's 72 prose documents, GLiNER found only 5 relations (`eval/real_check.md`). The agent that just fixed the bug knows what changed better than any extractor, so we let it write. In the demo, the triage agent moves ownership of `reporting-service` to Elif Yildiz with one `relate --supersede` call — the old edge is closed and kept as dated history — and leaves a handoff that appears in the next agent's session-start brief.
 
 ## What the evaluation actually showed
 
