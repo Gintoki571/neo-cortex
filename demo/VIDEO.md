@@ -151,7 +151,7 @@ neo cypher "MATCH (d:DreamRun) RETURN d.id, d.merged, d.promoted, d.decayed, d.c
 
 On screen, one line of credit: "the sleeping idea: github.com/zhengkid/Dream-RSI".
 
-**Real output:** the second note prints a `conflicts:` line (similarity 0.97, differs in a number: 3 versus 5); `neo dream` prints `merged 0, promoted 0, decayed 0, conflicts 3` on the full demo database (it already holds two other conflicting pairs; a bare database shows 1); the log record `dream_... | 0 | 0 | 0 | 3`.
+**Real output:** the second note prints a `conflicts:` line (similarity 0.97, differs in a number: 3 versus 5); `neo dream` prints `merged 0, promoted 0, decayed 0, conflicts 2` on the full demo database the count was 2 on a fresh `demo/setup.sh` (the demo data already holds one other conflicting pair; the number can differ by one or two, so say "conflicts flagged", not the number); the log record `dream_... | 0 | 0 | 0 | 2`.
 
 **Point at:** the conflict line when the second note is written; the log record in the graph.
 

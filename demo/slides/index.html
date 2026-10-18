@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neo-Cortex - a memory that connects the dots</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121a24; --panel2:#0e1420; --line:#26313f;
+    --ink:#e8eef7; --dim:#93a5bc;
+    --blue:#4da3ff; --orange:#ff9d4d; --green:#3ecf8e; --red:#ff5d5d;
+    --purple:#b48cff; --yellow:#ffd24d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  #bar{position:fixed;top:0;left:0;height:5px;width:0;z-index:10;
+    background:linear-gradient(90deg,var(--blue),var(--orange));transition:width .3s ease}
+  #num{position:fixed;right:20px;bottom:14px;color:var(--dim);font-size:clamp(16px,1.6vw,22px);z-index:10}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+    justify-content:center;gap:2.6vh;padding:5vh 5vw 6vh;text-align:center}
+  .slide.active{display:flex}
+  h1{font-size:clamp(64px,10vw,150px);margin:0;letter-spacing:-.02em;
+    background:linear-gradient(90deg,var(--blue),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:clamp(32px,4vw,62px);margin:0 0 1vh;font-weight:750}
+  .subtitle{font-size:clamp(26px,3vw,48px);color:var(--dim);margin:0}
+  p,.line{font-size:clamp(24px,2.4vw,38px);margin:.4em 0;line-height:1.35}
+  .small{font-size:clamp(20px,2vw,28px);color:var(--dim)}
+  .credit{font-size:clamp(16px,1.6vw,22px);color:var(--dim);position:absolute;bottom:4.5vh;left:0;right:0}
+  .step{opacity:0;transform:translateY(16px);transition:opacity .45s ease,transform .45s ease}
+  .step.on{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important;animation:none!important}
+    .step{opacity:1!important;transform:none!important}
+  }
+  /* building blocks */
+  .cols{display:flex;gap:3vw;align-items:center;justify-content:center;flex-wrap:nowrap}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:2.4vh 2vw}
+  .card{background:rgba(77,163,255,.12);border:2px solid var(--blue);border-radius:12px;
+    padding:1.2vh 1.2vw;font-size:clamp(18px,1.9vw,28px);color:#cfe4ff}
+  .string{color:var(--orange);font-weight:700}
+  .chip{display:inline-block;border-radius:999px;padding:.5vh 1.4vw;margin:.4vh .4vw;
+    font-size:clamp(18px,1.9vw,28px);border:2px solid var(--line);background:var(--panel)}
+  .chip.blue{border-color:var(--blue);color:#cfe4ff;background:rgba(77,163,255,.10)}
+  .chip.orange{border-color:var(--orange);color:#ffe0c2;background:rgba(255,157,77,.10)}
+  .chip.green{border-color:var(--green);color:#d2f5e5;background:rgba(62,207,142,.10)}
+  .chip.red{border-color:var(--red);color:#ffd6d6;background:rgba(255,93,93,.10)}
+  .chip.purple{border-color:var(--purple);color:#e7dbff;background:rgba(180,140,255,.10)}
+  .chip.yellow{border-color:var(--yellow);color:#fff3c9;background:rgba(255,210,77,.10)}
+  .badge{display:inline-block;border:2px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:1.4vh 1.6vw;margin:.6vh .5vw;font-size:clamp(18px,2vw,30px)}
+  .badge b{color:var(--blue);margin-right:.5em}
+  .gate{display:grid;grid-template-columns:1fr auto auto;gap:1.2vw;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4vh 1.4vw;margin:.9vh 0;
+    width:min(78vw,1050px);text-align:left}
+  .gate .say{font-style:italic;font-size:clamp(18px,1.9vw,28px)}
+  .gate .ring{width:44px;height:44px;border-radius:50%;border:3px solid var(--green);color:var(--green);
+    display:grid;place-items:center;font-size:26px;font-weight:800;flex:none}
+  .gate .who{font-size:clamp(15px,1.5vw,21px);color:var(--dim)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  svg{max-width:92vw;height:auto;display:block}
+  svg text{font-family:system-ui,-apple-system,sans-serif}
+  .pipes{display:flex;flex-direction:column;align-items:center;gap:1vh}
+  .prow{display:flex;align-items:stretch;justify-content:center;gap:.6vw}
+  .pbox{background:var(--panel);border:2px solid var(--blue);border-radius:14px;padding:1.4vh 1vw;
+    font-size:clamp(19px,2vw,28px);min-width:11vw;color:var(--ink)}
+  .pbox .sub{display:block;font-size:clamp(15px,1.55vw,21px);color:var(--dim);margin-top:.4vh}
+  .arr{align-self:center;color:var(--orange);font-size:clamp(24px,2.6vw,40px);font-weight:800}
+  .bars{display:flex;align-items:flex-end;gap:2.6vw;height:32vh;margin:1vh 0}
+  .bargroup{display:flex;align-items:flex-end;gap:.8vw}
+  .bar{width:clamp(56px,6vw,96px);border-radius:8px 8px 0 0;position:relative}
+  .bar .val{position:absolute;top:-1.4em;left:50%;transform:translateX(-50%);
+    font-size:clamp(18px,2vw,30px);font-weight:800;white-space:nowrap}
+  .barlabel{font-size:clamp(17px,1.8vw,26px);color:var(--dim);margin-top:1vh}
+  .stamp{display:inline-block;border:6px solid var(--red);color:var(--red);border-radius:14px;
+    padding:1.4vh 2.4vw;font-size:clamp(30px,3.6vw,56px);font-weight:900;letter-spacing:.04em;
+    transform:rotate(-4deg);background:rgba(255,93,93,.07)}
+  .night{background:radial-gradient(1200px 500px at 70% -10%,#141c33 0%,var(--panel2) 55%)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="num"></div>
+
+<!-- ============ S0 TITLE ============ -->
+<section class="slide" id="s0">
+  <h1>Neo-Cortex</h1>
+  <p class="subtitle">a memory that connects the dots</p>
+  <div class="step">
+    <span class="badge"><b>01</b>Agents that act on connected data</span>
+    <span class="badge"><b>02</b>Agent memory and coordination</span><br>
+    <span class="badge"><b>03</b>Company brain</span>
+  </div>
+  <p class="small step">One FalkorDB graph &mdash; no big AI model inside.</p>
+</section>
+
+<!-- ============ S1 THE PROBLEM ============ -->
+<section class="slide" id="s1">
+  <h2>The problem</h2>
+  <div class="cols step">
+    <div class="panel">
+      <p style="margin:0">An agent that acts for you</p>
+      <p class="small" style="margin:.4vh 0 0">Day 1: learns everything<br>Day 2: blank slate</p>
+    </div>
+    <div class="panel">
+      <p style="margin:0">A company's facts</p>
+      <p class="small" style="margin:.4vh 0 0">scattered over tickets, chats,<br>documents and notes</p>
+    </div>
+  </div>
+  <div class="step">
+    <svg viewBox="0 0 980 300" style="width:min(74vw,880px)" role="img" aria-label="A string board: cards joined by strings">
+      <line x1="260" y1="56" x2="300" y2="150" stroke="var(--orange)" stroke-width="4"/>
+      <text x="206" y="112" fill="var(--orange)" font-size="22" font-weight="700">OWNS</text>
+      <line x1="580" y1="156" x2="760" y2="156" stroke="var(--orange)" stroke-width="4"/>
+      <text x="610" y="142" fill="var(--orange)" font-size="22" font-weight="700">DEPENDS_ON</text>
+      <line x1="860" y1="230" x2="860" y2="182" stroke="var(--orange)" stroke-width="4"/>
+      <text x="876" y="212" fill="var(--orange)" font-size="22" font-weight="700">OWNS</text>
+      <rect x="30" y="30" width="230" height="52" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="145" y="64" fill="#cfe4ff" font-size="25" text-anchor="middle">Priya Nair</text>
+      <rect x="300" y="130" width="280" height="52" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="440" y="164" fill="#cfe4ff" font-size="25" text-anchor="middle">invoice-export-service</text>
+      <rect x="760" y="130" width="200" height="52" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="860" y="164" fill="#cfe4ff" font-size="25" text-anchor="middle">ledger-service</text>
+      <rect x="760" y="230" width="200" height="52" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="860" y="264" fill="#cfe4ff" font-size="25" text-anchor="middle">Elif Yildiz</text>
+    </svg>
+    <p>A knowledge graph: <span style="color:var(--blue)">cards for things</span>,
+       <span class="string">strings for relationships</span>.</p>
+  </div>
+</section>
+
+<!-- ============ S2 ONE GRAPH, THREE JOBS ============ -->
+<section class="slide" id="s2">
+  <h2>One graph, three jobs, no bills</h2>
+  <div class="step">
+    <svg viewBox="0 0 960 250" style="width:min(74vw,880px)" role="img" aria-label="Three jobs around one graph">
+      <line x1="170" y1="90" x2="450" y2="185" stroke="var(--line)" stroke-width="3"/>
+      <line x1="480" y1="90" x2="480" y2="185" stroke="var(--line)" stroke-width="3"/>
+      <line x1="790" y1="90" x2="510" y2="185" stroke="var(--line)" stroke-width="3"/>
+      <rect x="30" y="20" width="280" height="70" rx="14" fill="var(--panel)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="170" y="52" fill="#cfe4ff" font-size="24" text-anchor="middle" font-weight="700">an agent's memory</text>
+      <text x="170" y="79" fill="#93a5bc" font-size="18" text-anchor="middle">remembers across sessions</text>
+      <rect x="340" y="20" width="280" height="70" rx="14" fill="var(--panel)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="480" y="52" fill="#cfe4ff" font-size="24" text-anchor="middle" font-weight="700">a company's brain</text>
+      <text x="480" y="79" fill="#93a5bc" font-size="18" text-anchor="middle">built from its documents</text>
+      <rect x="650" y="20" width="280" height="70" rx="14" fill="var(--panel)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="790" y="52" fill="#cfe4ff" font-size="24" text-anchor="middle" font-weight="700">multi-step questions</text>
+      <text x="790" y="79" fill="#93a5bc" font-size="18" text-anchor="middle">follows how things connect</text>
+      <rect x="330" y="185" width="300" height="58" rx="29" fill="rgba(255,157,77,.12)" stroke="var(--orange)" stroke-width="3"/>
+      <text x="480" y="222" fill="#ffe0c2" font-size="25" text-anchor="middle" font-weight="700">one graph</text>
+    </svg>
+  </div>
+  <div class="step">
+    <p>2 small models on your own computer &mdash; no per-question bill</p>
+    <span class="chip green">about 26 ms per read</span>
+    <span class="chip green">about 2 GB of graphics memory</span>
+  </div>
+</section>
+
+<!-- ============ S3 FROM FILE TO GRAPH ============ -->
+<section class="slide" id="s3">
+  <h2>From file to graph</h2>
+  <div class="pipes">
+    <div class="prow step">
+      <div class="pbox">file<span class="sub">any document</span></div><span class="arr">&rarr;</span>
+      <div class="pbox">plain text<span class="sub">converted</span></div><span class="arr">&rarr;</span>
+      <div class="pbox">small pieces<span class="sub">cut up</span></div>
+    </div>
+    <div class="prow step">
+      <div class="pbox">meaning numbers<span class="sub">a map of meanings</span></div><span class="arr">&rarr;</span>
+      <div class="pbox" style="border-color:var(--orange)">reading model (GLiNER)<span class="sub">finds people, services, teams + relationships (extraction)</span><span class="sub">asks: fact, maybe, denial or plan? (classification)</span></div><span class="arr">&rarr;</span>
+      <div class="pbox" style="border-color:var(--orange)">cards and strings<span class="sub">written into FalkorDB</span></div>
+    </div>
+  </div>
+  <div class="step">
+    <p class="small" style="margin-bottom:.6vh">the real handover note, in under a second:</p>
+    <span class="chip blue">6 mentions</span>
+    <span class="chip orange">2 relationships</span>
+  </div>
+</section>
+
+<!-- ============ S4 THE JUDGE ============ -->
+<section class="slide" id="s4">
+  <h2>The judge who writes down every verdict</h2>
+  <div class="step">
+    <div class="gate">
+      <span class="say">&ldquo;Priya Nair owns invoice-export-service.&rdquo;</span>
+      <span class="ring">&check;</span>
+      <span class="chip green">FACT &rarr; kept &middot; 0.9881</span>
+    </div>
+    <div class="gate">
+      <span class="say">&ldquo;&hellip;might move to the Payments team next quarter.&rdquo;</span>
+      <span class="ring">&check;</span>
+      <span class="chip yellow">MAYBE &rarr; never a current fact</span>
+    </div>
+    <div class="gate">
+      <span class="say">&ldquo;Mateo Alvarez does not own it.&rdquo;</span>
+      <span class="ring">&check;</span>
+      <span class="chip red">DENIED &rarr; dropped</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="panel" style="border-color:var(--green)">
+      <p class="mono" style="margin:0">{"same": 0.8433, "different": 0.1567}</p>
+      <p class="small" style="margin:.5vh 0 0">saved verdict &mdash; reused instead of asked again</p>
+    </div>
+  </div>
+  <p class="credit">the verdict idea: github.com/realZachi/pg-jev</p>
+</section>
+
+<!-- ============ S5 WRITING STRAIGHT IN ============ -->
+<section class="slide" id="s5">
+  <h2>Writing straight in</h2>
+  <div class="step">
+    <div class="gate" style="grid-template-columns:1fr auto 1fr auto;font-size:clamp(20px,2.2vw,30px)">
+      <span>A document nobody has read</span><span class="arr">&rarr;</span>
+      <span>the reading model</span>
+      <span class="chip blue">about 0.67 s</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="gate" style="grid-template-columns:1fr auto 1fr auto;font-size:clamp(20px,2.2vw,30px)">
+      <span>An agent that already knows</span><span class="arr">&rarr;</span>
+      <span>writes the cards and strings itself</span>
+      <span class="chip green">about 0.15 s</span>
+    </div>
+    <p class="small">no misreading &mdash; the agent's words are the facts</p>
+  </div>
+</section>
+
+<!-- ============ S6 FOUR SEARCHES ============ -->
+<section class="slide" id="s6">
+  <h2>Four searches, one answer</h2>
+  <div class="step">
+    <svg viewBox="0 0 980 300" style="width:min(62vw,720px)" role="img" aria-label="Four searches merging into one answer">
+      <path d="M 250,44 C 430,44 470,150 660,150" fill="none" stroke="#3a4759" stroke-width="3"/>
+      <path d="M 250,118 C 420,118 480,150 660,150" fill="none" stroke="#3a4759" stroke-width="3"/>
+      <path d="M 250,192 C 420,192 480,150 660,150" fill="none" stroke="#3a4759" stroke-width="3"/>
+      <path d="M 250,262 C 430,262 470,150 660,150" fill="none" stroke="#3a4759" stroke-width="3"/>
+      <rect x="20" y="20" width="230" height="48" rx="24" fill="var(--panel)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="135" y="52" fill="#cfe4ff" font-size="23" text-anchor="middle">by words</text>
+      <rect x="20" y="94" width="230" height="48" rx="24" fill="var(--panel)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="135" y="126" fill="#cfe4ff" font-size="23" text-anchor="middle">by meaning</text>
+      <rect x="20" y="168" width="230" height="48" rx="24" fill="rgba(255,157,77,.12)" stroke="var(--orange)" stroke-width="3"/>
+      <text x="135" y="200" fill="#ffe0c2" font-size="23" text-anchor="middle" font-weight="700">by connections &#9733;</text>
+      <rect x="20" y="242" width="230" height="48" rx="24" fill="var(--panel)" stroke="var(--purple)" stroke-width="2.5"/>
+      <text x="135" y="274" fill="#e7dbff" font-size="23" text-anchor="middle">by time</text>
+      <rect x="665" y="120" width="290" height="62" rx="31" fill="rgba(62,207,142,.10)" stroke="var(--green)" stroke-width="3"/>
+      <text x="810" y="159" fill="#d2f5e5" font-size="25" text-anchor="middle" font-weight="700">one answer</text>
+    </svg>
+  </div>
+  <div style="display:flex;gap:3vw;align-items:center;justify-content:center;flex-wrap:nowrap">
+  <div class="step">
+    <p style="margin:0">&ldquo;What breaks if a service stops?&rdquo;</p>
+    <div class="bars" style="height:24vh">
+      <div class="bargroup">
+        <div class="bar" style="height:calc(0.80 * 24vh);background:var(--green)"><span class="val" style="color:var(--green)">0.80</span></div>
+        <div class="bar" style="height:calc(0.20 * 24vh);background:#5a6b80"><span class="val" style="color:#93a5bc">0.20</span></div>
+      </div>
+    </div>
+    <p class="small" style="margin:0"><span style="color:var(--green)">the graph</span> vs plain text search (eval/answers.md)</p>
+  </div>
+  <div class="step">
+    <svg viewBox="0 0 820 330" style="width:min(44vw,520px)" role="img" aria-label="Walking the depends-on strings backwards">
+      <line x1="230" y1="60" x2="380" y2="150" stroke="var(--orange)" stroke-width="4"/>
+      <line x1="235" y1="165" x2="375" y2="165" stroke="var(--orange)" stroke-width="4"/>
+      <line x1="230" y1="270" x2="380" y2="180" stroke="var(--orange)" stroke-width="4"/>
+      <line x1="420" y1="270" x2="420" y2="195" stroke="var(--orange)" stroke-width="4" stroke-dasharray="8 7"/>
+      <rect x="20" y="30" width="215" height="50" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="127" y="62" fill="#cfe4ff" font-size="22" text-anchor="middle">reporting-service</text>
+      <rect x="15" y="140" width="220" height="50" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="125" y="172" fill="#cfe4ff" font-size="22" text-anchor="middle">fraud-scoring</text>
+      <rect x="20" y="250" width="215" height="50" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="127" y="282" fill="#cfe4ff" font-size="20" text-anchor="middle">invoice-export-service</text>
+      <rect x="320" y="270" width="200" height="50" rx="12" fill="rgba(77,163,255,.14)" stroke="var(--blue)" stroke-width="2.5"/>
+      <text x="420" y="302" fill="#cfe4ff" font-size="20" text-anchor="middle">payment-gateway</text>
+      <rect x="325" y="140" width="190" height="52" rx="26" fill="rgba(255,157,77,.12)" stroke="var(--orange)" stroke-width="3"/>
+      <text x="420" y="173" fill="#ffe0c2" font-size="23" text-anchor="middle" font-weight="700">ledger-service</text>
+      <text x="620" y="170" fill="#93a5bc" font-size="20">walks the &ldquo;depends on&rdquo;</text>
+      <text x="620" y="198" fill="#93a5bc" font-size="20">strings backwards</text>
+    </svg>
+  </div>
+  </div>
+</section>
+
+<!-- ============ S7 SLEEPING MEMORY ============ -->
+<section class="slide" id="s7">
+  <h2>Sleeping memory</h2>
+  <div class="step night panel" style="width:min(80vw,1000px)">
+    <div class="cols">
+      <span class="card">retry limit is 3</span>
+      <span class="chip red">CLASH &mdash; flagged for the agent</span>
+      <span class="card">retry limit is 5</span>
+    </div>
+  </div>
+  <div class="step cols" style="align-items:stretch;flex-wrap:wrap;gap:1.5vw">
+    <div class="panel"><p class="card" style="display:inline-block">note</p><p class="card" style="display:inline-block;opacity:.85">note</p><p class="small" style="margin:.8vh 0 0">repeats combine into one</p></div>
+    <div class="panel"><p class="card" style="display:inline-block;opacity:.35">old note</p><p class="small" style="margin:.8vh 0 0">unused notes fade &mdash; never deleted</p></div>
+    <div class="panel" style="border-color:var(--green)"><p class="chip green" style="margin:0">log card written</p><p class="small" style="margin:.8vh 0 0">the tidy-up leaves a record</p></div>
+  </div>
+  <p class="credit">the sleeping idea: github.com/zhengkid/Dream-RSI</p>
+</section>
+
+<!-- ============ S8 TUNING ============ -->
+<section class="slide" id="s8">
+  <h2>A tuning rule that cannot fool itself</h2>
+  <div class="step">
+    <div class="bars">
+      <div class="bargroup">
+        <div class="bar" style="height:calc(0.648 * 28vh);background:#5a6b80"><span class="val" style="color:#93a5bc">0.648</span></div>
+        <div class="bar" style="height:calc(0.752 * 28vh);background:var(--green)"><span class="val" style="color:var(--green)">0.752</span></div>
+        <div class="barlabel" style="align-self:end;margin:0 0 -4.5vh">practice questions<br><span style="color:var(--green);font-weight:800">&#9650;</span></div>
+      </div>
+      <div class="bargroup">
+        <div class="bar" style="height:calc(0.694 * 28vh);background:#5a6b80"><span class="val" style="color:#93a5bc">0.694</span></div>
+        <div class="bar" style="height:calc(0.675 * 28vh);background:var(--red)"><span class="val" style="color:var(--red)">0.675</span></div>
+        <div class="barlabel" style="align-self:end;margin:0 0 -4.5vh">unseen questions<br><span style="color:var(--red);font-weight:800">&#9660;</span></div>
+      </div>
+    </div>
+    <p class="small">grey: current settings &middot; coloured: the tuner's proposal (eval/tune_clean.json)</p>
+  </div>
+  <div class="step"><span class="stamp">REJECTED &mdash; old settings stay</span></div>
+  <p class="credit">the tuning idea: github.com/google-research/rrsi (arXiv 2609.24972)</p>
+</section>
+
+<!-- ============ S9 HONEST CLOSE ============ -->
+<section class="slide" id="s9">
+  <h2>One graph, three jobs.</h2>
+  <p class="line step">7 more ideas tried &mdash; none beat the default across both test collections <span class="small">(eval/flags.md)</span></p>
+  <p class="line step">Where the graph only ties text search, we say so.</p>
+  <div class="step">
+    <p class="line" style="margin-bottom:.2em">Built with Claude Code and other AI coding agents;</p>
+    <p class="line" style="margin-top:0">people directed, reviewed and verified.</p>
+    <p class="small mono">github.com/Gintoki571/neo-cortex</p>
+  </div>
+</section>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var i = 0;
+  var bar = document.getElementById('bar');
+  var num = document.getElementById('num');
+
+  function steps(){ return Array.prototype.slice.call(slides[i].querySelectorAll('.step')); }
+
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s,k){ s.classList.toggle('active', k === i); });
+    steps().forEach(function(st){ st.classList.toggle('on', reduced); });
+    bar.style.width = (slides.length > 1 ? (i / (slides.length - 1)) * 100 : 100) + '%';
+    num.textContent = i + ' / ' + (slides.length - 1);
+    if (history.replaceState) history.replaceState(null, '', '#' + i);
+    else location.hash = '#' + i;
+  }
+
+  function next(){
+    if (!reduced){
+      for (var k = 0; k < steps().length; k++){
+        if (!steps()[k].classList.contains('on')){ steps()[k].classList.add('on'); return; }
+      }
+    }
+    show(i + 1);
+  }
+  function prev(){
+    if (!reduced){
+      var st = steps();
+      for (var k = st.length - 1; k >= 0; k--){
+        if (st[k].classList.contains('on')){ st[k].classList.remove('on'); return; }
+      }
+    }
+    show(i - 1);
+  }
+
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter'){
+      e.preventDefault(); next();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace'){
+      e.preventDefault(); prev();
+    } else if (/^[0-9]$/.test(e.key)){
+      show(parseInt(e.key, 10));
+    } else if (e.key === 'f' || e.key === 'F'){
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+
+  function fromHash(){
+    var n = parseInt(location.hash.replace('#',''), 10);
+    show(isNaN(n) ? 0 : n);
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>
+</body>
+</html>
