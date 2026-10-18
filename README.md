@@ -200,6 +200,71 @@ REL types (one relationship type with a `type` property, so Cypher never builds 
 
 Each REL edge carries `conf` (confidence 0-1), `source_id` (the chunk, memory or `relate` call that justified it) and `valid_from_ms`/`valid_to_ms` — an edge with an end date is closed history, skipped by queries about "now". Between memories, `SUPERSEDES` retires a replaced fact, `CONFLICTS_WITH` flags two facts that disagree, and `MERGED_INTO` marks a duplicate folded into another.
 
+## How we use FalkorDB
+
+FalkorDB is the only store, and the graph does work the agent could not do from files:
+
+| FalkorDB feature | What Neo-Cortex does with it | Where |
+|---|---|---|
+| One graph per tenant (`neo_<tenant>`) | team and project isolation; an agent cannot read another tenant by accident | `store.py` |
+| Vector indexes (`db.idx.vector.queryNodes`, cosine, 768-d) on `Chunk.emb`, `Memory.emb`, `Entity.emb` | the vector channel of `recall`, entity linking fallback, duplicate-memory check, dream merge candidates | `retrieve/channels.py`, `write.py`, `dream.py` |
+| Full-text index on `Entity.name` | fuzzy entity-name lookup for linking a question's words to entities | `channels.link_entities` |
+| `algo.SPpaths` | bridging paths between two entities: `connect` (up to 5 paths, 4 hops) and the paths in `ask` | `tools.py _paths` |
+| Variable-length paths `[:REL*1..2]` with a type filter | `who` (owners and experts) and `impact` (blast radius over `DEPENDS_ON`) | `tools.py who, impact` |
+| Property graph with time on edges (`valid_from_ms`, `valid_to_ms`) | `timeline`, supersession of owners, current-only walks | `write.py _supersede`, `tools.py timeline` |
+| `GRAPH.RO_QUERY` | the agent's read-only `cypher` tool; writes are rejected by the server | `tools.py cypher` |
+| Audit nodes (`Judgment`, `DreamRun`, `TuneRun`) | cached model decisions, consolidation runs and tuning trials are data in the same graph | `resolve.py`, `dream.py`, `eval/tune.py` |
+| falkordblite (embedded) or Docker | same Cypher either way; one file lock so only one process owns the data | `store.py` |
+
+Not used on purpose: `algo.pageRank` has no personalization vector, so Personalized PageRank (the HippoRAG idea) runs in numpy over a subgraph fetched with plain Cypher.
+
+## Key Cypher queries and graph algorithms
+
+The full list, with the function that issues each query, is [docs/cypher.md](docs/cypher.md). The queries the product depends on:
+
+```cypher
+// Vector search (recall, entity linking, duplicate check): smaller score = nearer
+CALL db.idx.vector.queryNodes('Chunk','emb',20,vecf32($v)) YIELD node, score RETURN node.id, score
+
+// Shortest bridging paths between two entities (connect, ask)
+MATCH (a:Entity {id:$a}), (b:Entity {id:$b})
+CALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'], maxLen:4, relDirection:'both', pathCount:5}) YIELD path
+RETURN [x IN nodes(path) | [x.id, x.name]], [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]
+
+// Who owns or knows this? (who): people reaching the topic through ownership-type edges, up to 2 hops
+MATCH p=(x:Entity {type:'person'})-[:REL*1..2]->(t:Entity)
+WHERE t.id IN $t AND all(r IN relationships(p) WHERE r.type IN $ty)
+RETURN x.id, x.name, [n IN nodes(p) | [n.id, n.name]], [r IN relationships(p) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]
+
+// Supersession: a new owner closes the old OWNS edge instead of deleting it (history stays queryable)
+MATCH (a:Entity)-[r:REL {type:$t}]->(b:Entity) WHERE b.id IN $e RETURN id(r), a.id, b.id, r.valid_from_ms, r.valid_to_ms
+UNWIND $r AS x MATCH ()-[r:REL]->() WHERE id(r) = x.i SET r.valid_to_ms = x.v
+
+// Subgraph for Personalized PageRank (graph channel): current edges only, then PPR runs in numpy
+MATCH (a:Entity)-[r:REL]-(b:Entity) WHERE a.id IN $ids AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)
+RETURN a.id, b.id, b.name, b.mentions, r.type, coalesce(r.conf, 0.5), startNode(r).id
+
+// Timeline of one entity: dated edges, with who superseded whom
+MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i}) RETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf
+
+// Agent escape hatch (read-only, GRAPH.RO_QUERY): what neo status runs
+MATCH (n) RETURN labels(n)[0] AS label, count(n) AS n ORDER BY n DESC
+```
+
+Graph algorithms: `algo.SPpaths` (shortest paths), variable-length path traversal (`who`, `impact`), Personalized PageRank (HippoRAG-style, numpy, at most 3 hops and 500 nodes, gated by seed strength), and weighted Reciprocal Rank Fusion over four channels (k=60).
+
+## Research behind it, and how it is implemented
+
+| Idea | Paper / code | How Neo-Cortex implements it in FalkorDB | Measured |
+|---|---|---|---|
+| **pg-jev**: small "System 1" models judge text and return calibrated probabilities, not generated text | [realZachi/pg-jev](https://github.com/realZachi/pg-jev) (Postgres extension, [pgjev.com](https://pgjev.com)); GLiNER2 paper [arXiv 2507.18546](https://arxiv.org/abs/2507.18546) | Every borderline entity judgment is cached as a `(:Judgment)` node keyed by a hash of question, text and labels (`resolve.py judge`). Every extracted relation is classified on its source sentence as fact, possibility, denial or plan; `modality` and `p_fact` live on the `REL` edge and the current-state tools read facts only (`extract.py _gate`) | trap probe 20/25 vs 17/25 for the model alone; [eval/graph_quality.md](eval/graph_quality.md) |
+| **RRSI**: self-improvement only when a regularised, held-out check accepts the change | [google-research/rrsi](https://github.com/google-research/rrsi); paper [arXiv 2609.24972](https://arxiv.org/abs/2609.24972) ([project page](https://regularized-rsi.com/)) | `eval/tune.py` searches channel weights on odd questions and accepts them only if the paired-bootstrap 95% lower bound on even questions is above 0 and latency is within 20%. Each trial is a `(:TuneRun)` node. It rejected its own weights | [eval/tune_clean.json](eval/tune_clean.json) |
+| **Dream-RSI**: offline "dreaming" that consolidates experience | [zhengkid/Dream-RSI](https://github.com/zhengkid/Dream-RSI); [paper PDF](https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf) ([dream-rsi.com](https://www.dream-rsi.com); the arXiv posting is announced as in progress) | `neo dream` (`dream.py`): merges near-duplicate memories (cosine >= 0.92, never across a differing number or a negation), promotes episodic clusters seen in 3+ sessions to semantic, decays idle confidence, flags `CONFLICTS_WITH` pairs. Deterministic and idempotent; each run is a `(:DreamRun)` node; merged memories keep a `MERGED_INTO` edge | `tests/test_dream.py` (no eval number) |
+| **HippoRAG**: Personalized PageRank over a knowledge graph for retrieval | [arXiv 2405.14831](https://arxiv.org/abs/2405.14831), [HippoRAG 2, arXiv 2502.14802](https://arxiv.org/abs/2502.14802) | The graph channel seeds PPR with the question's linked entities over entity and chunk-mention edges fetched by Cypher, in numpy | [eval/results.md](eval/results.md) |
+| **BM25 + RRF** | [BM25S, arXiv 2407.03618](https://arxiv.org/abs/2407.03618); Cormack, Clarke and Buettcher, "Reciprocal Rank Fusion outperforms Condorcet and individual rank learning methods", SIGIR 2009 | `bm25s` index next to FalkorDB (its full-text index is not BM25); four channels fused with weighted RRF | [eval/results.md](eval/results.md) |
+
+More detail on what was taken, what was left out and what failed: [docs/lineage.md](docs/lineage.md).
+
 ## MCP tools and CLI
 
 The daemon exposes 15 MCP tools (`neo serve`, streamable HTTP at `/mcp`). Each tool returns token-budgeted text with ids, sources, dates, confidence and the channels or paths that matched.

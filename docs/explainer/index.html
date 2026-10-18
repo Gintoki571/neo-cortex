@@ -132,13 +132,14 @@ footer.foot{border-top:1px solid var(--line);color:var(--mut);font-size:.85rem;m
   <button data-s="model">3 · Data model</button>
   <button data-s="write">4 · Write path</button>
   <button data-s="read">5 · Read path</button>
-  <button data-s="time">6 · Time &amp; history</button>
-  <button data-s="lifecycle">7 · Memory lifecycle</button>
-  <button data-s="results">8 · Results</button>
-  <button data-s="lineage">9 · Ideas it builds on</button>
-  <button data-s="measured">10 · Measured, not adopted</button>
-  <button data-s="limits">11 · Open limits</button>
-  <button data-s="glossary">12 · Glossary</button>
+  <button data-s="falkor">6 · FalkorDB &amp; Cypher</button>
+  <button data-s="time">7 · Time &amp; history</button>
+  <button data-s="lifecycle">8 · Memory lifecycle</button>
+  <button data-s="results">9 · Results</button>
+  <button data-s="lineage">10 · Ideas &amp; papers</button>
+  <button data-s="measured">11 · Measured, not adopted</button>
+  <button data-s="limits">12 · Open limits</button>
+  <button data-s="glossary">13 · Glossary</button>
 </nav>
 
 <main id="main">
@@ -510,6 +511,31 @@ footer.foot{border-top:1px solid var(--line);color:var(--mut);font-size:.85rem;m
 </table>
 </section>
 
+<!-- ============ 6 FALKORDB ============ -->
+<section class="panel" id="s-falkor" aria-labelledby="h-falkor" hidden>
+<h2 id="h-falkor">FalkorDB and Cypher: what the graph database does here</h2>
+<p>FalkorDB is the only store. One graph per tenant (<span class="mono">neo_&lt;tenant&gt;</span>), embedded through falkordblite or run in Docker; the same Cypher works on both. Every query the product depends on is listed in <a href="../../docs/cypher.md">docs/cypher.md</a> with the function that issues it. <span class="src">(README.md, "How we use FalkorDB")</span></p>
+<div style="overflow-x:auto"><table class="data">
+<tr><th>FalkorDB feature</th><th>What we use it for</th><th>Where</th></tr>
+<tr><td>Vector indexes (cosine, 768-d)</td><td>vector channel of recall, entity-linking fallback, duplicate-memory check, dream merge candidates</td><td class="mono">retrieve/channels.py, write.py, dream.py</td></tr>
+<tr><td>Full-text index on Entity.name</td><td>fuzzy link from a question's words to entities</td><td class="mono">channels.link_entities</td></tr>
+<tr><td><span class="mono">algo.SPpaths</span></td><td>bridging paths for connect and ask</td><td class="mono">tools.py _paths</td></tr>
+<tr><td>Variable-length paths <span class="mono">[:REL*1..2]</span></td><td>who (owners, experts) and impact (blast radius over DEPENDS_ON)</td><td class="mono">tools.py</td></tr>
+<tr><td>Time on edges (valid_from_ms, valid_to_ms)</td><td>timeline, supersession, current-only walks</td><td class="mono">write.py _supersede</td></tr>
+<tr><td><span class="mono">GRAPH.RO_QUERY</span></td><td>the agent's read-only cypher tool</td><td class="mono">tools.py cypher</td></tr>
+<tr><td>Audit nodes in the same graph</td><td>Judgment (pg-jev idea), DreamRun (Dream-RSI idea), TuneRun (RRSI idea)</td><td class="mono">resolve.py, dream.py, eval/tune.py</td></tr>
+</table></div>
+<p>Graph algorithms in play: <b>shortest paths</b> (algo.SPpaths), <b>variable-length path traversal</b>, <b>Personalized PageRank</b> (HippoRAG idea, computed in numpy over a subgraph fetched with Cypher), and <b>weighted Reciprocal Rank Fusion</b> over four channels (k=60). Not used on purpose: algo.pageRank (no personalization vector).</p>
+<h3>The queries the product depends on — click one</h3>
+<div id="qbtns" class="chips" role="tablist" aria-label="Cypher queries"></div>
+<div class="card" id="qview" aria-live="polite">
+<h4 id="q-title"></h4>
+<p id="q-what"></p>
+<pre id="q-code" class="mono" style="white-space:pre-wrap;overflow-x:auto;padding:10px;margin:8px 0"></pre>
+<p class="src" id="q-file"></p>
+</div>
+</section>
+
 <!-- ============ 9 LINEAGE ============ -->
 <section class="panel" id="s-lineage" aria-labelledby="h-lineage" hidden>
 <h2 id="h-lineage">Ideas it builds on</h2>
@@ -737,13 +763,13 @@ TOOLS.forEach(function(p){
 
 /* ---------- lineage cards (section 9) ---------- */
 var LIN = [
- ["lin-pgjev","pg-jev","Cached typed judgments + assertion gating on every extracted relation.","realZachi/pg-jev"],
- ["lin-rrsi","RRSI","Held-out acceptance rule for self-tuning; the tuner rejected its own weights.","google-research/rrsi"],
- ["lin-dreamrsi","Dream-RSI","Offline, deterministic, idempotent consolidation with a run log (DreamRun).","zhengkid/Dream-RSI"],
- ["lin-hipporag","HippoRAG","Personalized PageRank from query entities over the entity-chunk graph.","arXiv 2405.14831 / 2502.14802"],
+ ["lin-pgjev","pg-jev","Cached typed judgments + assertion gating on every extracted relation.","<a href=\"https://github.com/realZachi/pg-jev\" target=\"_blank\" rel=\"noopener\">code: realZachi/pg-jev</a> · <a href=\"https://pgjev.com\" target=\"_blank\" rel=\"noopener\">pgjev.com</a> · GLiNER2 paper <a href=\"https://arxiv.org/abs/2507.18546\" target=\"_blank\" rel=\"noopener\">arXiv 2507.18546</a>"],
+ ["lin-rrsi","RRSI","Held-out acceptance rule for self-tuning; the tuner rejected its own weights.","<a href=\"https://github.com/google-research/rrsi\" target=\"_blank\" rel=\"noopener\">code: google-research/rrsi</a> · paper <a href=\"https://arxiv.org/abs/2609.24972\" target=\"_blank\" rel=\"noopener\">arXiv 2609.24972</a>"],
+ ["lin-dreamrsi","Dream-RSI","Offline, deterministic, idempotent consolidation with a run log (DreamRun).","<a href=\"https://github.com/zhengkid/Dream-RSI\" target=\"_blank\" rel=\"noopener\">code: zhengkid/Dream-RSI</a> · <a href=\"https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf\" target=\"_blank\" rel=\"noopener\">paper (PDF)</a> · <a href=\"https://www.dream-rsi.com\" target=\"_blank\" rel=\"noopener\">dream-rsi.com</a>"],
+ ["lin-hipporag","HippoRAG","Personalized PageRank from query entities over the entity-chunk graph.","papers <a href=\"https://arxiv.org/abs/2405.14831\" target=\"_blank\" rel=\"noopener\">HippoRAG 2405.14831</a> · <a href=\"https://arxiv.org/abs/2502.14802\" target=\"_blank\" rel=\"noopener\">HippoRAG 2 2502.14802</a>"],
  ["lin-gliner","GLiNER2.5","Small non-generative encoder as extractor, typer, classifier and judge — the no-LLM System 1.","fastino/gliner2.5-base-v1"],
  ["lin-embed","EmbeddingGemma","Text-only embeddings (768-d) for chunks, memories, entities and queries.","google/embeddinggemma-2"],
- ["lin-bm25rrf","bm25s + RRF","BM25 lexical channel fused with weighted reciprocal rank fusion (k=60).","bm25s"],
+ ["lin-bm25rrf","bm25s + RRF","BM25 lexical channel fused with weighted reciprocal rank fusion (k=60).","<a href=\"https://arxiv.org/abs/2407.03618\" target=\"_blank\" rel=\"noopener\">BM25S paper 2407.03618</a> · RRF: Cormack et al., SIGIR 2009"],
  ["lin-anydoc","anydoc","Office and PDF to Markdown for non-text ingest; HTML via a built-in converter.","firecrawl/anydoc"],
  ["lin-okf","OKF + DOX","Knowledge bundle for the project's research; AGENTS.md hierarchy as work contracts.","GoogleCloudPlatform/open-knowledge-format"]];
 var lc = document.getElementById("lineage-cards");
@@ -755,6 +781,25 @@ LIN.forEach(function(p){
   d.innerHTML = "<h4>" + p[1] + "</h4><p>" + p[2] + "</p><p class=\"src\">Source: " + p[3] + "</p>";
   lc.appendChild(d);
 });
+
+/* ---------- Cypher viewer (section 6) ---------- */
+var CQ = [["Vector search", "retrieve/channels.py vector(); write.py remember(); dream.py _neighbours()", "Nearest chunks or memories to a query embedding. FalkorDB returns a cosine distance (smaller is nearer). Used by recall, the duplicate-memory check and dream's merge candidates.", "CALL db.idx.vector.queryNodes('Chunk','emb',20,vecf32($v)) YIELD node, score\nRETURN node.id, score"], ["Bridging paths: algo.SPpaths", "tools.py _paths() — used by connect and ask", "Shortest relation paths between two entities in both directions, with the source and date of every edge. This is how ask connects two things no single document links.", "MATCH (a:Entity {id:$a}), (b:Entity {id:$b})\nCALL algo.SPpaths({sourceNode:a, targetNode:b, relTypes:['REL'],\n  maxLen:4, relDirection:'both', pathCount:5}) YIELD path\nRETURN [x IN nodes(path) | [x.id, x.name]],\n       [r IN relationships(path) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]"], ["Who owns or knows it: variable-length path", "tools.py who()", "People who reach the topic entity through ownership-type edges (OWNS, MEMBER_OF, WORKS_ON, APPROVED, DECIDED, PART_OF) within two hops; then ranked by path weight and document evidence.", "MATCH p=(x:Entity {type:'person'})-[:REL*1..2]->(t:Entity)\nWHERE t.id IN $t AND all(r IN relationships(p) WHERE r.type IN $ty)\nRETURN x.id, x.name, [n IN nodes(p) | [n.id, n.name]],\n       [r IN relationships(p) | [r.type, startNode(r).id, r.source_id, r.valid_from_ms, r.conf]]"], ["Supersession: close an edge, keep history", "write.py _supersede()", "A newer document naming a different owner does not delete the old OWNS edge: its valid_to_ms is set, so timeline can show who owned it before.", "MATCH (a:Entity)-[r:REL {type:$t}]->(b:Entity) WHERE b.id IN $e\nRETURN id(r), a.id, b.id, r.valid_from_ms, r.valid_to_ms\n\nUNWIND $r AS x MATCH ()-[r:REL]->() WHERE id(r) = x.i\nSET r.valid_to_ms = x.v"], ["Subgraph for Personalized PageRank", "retrieve/channels.py ppr()", "Fetches the edges around the question's entities (current edges only); PageRank with restart then runs in numpy, because FalkorDB's algo.pageRank has no personalization vector.", "MATCH (a:Entity)-[r:REL]-(b:Entity)\nWHERE a.id IN $ids AND (r.valid_to_ms IS NULL OR r.valid_to_ms > $now)\nRETURN a.id, b.id, b.name, b.mentions, r.type, coalesce(r.conf, 0.5), startNode(r).id"], ["Timeline of one entity", "tools.py timeline()", "Every dated edge touching an entity, with its source, so 'what changed and when' is a graph read, not a text guess.", "MATCH (a:Entity)-[r:REL]-(b:Entity {id:$i})\nRETURN a.id, a.name, r.type, startNode(r).id = a.id, r.valid_from_ms, r.source_id, r.conf"], ["Read-only escape hatch", "tools.py cypher(); what neo status runs", "The agent can run its own Cypher, executed with GRAPH.RO_QUERY so the server rejects writes; a LIMIT is added when missing.", "MATCH (n) RETURN labels(n)[0] AS label, count(n) AS n ORDER BY n DESC"], ["Schema and indexes", "schema.py ensure_schema()", "Created once per tenant graph: cosine vector indexes (768-d) on Chunk, Memory and Entity embeddings; a full-text index on entity names for fuzzy linking; range indexes on ids and dates.", "CREATE VECTOR INDEX FOR (n:Chunk) ON (n.emb)\n  OPTIONS {dimension:768, similarityFunction:'cosine'}\nCREATE FULLTEXT INDEX FOR (n:Entity) ON (n.name)\nCREATE INDEX FOR (n:Entity) ON (n.key)"]];
+var qb = document.getElementById("qbtns");
+function showQ(i){
+  var q = CQ[i];
+  document.getElementById("q-title").textContent = q[0];
+  document.getElementById("q-what").textContent = q[2];
+  document.getElementById("q-code").textContent = q[3];
+  document.getElementById("q-file").textContent = "Issued by: " + q[1] + " (full list: docs/cypher.md)";
+  qb.querySelectorAll(".chip").forEach(function(c,j){ c.classList.toggle("hot", j === i); c.setAttribute("aria-selected", j === i ? "true" : "false"); });
+}
+CQ.forEach(function(q,i){
+  var b = document.createElement("button");
+  b.className = "chip"; b.type = "button"; b.setAttribute("role","tab"); b.textContent = q[0];
+  b.addEventListener("click", function(){ showQ(i); });
+  qb.appendChild(b);
+});
+showQ(0);
 
 /* ---------- glossary (section 12) ---------- */
 var GLOSS = [

@@ -14,7 +14,7 @@ For each outside idea: the source, what we took, where it lives in the code, wha
 | 8 | Office and PDF to Markdown | [firecrawl/anydoc](https://github.com/firecrawl/anydoc) | Non-text ingest | Built. HTML unsupported |
 | 9 | Bundle and agent contracts | [OKF](https://github.com/GoogleCloudPlatform/open-knowledge-format); DOX AGENTS.md | `knowledge/` bundle, AGENTS.md hierarchy | Built (docs only) |
 
-HippoRAG arXiv IDs, the bm25s link and the RRF reference are from memory and were not re-fetched.
+Links checked with obscura on 2026-10-18: HippoRAG [2405.14831](https://arxiv.org/abs/2405.14831), HippoRAG 2 [2502.14802](https://arxiv.org/abs/2502.14802), BM25S [2407.03618](https://arxiv.org/abs/2407.03618), RRSI [2609.24972](https://arxiv.org/abs/2609.24972) ([project page](https://regularized-rsi.com/)), GLiNER2 [2507.18546](https://arxiv.org/abs/2507.18546), Dream-RSI [paper PDF](https://github.com/zhengkid/Dream-RSI/blob/main/papers/Dream-RSI.pdf) ([dream-rsi.com](https://www.dream-rsi.com); its repo says the arXiv posting is in progress). pg-jev ([pgjev.com](https://pgjev.com)) has no paper; its model card points to the GLiNER2 paper. RRF: Cormack, Clarke and Buettcher, SIGIR 2009 (not re-fetched).
 
 ## 1. pg-jev
 
