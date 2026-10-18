@@ -1,53 +1,38 @@
-# Quick demo: record a working demo in about 20 minutes, no OBS needed
+# Quick demo: ONE silent recording, nothing to say, nothing to press
 
-Goal: about 2.5 to 3 minutes showing the project working, with your voice. You do not need slides, the Browser, or editing software. The demo database is already running (check with `neo status`).
+`demo/silent_demo.sh` plays the whole demo by itself: a caption explains each step in plain words, the command types itself, runs, and stays on screen long enough to read. You only start the screen recorder, start the script, and stop the recorder. About 5 minutes. No audio, no OBS, no editing.
 
-## What you need (all already installed)
-- **Spectacle** records the screen (it cannot record sound, so we record your voice separately).
-- **pw-record** records your microphone (tested: it works on this machine).
-- **ffmpeg** glues voice and screen together at the end.
+The demo database is already built and clean (102 fictional company documents). If you restart your computer or run the demo once, see "Retake" below.
 
-## Step 1: prepare the terminal (2 minutes)
-Open ONE terminal window, dark theme, font size 18 or bigger, maximised. Run:
-```
-cd ~/neo-cortex && source demo/env.sh && alias neo=$NEO && clear
-```
-Open a SECOND small terminal (you will not film it) for the microphone.
+## Steps (5 minutes of work)
 
-## Step 2: start recording (1 minute)
-1. In the small terminal: `pw-record --target alsa_input.pci-0000_00_1f.3.analog-stereo ~/voice.wav` (it starts recording your voice; leave it running).
-2. Start Spectacle, choose the **Record** mode, **Screen** (or the terminal window only), and click **Start**. Wait 3 seconds, then speak.
+1. Open ONE terminal, dark theme, font size 20 or bigger, maximised (fills the screen). Run:
+   ```
+   cd ~/neo-cortex && clear
+   ```
+2. Start Spectacle, choose **Record** and **Screen** (or just this terminal window), click **Start**. Wait 2 seconds.
+   (Alternative from a second terminal: `spectacle -R screen`, if the Spectacle window gives trouble.)
+3. In the big terminal run:
+   ```
+   demo/silent_demo.sh
+   ```
+   Leave your hands off the keyboard. Do not scroll. It shows, in order: the project card, what is stored, a new document being added, the verdict for each link (a denied claim is dropped), an agent writing directly, four searches (what breaks if a service stops, how two people are connected, who owned something and until when), memory tidying, the tuning result, and a final card (AI disclosure, repo link, "Team: bindesh (solo)").
+4. When the last card ("Neo-Cortex: one graph, three jobs") has been on screen for about 8 seconds, stop the Spectacle recording.
+5. Find the file: `ls -t ~/Videos | head` (Spectacle saves there). Play it once to check it is readable. If the host wants MP4: `ffmpeg -i ~/Videos/FILE.webm -c:v libx264 -crf 23 ~/neo-cortex-demo.mp4` (otherwise upload the .webm as it is).
+6. Upload as **Unlisted** to YouTube (or any host the form accepts), test the link in a private window.
+7. Submit the form (deadline 00:14 local = 18:29 UTC): name all three tracks (01 Agents that act on connected data, 02 Agent memory and coordination, 03 Company brain); paste the text from `docs/submission.md`; add the repo link https://github.com/Gintoki571/neo-cortex and the video link.
 
-## Step 3: do this and say this (about 3 minutes)
-Press ENTER twice for each command (first ENTER types it, second runs it). Speak while it runs. Short sentences. Pause one second after each output.
+It is fine if the video is not perfect. It shows the real project working, which is what the judges asked for.
 
-| You run | You say (example, put it in your own words) |
-|---|---|
-| `demo/video_runner.sh 1 --fast` | "This is Neo-Cortex. AI assistants forget everything between sessions, and a company's knowledge is scattered across documents and chats. Neo-Cortex keeps all of it in one graph database, FalkorDB. This is a fictional company, Pellucid Pay: 102 documents, already in the graph." |
-| `demo/video_runner.sh 3 --fast` | "Now I add a new document. A small reading program picks out the people, services and teams and how they are linked. It took under a second: six things found, two links created. There is no big AI model inside, so no per-question bill." |
-| `demo/video_runner.sh 4 --fast` | "Each link has a verdict and a probability. The note also said Mateo does not own this service, and that it might move next quarter. Neither became an ownership link: a denial is dropped and a maybe is never treated as a fact. Only the real owner, Priya, is listed. This idea comes from a project called pg-jev." |
-| `demo/video_runner.sh 6 --fast` | "Now the questions. The graph searches by words, by meaning, by connections and by time. The tags show which search found each result. If this service stops, what breaks? Four other services depend on it, and it tells me which owners to call. This path shows how two people are connected. On questions like this the graph gives the full answer 80 percent of the time, plain text search 20 percent." |
-| `demo/video_runner.sh 7 --fast` | "Memory tidies itself. I tell it the retry limit is three, then five. It flags the clash, and the dream command tidies the memory and writes a log. This idea is from a research project called Dream-RSI." |
+## If something goes wrong
+- **The script says "demo daemon not running":** run `demo/setup.sh`, wait for `ready` (about 2 minutes), then start again from step 2.
+- **Retake (the script changes the database: it adds the note and a few memories):** stop the old demo and build a fresh one:
+  ```
+  demo/teardown.sh; kill -9 $(ss -ltnp | grep ':6399' | grep -o 'pid=[0-9]*' | cut -d= -f2) 2>/dev/null; demo/setup.sh
+  ```
+  (the `kill -9` clears a leftover database process that can block the restart.) Do not use `demo/reset.sh`; it can fail.
+- **Slow output or "falling back to cpu" in setup:** another program is using the graphics card; close it and run setup again, otherwise the recording still works but runs slower.
+- **Only a very short check run (no recording):** `demo/silent_demo.sh --fast` (pauses shortened; it also changes the database, so rebuild before the real take).
 
-Closing sentence (just talk, nothing to run): "Neo-Cortex covers all three tracks: agents that act on connected data, agent memory, and a company brain. It was built with Claude Code and other AI coding agents; I directed, reviewed and verified the work. The code is at github.com/Gintoki571/neo-cortex."
-
-If a command fails or you stumble badly, press Ctrl-C in the recording terminal, stop both recorders, and start again from Step 2. Do not run `demo/teardown.sh`. To restore the database before a retake: `demo/reset.sh`.
-
-## Step 4: stop and glue (3 minutes)
-1. Stop Spectacle recording first (its stop button or the tray icon). Then press Ctrl-C in the small terminal to stop `pw-record`.
-2. Run this once (it finds the newest screen recording in `~/Videos` and lines up the voice by the end):
-```
-cd ~; V=$(ls -t ~/Videos/*.webm ~/Videos/*.mp4 2>/dev/null | head -1); echo "screen: $V"
-vd=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$V"); ad=$(ffprobe -v error -show_entries format=duration -of csv=p=0 ~/voice.wav)
-ss=$(python3 -c "print(max(0, $ad - $vd))"); echo "voice starts $ss s into the audio"
-ffmpeg -y -i "$V" -ss $ss -i ~/voice.wav -map 0:v -map 1:a -c:v libx264 -preset veryfast -crf 23 -c:a aac -shortest ~/neo-cortex-demo.mp4
-```
-3. Play `~/neo-cortex-demo.mp4` and check you can hear yourself and read the text. If the voice is slightly early or late (it is lined up by the end, so it should be within a second), that is fine for this submission.
-
-## Step 5: upload and submit
-1. Upload `~/neo-cortex-demo.mp4` to YouTube as **Unlisted** (or any video host the form accepts). Test the link in a private window.
-2. In the form: name all three tracks (01 Agents that act on connected data, 02 Agent memory and coordination, 03 Company brain), paste the text from `docs/submission.md`, add the repo link https://github.com/Gintoki571/neo-cortex and the video link.
-3. The deadline is 00:14 local time (18:29 UTC). Submit before that; do not wait for a perfect video.
-
-## Cleanup when done
+## Cleanup after you submit
 `demo/teardown.sh`, then close the FalkorDB Browser terminal with Ctrl-C.
